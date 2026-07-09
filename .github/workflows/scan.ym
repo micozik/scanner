@@ -1,0 +1,43 @@
+name: A股自动扫描
+
+on:
+  schedule:
+    # 北京时间 = UTC+8。以下均为UTC时间：
+    # 交易时段每30分钟：北京9:00-15:30 → UTC 1:00-7:30，周一到周五
+    - cron: '*/30 1-7 * * 1-5'
+    # 收盘后全扫描：北京16:00 → UTC 8:00
+    - cron: '0 8 * * 1-5'
+    # 龙虎榜发布后：北京18:30 → UTC 10:30
+    - cron: '30 10 * * 1-5'
+  # 手动触发按钮（随时可在网页上点一次立即扫描）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 拉取仓库
+        uses: actions/checkout@v4
+
+      - name: 安装Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install akshare pandas
+
+      - name: 运行扫描器
+        run: python scanner_cloud.py
+
+      - name: 提交日报到仓库
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          git add reports/
+          git commit -m "自动扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" || echo "无新数据"
+          git push
