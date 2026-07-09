@@ -13,6 +13,7 @@ V1.2新增：
 import os
 import json
 import time
+import signal
 import datetime
 
 import akshare as ak
@@ -39,12 +40,25 @@ def pick_col(df, keywords):
     return None
 
 
-def with_retry(fn, tries=3, wait=4):
-    """接口抖动时自动重试3次"""
+class CallTimeout(Exception):
+    pass
+
+
+def _alarm_handler(signum, frame):
+    raise CallTimeout("接口60秒无响应")
+
+
+def with_retry(fn, tries=2, wait=3, timeout=60):
+    """每次请求最多等60秒（防挂起），失败自动重试"""
     last = None
     for _ in range(tries):
         try:
-            return fn()
+            signal.signal(signal.SIGALRM, _alarm_handler)
+            signal.alarm(timeout)
+            try:
+                return fn()
+            finally:
+                signal.alarm(0)
         except Exception as e:
             last = e
             time.sleep(wait)
@@ -329,5 +343,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-发自我的iPhone
