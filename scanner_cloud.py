@@ -1,13 +1,12 @@
 
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V1.2（2026-07-09晚升级）
-V1.2新增：
-  1. 双重重试机制（修复接口抖动报空）
-  2. 市场广度仪表盘（整个A股今天发生了什么）
-  3. 板块全景榜（行业+概念完整排序，每个板块附领涨股）
-  4. 轮动连续性追踪（今天vs上次对比：持续=真主线，新面孔=待验证）
-  5. 新闻流扩容（多源并抓，全谱信息面：政策/科技/战争/气候/金融）
+A股作战扫描器 · 云端版 V1.3（2026-07-09晚·多源互备版）
+V1.3新增：
+  1. 多数据源自动切换：东财失败自动切同花顺/乐咕乐股/新浪
+  2. 市场广度改用乐咕乐股轻量接口（涨跌家数/涨停跌停/活跃度）
+  3. 模块间隔2秒，降低被限流概率
+  4. 每次请求60秒硬超时+重试（防挂起）
 """
 
 import os
@@ -49,7 +48,6 @@ def _alarm_handler(signum, frame):
 
 
 def with_retry(fn, tries=2, wait=3, timeout=60):
-    """每次请求最多等60秒（防挂起），失败自动重试"""
     last = None
     for _ in range(tries):
         try:
@@ -65,23 +63,36 @@ def with_retry(fn, tries=2, wait=3, timeout=60):
     raise last
 
 
+def multi_source(title, sources):
+    """依次尝试多个数据源，第一个成功的生效"""
+    for src_name, fn in sources:
+        try:
+            result = with_retry(fn)
+            if result is not None:
+                return src_name, result
+        except Exception as e:
+            w(f"  [切换] {title}·{src_name}失败({type(e).__name__})，尝试备源...")
+    return None, None
+
+
 def safe_run(title, func):
     try:
         func()
     except Exception as e:
-        w(f"  [报空] {title} 获取失败：{type(e).__name__}: {str(e)[:80]}")
+        w(f"  [报空] {title}：{type(e).__name__}: {str(e)[:80]}")
+    time.sleep(2)  # 模块间隔，防限流
 
 
-# ========== 零、状态门探测器 ==========
+# ========== 零、状态门 ==========
 
 def scan_regime_gate():
-    w("\n【零、状态门】昨日涨停股今日表现（正=可开仓，负=电风扇禁开仓）")
+    w("\n【零、状态门】昨日涨停股今日表现（正=可开仓，负=禁开仓）")
 
     def _do():
         date = now_beijing().strftime("%Y%m%d")
         df = with_retry(lambda: ak.stock_zt_pool_previous_em(date=date))
         if df is None or len(df) == 0:
-            w("  暂无昨日涨停股数据")
+            w("  暂无数据")
             return
         c_name = pick_col(df, ["名称"])
         c_pct = pick_col(df, ["涨跌幅"])
@@ -98,45 +109,57 @@ def scan_regime_gate():
     safe_run("状态门", _do)
 
 
-# ========== 一、市场广度仪表盘（V1.2新增） ==========
+# ========== 一、市场广度（主源：乐咕乐股） ==========
 
-def scan_breadth_and_spot():
-    w("\n【一、市场广度仪表盘】整个A股今天的体检单")
+def scan_breadth():
+    w("\n【一、市场广度仪表盘】")
 
     def _do():
-        df = with_retry(lambda: ak.stock_zh_a_spot_em())
+        src, df = multi_source("市场广度", [
+            ("乐咕乐股", lambda: ak.stock_market_activity_legu()),
+        ])
+        if df is not None:
+            w(f"  （数据源：{src}）")
+            for _, r in df.iterrows():
+                w(f"    {r.iloc[0]}：{r.iloc[1]}")
+            return
+        # 备源：东财快照计算
+        df2 = with_retry(lambda: ak.stock_zh_a_spot_em())
+        c_pct = pick_col(df2, ["涨跌幅"])
+        df2[c_pct] = pd.to_numeric(df2[c_pct], errors="coerce")
+        w(f"  （数据源：东财计算）涨{(df2[c_pct]>0).sum()} : 跌{(df2[c_pct]<0).sum()}"
+          f" | 涨停~{(df2[c_pct]>9.85).sum()} : 跌停~{(df2[c_pct]<-9.85).sum()}")
+    safe_run("市场广度", _do)
+
+
+# ========== 二、全市场快照+缩量吸筹 ==========
+
+def scan_spot():
+    w("\n【二、全市场快照与暗流筛选】")
+
+    def _do():
+        df = with_retry(lambda: ak.stock_zh_a_spot_em(), tries=2, timeout=90)
         c_name = pick_col(df, ["名称"])
         c_code = pick_col(df, ["代码"])
         c_pct = pick_col(df, ["涨跌幅"])
         c_lb = pick_col(df, ["量比"])
-        c_amt = pick_col(df, ["成交额"])
+        df = df[~df[c_name].astype(str).str.contains("ST", na=False)]
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
         df[c_lb] = pd.to_numeric(df[c_lb], errors="coerce")
-        df[c_amt] = pd.to_numeric(df[c_amt], errors="coerce")
-
-        total = df[c_pct].notna().sum()
-        ups = (df[c_pct] > 0).sum()
-        downs = (df[c_pct] < 0).sum()
-        zt = (df[c_pct] > 9.85).sum()
-        dt = (df[c_pct] < -9.85).sum()
-        amt = df[c_amt].sum() / 1e8
-        w(f"  全市场{total}只 | 涨{ups} : 跌{downs} | 涨停约{zt} : 跌停约{dt} | 总成交约{amt:.0f}亿")
-
-        ndf = df[~df[c_name].astype(str).str.contains("ST", na=False)]
-        w("  ◆ 涨幅前15（剔除ST）：")
-        for _, r in ndf.sort_values(c_pct, ascending=False).head(15).iterrows():
+        w("  ◆ 涨幅前15：")
+        for _, r in df.sort_values(c_pct, ascending=False).head(15).iterrows():
             w(f"    {r[c_name]}({r[c_code]}) +{r[c_pct]}% 量比{r[c_lb]}")
-        w("  ◆ 缩量吸筹候选（微跌+量比<0.6，暗流线索）：")
-        quiet = ndf[(ndf[c_pct] < 0) & (ndf[c_pct] > -3) & (ndf[c_lb] < 0.6)]
+        w("  ◆ 缩量吸筹候选（微跌+量比<0.6）：")
+        quiet = df[(df[c_pct] < 0) & (df[c_pct] > -3) & (df[c_lb] < 0.6)]
         for _, r in quiet.sort_values(c_lb).head(10).iterrows():
             w(f"    {r[c_name]}({r[c_code]}) {r[c_pct]}% 量比{r[c_lb]}")
-    safe_run("市场广度", _do)
+    safe_run("全市场快照", _do)
 
 
-# ========== 二、板块全景榜+轮动连续性（V1.2核心新增） ==========
+# ========== 三、板块全景榜（东财主源+同花顺备源） ==========
 
 def scan_board_rank():
-    w("\n【二、板块全景榜】什么板块在涨·板块里谁领涨·与上次对比")
+    w("\n【三、板块全景榜】板块|涨跌|领涨股|连续性")
 
     prev_top = []
     try:
@@ -144,7 +167,7 @@ def scan_board_rank():
             with open(HIST_FILE, "r", encoding="utf-8") as f:
                 prev = json.load(f)
                 prev_top = prev.get("industry_top", [])
-                w(f"  （上次记录：{prev.get('date','?')} 领涨板块：{'、'.join(prev_top[:5])}...）")
+                w(f"  （上次{prev.get('date','?')}领涨：{'、'.join(prev_top[:5])}...）")
     except Exception:
         pass
 
@@ -152,34 +175,41 @@ def scan_board_rank():
 
     def _industry():
         nonlocal today_top
-        df = with_retry(lambda: ak.stock_board_industry_name_em())
-        c_name = pick_col(df, ["板块名称", "名称"])
-        c_pct = pick_col(df, ["涨跌幅"])
+        src, df = multi_source("行业榜", [
+            ("东财", lambda: ak.stock_board_industry_name_em()),
+            ("同花顺", lambda: ak.stock_board_industry_summary_ths()),
+        ])
+        if df is None:
+            raise RuntimeError("东财与同花顺行业榜均失败")
+        c_name = pick_col(df, ["板块名称", "板块", "名称"])
+        c_pct = pick_col(df, ["涨跌幅", "涨跌"])
         c_lead = pick_col(df, ["领涨股票", "领涨股"])
-        c_leadpct = pick_col(df, ["领涨股票-涨跌幅", "领涨股-涨跌幅"])
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
         df = df.sort_values(c_pct, ascending=False)
         today_top = df.head(10)[c_name].astype(str).tolist()
-        w("  ◆ 行业板块涨幅前15（板块 | 涨跌 | 领涨股 | 连续性）：")
+        w(f"  ◆ 行业涨幅前15（源：{src}）：")
         for _, r in df.head(15).iterrows():
             name = str(r[c_name])
             tag = "🔥持续" if name in prev_top else "🆕新面孔"
-            lead = f"{r[c_lead]}" if c_lead else ""
-            lp = f" {r[c_leadpct]}%" if c_leadpct else ""
-            w(f"    {name} | {r[c_pct]}% | 领涨:{lead}{lp} | {tag}")
-        w("  ◆ 行业板块跌幅前5：")
+            lead = f" 领涨:{r[c_lead]}" if c_lead else ""
+            w(f"    {name} | {r[c_pct]}%{lead} | {tag}")
+        w("  ◆ 行业跌幅前5：")
         for _, r in df.tail(5).iloc[::-1].iterrows():
             w(f"    {r[c_name]} | {r[c_pct]}%")
     safe_run("行业板块榜", _industry)
 
     def _concept():
-        df = with_retry(lambda: ak.stock_board_concept_name_em())
+        src, df = multi_source("概念榜", [
+            ("东财", lambda: ak.stock_board_concept_name_em()),
+        ])
+        if df is None:
+            raise RuntimeError("概念榜失败")
         c_name = pick_col(df, ["板块名称", "名称"])
         c_pct = pick_col(df, ["涨跌幅"])
         c_lead = pick_col(df, ["领涨股票", "领涨股"])
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
         df = df.sort_values(c_pct, ascending=False)
-        w("  ◆ 概念板块涨幅前15：")
+        w(f"  ◆ 概念涨幅前15（源：{src}）：")
         for _, r in df.head(15).iterrows():
             lead = f" 领涨:{r[c_lead]}" if c_lead else ""
             w(f"    {r[c_name]} | {r[c_pct]}%{lead}")
@@ -195,33 +225,41 @@ def scan_board_rank():
         pass
 
 
-# ========== 三、板块资金流（双重试加固） ==========
+# ========== 四、板块资金流（东财主源+同花顺备源） ==========
 
 def scan_sector_flow():
-    w("\n【三、板块资金流向】钱从哪抽·注进哪（主力净流入，亿元）")
-    for stype, label in [("行业资金流", "行业"), ("概念资金流", "概念")]:
-        def _do(stype=stype, label=label):
-            df = with_retry(lambda: ak.stock_sector_fund_flow_rank(
-                indicator="今日", sector_type=stype))
-            c_name = pick_col(df, ["名称"])
-            c_pct = pick_col(df, ["涨跌幅"])
-            c_flow = pick_col(df, ["主力净流入-净额", "主力净流入"])
-            df = df[[c_name, c_pct, c_flow]].copy()
-            df[c_flow] = (pd.to_numeric(df[c_flow], errors="coerce") / 1e8).round(2)
-            df = df.sort_values(c_flow, ascending=False)
-            w(f"  ◆ {label}净流入前10：")
-            for _, r in df.head(10).iterrows():
-                w(f"    {r[c_name]} | {r[c_pct]}% | +{r[c_flow]}亿")
-            w(f"  ◆ {label}净流出前5：")
-            for _, r in df.tail(5).iloc[::-1].iterrows():
-                w(f"    {r[c_name]} | {r[c_pct]}% | {r[c_flow]}亿")
-        safe_run(f"{label}资金流", _do)
+    w("\n【四、板块资金流向】（亿元）")
+
+    def _em(stype):
+        return ak.stock_sector_fund_flow_rank(indicator="今日", sector_type=stype)
+
+    def _do():
+        src, df = multi_source("行业资金流", [
+            ("东财", lambda: _em("行业资金流")),
+            ("同花顺", lambda: ak.stock_fund_flow_industry(symbol="即时")),
+        ])
+        if df is None:
+            raise RuntimeError("行业资金流双源失败")
+        c_name = pick_col(df, ["名称", "行业"])
+        c_pct = pick_col(df, ["涨跌幅", "行业指数涨跌", "涨跌"])
+        c_flow = pick_col(df, ["主力净流入-净额", "主力净流入", "净额", "流入资金"])
+        df[c_flow] = pd.to_numeric(df[c_flow], errors="coerce")
+        if df[c_flow].abs().max() and df[c_flow].abs().max() > 1e6:
+            df[c_flow] = (df[c_flow] / 1e8).round(2)  # 东财单位是元
+        df = df.sort_values(c_flow, ascending=False)
+        w(f"  ◆ 行业净流入前10（源：{src}）：")
+        for _, r in df.head(10).iterrows():
+            w(f"    {r[c_name]} | {r[c_pct]}% | +{r[c_flow]}亿")
+        w("  ◆ 行业净流出前5：")
+        for _, r in df.tail(5).iloc[::-1].iterrows():
+            w(f"    {r[c_name]} | {r[c_pct]}% | {r[c_flow]}亿")
+    safe_run("板块资金流", _do)
 
 
-# ========== 四、涨停池 ==========
+# ========== 五、涨停池 ==========
 
 def scan_zt_pool():
-    w("\n【四、涨停池】资金攻击方向验证器")
+    w("\n【五、涨停池】")
 
     def _do():
         date = now_beijing().strftime("%Y%m%d")
@@ -243,10 +281,10 @@ def scan_zt_pool():
     safe_run("涨停池", _do)
 
 
-# ========== 五、龙虎榜 ==========
+# ========== 六、龙虎榜 ==========
 
 def scan_lhb():
-    w("\n【五、龙虎榜】大资金署名单（约18点后更新）")
+    w("\n【六、龙虎榜】（约18点后更新）")
 
     def _do():
         today = now_beijing().strftime("%Y%m%d")
@@ -268,10 +306,10 @@ def scan_lhb():
     safe_run("龙虎榜", _do)
 
 
-# ========== 六、北向资金 ==========
+# ========== 七、北向资金 ==========
 
 def scan_north():
-    w("\n【六、北向资金】")
+    w("\n【七、北向资金】")
 
     def _do():
         df = with_retry(lambda: ak.stock_hsgt_fund_flow_summary_em())
@@ -280,10 +318,10 @@ def scan_north():
     safe_run("北向资金", _do)
 
 
-# ========== 七、新闻流（V1.2扩容：多源并抓，全谱信息面） ==========
+# ========== 八、新闻流 ==========
 
 def scan_news():
-    w("\n【七、新闻电报流】全谱信息面（政策/科技/战争/气候/金融）")
+    w("\n【八、新闻电报流】全谱信息面")
     sources = [
         ("财联社电报", lambda: ak.stock_info_global_cls(symbol="全部"), 50),
         ("东财全球快讯", lambda: ak.stock_info_global_em(), 30),
@@ -306,6 +344,7 @@ def scan_news():
             got += 1
         except Exception as e:
             w(f"  [跳过] {name}：{type(e).__name__}")
+        time.sleep(2)
     if got == 0:
         w("  [报空] 所有新闻源均失败")
 
@@ -319,11 +358,12 @@ def main():
     mode = "盘中快照" if intraday else "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V1.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V1.3多源版 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_regime_gate()
-    scan_breadth_and_spot()
+    scan_breadth()
+    scan_spot()
     scan_board_rank()
     scan_sector_flow()
     if not intraday:
@@ -338,7 +378,7 @@ def main():
         f.write(text)
     with open(f"reports/日报_{bj.strftime('%Y%m%d')}.txt", "w", encoding="utf-8") as f:
         f.write(text)
-    print("\n✅ V1.2扫描完成 reports/latest.txt")
+    print("\n✅ V1.3扫描完成 reports/latest.txt")
 
 
 if __name__ == "__main__":
