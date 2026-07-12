@@ -354,23 +354,33 @@ def scan_news():
 def main():
     bj = now_beijing()
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
-    intraday = bj.weekday() < 5 and (9 <= bj.hour < 15)
-    mode = "盘中快照" if intraday else "盘后全扫描"
+    weekend = bj.weekday() >= 5
+    intraday = (not weekend) and (9 <= bj.hour < 15)
+    if weekend:
+        mode = "周末新闻扫描"
+    elif intraday:
+        mode = "盘中快照"
+    else:
+        mode = "盘后全扫描"
 
     w("=" * 60)
     w(f"A股作战扫描器V1.3多源版 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
-    scan_regime_gate()
-    scan_breadth()
-    scan_spot()
-    scan_board_rank()
-    scan_sector_flow()
-    if not intraday:
-        scan_zt_pool()
-        scan_lhb()
-        scan_north()
-    scan_news()
+    if weekend:
+        # 休市日：行情数据无更新，只抓新闻（政策/国际/战争/灾害/产业全谱）
+        scan_news()
+    else:
+        scan_regime_gate()
+        scan_breadth()
+        scan_spot()
+        scan_board_rank()
+        scan_sector_flow()
+        if not intraday:
+            scan_zt_pool()
+            scan_lhb()
+            scan_north()
+        scan_news()
 
     os.makedirs("reports", exist_ok=True)
     text = "\n".join(REPORT)
