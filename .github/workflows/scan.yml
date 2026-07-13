@@ -2,16 +2,16 @@ name: A股自动扫描
 
 on:
   schedule:
-    # 北京时间 = UTC+8。以下均为UTC时间：
-    # 交易时段每30分钟：北京9:00-15:30 → UTC 1:00-7:30，周一到周五
-    - cron: '7/37 1-7 * * 1-5'
-    - cron: '15 1,5,9,13 * * 6,0'
-    # 收盘后全扫描：北京16:00 → UTC 8:00
+    - cron: '0,30 1-6 * * 1-5'
+    - cron: '0 7 * * 1-5'
     - cron: '5 8 * * 1-5'
-    # 龙虎榜发布后：北京18:30 → UTC 10:30
     - cron: '35 10 * * 1-5'
-  # 手动触发按钮（随时可在网页上点一次立即扫描）
+    - cron: '15 1,5,9,13 * * 6,0'
   workflow_dispatch:
+
+concurrency:
+  group: scan
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -39,6 +39,11 @@ jobs:
         run: |
           git config user.name "scanner-bot"
           git config user.email "scanner-bot@users.noreply.github.com"
+          git add -f reports/latest.txt
           git add reports/
-          git commit -m "自动扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" || echo "无新数据"
-          git push
+          if git diff --cached --quiet; then echo "无改动，跳过"; exit 0; fi
+          git commit -m "自动扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && break
+            echo "push撞车，重试 $i"; sleep 3
+          done
