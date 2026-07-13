@@ -1,12 +1,11 @@
 
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V1.3（2026-07-09晚·多源互备版）
-V1.3新增：
-  1. 多数据源自动切换：东财失败自动切同花顺/乐咕乐股/新浪
-  2. 市场广度改用乐咕乐股轻量接口（涨跌家数/涨停跌停/活跃度）
-  3. 模块间隔2秒，降低被限流概率
-  4. 每次请求60秒硬超时+重试（防挂起）
+A股作战扫描器 · 云端版 V1.4（2026-07-13·盘中/盘后分流版）
+V1.4新增：
+  1. 盘中/盘后分流：盘中写「盘中_最新.txt」，盘后深扫写「盘后_最新.txt」，互不覆盖
+  2. 新增游资席位模块（活跃营业部），仅盘后运行
+  3. 每类各留一份最新档 + 每日存档
 """
 
 import os
@@ -64,7 +63,6 @@ def with_retry(fn, tries=2, wait=3, timeout=60):
 
 
 def multi_source(title, sources):
-    """依次尝试多个数据源，第一个成功的生效"""
     for src_name, fn in sources:
         try:
             result = with_retry(fn)
@@ -80,7 +78,7 @@ def safe_run(title, func):
         func()
     except Exception as e:
         w(f"  [报空] {title}：{type(e).__name__}: {str(e)[:80]}")
-    time.sleep(2)  # 模块间隔，防限流
+    time.sleep(2)
 
 
 # ========== 零、状态门 ==========
@@ -94,7 +92,6 @@ def scan_regime_gate():
         if df is None or len(df) == 0:
             w("  暂无数据")
             return
-        c_name = pick_col(df, ["名称"])
         c_pct = pick_col(df, ["涨跌幅"])
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
         avg = df[c_pct].mean()
@@ -109,7 +106,7 @@ def scan_regime_gate():
     safe_run("状态门", _do)
 
 
-# ========== 一、市场广度（主源：乐咕乐股） ==========
+# ========== 一、市场广度 ==========
 
 def scan_breadth():
     w("\n【一、市场广度仪表盘】")
@@ -123,7 +120,6 @@ def scan_breadth():
             for _, r in df.iterrows():
                 w(f"    {r.iloc[0]}：{r.iloc[1]}")
             return
-        # 备源：东财快照计算
         df2 = with_retry(lambda: ak.stock_zh_a_spot_em())
         c_pct = pick_col(df2, ["涨跌幅"])
         df2[c_pct] = pd.to_numeric(df2[c_pct], errors="coerce")
@@ -156,7 +152,7 @@ def scan_spot():
     safe_run("全市场快照", _do)
 
 
-# ========== 三、板块全景榜（东财主源+同花顺备源） ==========
+# ========== 三、板块全景榜 ==========
 
 def scan_board_rank():
     w("\n【三、板块全景榜】板块|涨跌|领涨股|连续性")
@@ -225,7 +221,7 @@ def scan_board_rank():
         pass
 
 
-# ========== 四、板块资金流（东财主源+同花顺备源） ==========
+# ========== 四、板块资金流 ==========
 
 def scan_sector_flow():
     w("\n【四、板块资金流向】（亿元）")
@@ -245,7 +241,7 @@ def scan_sector_flow():
         c_flow = pick_col(df, ["主力净流入-净额", "主力净流入", "净额", "流入资金"])
         df[c_flow] = pd.to_numeric(df[c_flow], errors="coerce")
         if df[c_flow].abs().max() and df[c_flow].abs().max() > 1e6:
-            df[c_flow] = (df[c_flow] / 1e8).round(2)  # 东财单位是元
+            df[c_flow] = (df[c_flow] / 1e8).round(2)
         df = df.sort_values(c_flow, ascending=False)
         w(f"  ◆ 行业净流入前10（源：{src}）：")
         for _, r in df.head(10).iterrows():
@@ -281,10 +277,10 @@ def scan_zt_pool():
     safe_run("涨停池", _do)
 
 
-# ========== 六、龙虎榜 ==========
+# ========== 六、龙虎榜（个股） ==========
 
 def scan_lhb():
-    w("\n【六、龙虎榜】（约18点后更新）")
+    w("\n【六、龙虎榜·个股】（约18:35后更新）")
 
     def _do():
         today = now_beijing().strftime("%Y%m%d")
@@ -306,10 +302,42 @@ def scan_lhb():
     safe_run("龙虎榜", _do)
 
 
-# ========== 七、北向资金 ==========
+# ========== 七、游资席位·活跃营业部（仅盘后） ==========
+
+def scan_hot_money():
+    w("\n【七、游资席位·活跃营业部】（谁在扫货/出货，约18:35后完整）")
+
+    def _do():
+        date = now_beijing().strftime("%Y%m%d")
+        df = with_retry(lambda: ak.stock_lhb_hyyyb_em(start_date=date, end_date=date))
+        if df is None or len(df) == 0:
+            w("  今日活跃营业部暂未发布（18:35后再看）")
+            return
+        c_name = pick_col(df, ["营业部名称", "营业部"])
+        c_net = pick_col(df, ["总买卖净额", "净额", "净买"])
+        c_stock = pick_col(df, ["买入股票", "买入个股"])
+        if c_net:
+            df[c_net] = pd.to_numeric(df[c_net], errors="coerce")
+            if df[c_net].abs().max() and df[c_net].abs().max() > 1e6:
+                df[c_net] = (df[c_net] / 1e8).round(2)
+            df = df.sort_values(c_net, ascending=False)
+        w("  ◆ 净买入最猛席位前10（游资进攻）：")
+        for _, r in df.head(10).iterrows():
+            stock = f" 主买:{r[c_stock]}" if c_stock else ""
+            net = f" 净{r[c_net]}亿" if c_net else ""
+            w(f"    {r[c_name]}{net}{stock}")
+        if c_net:
+            w("  ◆ 净卖出最猛席位前5（游资撤退）：")
+            for _, r in df.tail(5).iloc[::-1].iterrows():
+                stock = f" 主卖:{r[c_stock]}" if c_stock else ""
+                w(f"    {r[c_name]} 净{r[c_net]}亿{stock}")
+    safe_run("游资席位", _do)
+
+
+# ========== 八、北向资金 ==========
 
 def scan_north():
-    w("\n【七、北向资金】")
+    w("\n【八、北向资金】")
 
     def _do():
         df = with_retry(lambda: ak.stock_hsgt_fund_flow_summary_em())
@@ -318,10 +346,10 @@ def scan_north():
     safe_run("北向资金", _do)
 
 
-# ========== 八、新闻流 ==========
+# ========== 九、新闻流 ==========
 
 def scan_news():
-    w("\n【八、新闻电报流】全谱信息面")
+    w("\n【九、新闻电报流】全谱信息面")
     sources = [
         ("财联社电报", lambda: ak.stock_info_global_cls(symbol="全部"), 50),
         ("东财全球快讯", lambda: ak.stock_info_global_em(), 30),
@@ -364,11 +392,10 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V1.3多源版 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V1.4多源版 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
-        # 休市日：行情数据无更新，只抓新闻（政策/国际/战争/灾害/产业全谱）
         scan_news()
     else:
         scan_regime_gate()
@@ -379,16 +406,28 @@ def main():
         if not intraday:
             scan_zt_pool()
             scan_lhb()
+            scan_hot_money()
             scan_north()
         scan_news()
 
     os.makedirs("reports", exist_ok=True)
     text = "\n".join(REPORT)
+    date = bj.strftime('%Y%m%d')
+
+    if intraday:
+        prefix = "盘中"
+    elif weekend:
+        prefix = "周末"
+    else:
+        prefix = "盘后"
+
+    with open(f"reports/{prefix}_最新.txt", "w", encoding="utf-8") as f:
+        f.write(text)
+    with open(f"reports/{prefix}_{date}.txt", "w", encoding="utf-8") as f:
+        f.write(text)
     with open("reports/latest.txt", "w", encoding="utf-8") as f:
         f.write(text)
-    with open(f"reports/日报_{bj.strftime('%Y%m%d')}.txt", "w", encoding="utf-8") as f:
-        f.write(text)
-    print("\n✅ V1.3扫描完成 reports/latest.txt")
+    print(f"\n✅ V1.4完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
