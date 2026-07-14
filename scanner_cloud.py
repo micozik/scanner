@@ -1,11 +1,9 @@
 
+
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V1.4（2026-07-13·盘中/盘后分流版）
-V1.4新增：
-  1. 盘中/盘后分流：盘中写「盘中_最新.txt」，盘后深扫写「盘后_最新.txt」，互不覆盖
-  2. 新增游资席位模块（活跃营业部），仅盘后运行
-  3. 每类各留一份最新档 + 每日存档
+A股作战扫描器 · 云端版 V1.5（2026-07-13·盘中盘后分流 + 新闻雷达版）
+V1.5：1.新闻5源合并去重 2.关键词雷达六大类置顶 3.全量100条 4.游资席位模块
 """
 
 import os
@@ -346,35 +344,94 @@ def scan_north():
     safe_run("北向资金", _do)
 
 
-# ========== 九、新闻流 ==========
+# ========== 九、新闻流 + 关键词雷达 ==========
+
+NEWS_RADAR = {
+    "① 名人喊话": ["马斯克", "黄仁勋", "特朗普", "鲍威尔", "巴菲特", "伯里", "段永平", "奥特曼", "库克", "贝索斯"],
+    "② 政策·国内": ["国务院", "发改委", "财政部", "央行", "证监会", "工信部", "十五五", "国常会", "补贴", "规划", "部署"],
+    "③ 政策·海外": ["白宫", "美联储", "加息", "降息", "关税", "出口管制", "商务部", "外交部", "制裁", "欧盟"],
+    "④ 科技·产业": ["AI", "算力", "半导体", "芯片", "光模块", "CPO", "机器人", "商业航天", "卫星", "固态电池", "创新药", "存储", "英伟达", "台积电", "阿斯麦", "液冷", "光刻"],
+    "⑤ 大宗·地缘": ["石油", "原油", "黄金", "铜", "稀土", "战争", "霍尔木兹", "伊朗", "以色列", "地缘", "OPEC", "天然气", "冲突"],
+    "⑥ 资金·事件": ["打新", "IPO", "长鑫", "并购", "重组", "预增", "增持", "减持", "回购", "举牌", "分红", "中标"],
+}
+
+
+def _fetch_news_source(fn):
+    df = with_retry(fn, tries=2, wait=3)
+    if df is None or len(df) == 0:
+        return []
+    c_title = pick_col(df, ["标题", "内容", "新闻", "摘要"])
+    c_time = pick_col(df, ["发布时间", "时间", "日期"])
+    out = []
+    for _, r in df.iterrows():
+        title = str(r[c_title]).strip() if c_title else ""
+        t = str(r[c_time])[:16] if c_time else ""
+        if title and title != "nan":
+            out.append((t, title))
+    return out
+
 
 def scan_news():
-    w("\n【九、新闻电报流】全谱信息面")
+    w("\n【九、新闻电报流 + 关键词雷达】全谱信息面")
+
     sources = [
-        ("财联社电报", lambda: ak.stock_info_global_cls(symbol="全部"), 50),
-        ("东财全球快讯", lambda: ak.stock_info_global_em(), 30),
-        ("新浪快讯", lambda: ak.stock_info_global_sina(), 30),
+        ("财联社", lambda: ak.stock_info_global_cls(symbol="全部")),
+        ("东财", lambda: ak.stock_info_global_em()),
+        ("新浪", lambda: ak.stock_info_global_sina()),
+        ("同花顺", lambda: ak.stock_info_global_ths()),
+        ("富途", lambda: ak.stock_info_global_futu()),
     ]
-    got = 0
-    for name, fn, limit in sources:
-        if got >= 2:
-            break
+
+    all_news = []
+    ok_src = []
+    for name, fn in sources:
         try:
-            df = with_retry(fn, tries=2, wait=3)
-            if df is None or len(df) == 0:
-                continue
-            c_title = pick_col(df, ["标题", "内容", "新闻"])
-            c_time = pick_col(df, ["发布时间", "时间", "日期"])
-            w(f"  ◆ 数据源：{name}")
-            for _, r in df.head(limit).iterrows():
-                t = str(r[c_time])[:16] if c_time else ""
-                w(f"    [{t}] {str(r[c_title])[:70]}")
-            got += 1
+            items = _fetch_news_source(fn)
+            if items:
+                all_news.extend(items)
+                ok_src.append(f"{name}({len(items)})")
         except Exception as e:
             w(f"  [跳过] {name}：{type(e).__name__}")
         time.sleep(2)
-    if got == 0:
+
+    if not all_news:
         w("  [报空] 所有新闻源均失败")
+        return
+
+    seen = set()
+    uniq = []
+    for t, title in all_news:
+        key = title[:30]
+        if key not in seen:
+            seen.add(key)
+            uniq.append((t, title))
+    try:
+        uniq.sort(key=lambda x: x[0], reverse=True)
+    except Exception:
+        pass
+
+    w(f"  （合并去重：{'、'.join(ok_src)} → 共{len(uniq)}条）")
+
+    w("\n  ★★★ 关键情报雷达（命中你的关注清单）★★★")
+    any_hit = False
+    for cat, kws in NEWS_RADAR.items():
+        hits = []
+        hseen = set()
+        for t, title in uniq:
+            if any(kw in title for kw in kws) and title[:30] not in hseen:
+                hseen.add(title[:30])
+                hits.append((t, title))
+        if hits:
+            any_hit = True
+            w(f"  【{cat}】")
+            for t, title in hits[:12]:
+                w(f"    [{t}] {title[:75]}")
+    if not any_hit:
+        w("  （本次无命中关注关键词）")
+
+    w("\n  ◆ 全量新闻流（最近100条）：")
+    for t, title in uniq[:100]:
+        w(f"    [{t}] {title[:70]}")
 
 
 # ========== 主程序 ==========
@@ -392,7 +449,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V1.4多源版 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V1.5多源版 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -427,8 +484,9 @@ def main():
         f.write(text)
     with open("reports/latest.txt", "w", encoding="utf-8") as f:
         f.write(text)
-    print(f"\n✅ V1.4完成 {prefix}_最新.txt")
+    print(f"\n✅ V1.5完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
     main()
+
