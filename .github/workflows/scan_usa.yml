@@ -1,0 +1,39 @@
+
+name: 美股夜盘扫描
+
+on:
+  schedule:
+    - cron: '35 20 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: scan-usa
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install akshare pandas
+      - run: python scanner_usa.py
+      - name: 提交美股报告
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          git add -f reports/美股_最新.txt
+          git add reports/
+          if git diff --cached --quiet; then echo "无改动"; exit 0; fi
+          git commit -m "美股扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && break
+            sleep 3
+          done
+
