@@ -110,50 +110,52 @@ def scan_index():
 def scan_stocks():
     w("\n【二、重点个股】（芯片/算力/存储/中概）")
 
-    def _do():
-        df = None
-        src = None
-        for sname, fn in [("东财", ak.stock_us_spot_em), ("新浪", ak.stock_us_spot)]:
+    def _one(tk):
+        """单只逐个抓，避开全市场快照的超时/限流"""
+        for fname in ["stock_us_hist", "stock_us_daily"]:
             try:
-                df = with_retry(fn, timeout=90)
-                if df is not None and len(df) > 0:
-                    src = sname
-                    break
-            except Exception as e:
-                w(f"  [切换] {sname}失败({type(e).__name__})，试备源...")
-        if df is None:
-            raise RuntimeError("美股快照双源均失败")
-
-        c_name = pick_col(df, ["名称", "cname"])
-        c_sym = pick_col(df, ["代码", "symbol"])
-        c_price = pick_col(df, ["最新价", "price"])
-        c_pct = pick_col(df, ["涨跌幅", "changepercent"])
-        c_vol = pick_col(df, ["成交量", "volume"])
-
-        w(f"  （源：{src}，共{len(df)}只）")
-        for cn, tk in US_TICKERS:
-            try:
-                s = df[c_sym].astype(str).str.upper()
-                row = df[(s == tk) | (s.str.endswith("." + tk))]
-                if len(row) > 0:
-                    r = row.iloc[0]
-                    vol = f" 量{r[c_vol]}" if c_vol else ""
-                    w(f"    {cn}({tk}) {r[c_price]} {r[c_pct]}%{vol}")
+                fn = getattr(ak, fname, None)
+                if fn is None:
+                    continue
+                if fname == "stock_us_daily":
+                    df = with_retry(lambda: fn(symbol=tk, adjust=""), tries=1, timeout=30)
                 else:
-                    w(f"    {cn}({tk}) 未匹配")
+                    end = now_beijing().strftime("%Y%m%d")
+                    start = (now_beijing() - datetime.timedelta(days=12)).strftime("%Y%m%d")
+                    df = with_retry(
+                        lambda: fn(symbol=tk, period="daily", start_date=start,
+                                   end_date=end, adjust=""), tries=1, timeout=30)
+                if df is None or len(df) < 2:
+                    continue
+                c_close = pick_col(df, ["收盘", "close"])
+                c_date = pick_col(df, ["日期", "date"])
+                c_vol = pick_col(df, ["成交量", "volume"])
+                close = pd.to_numeric(df.iloc[-1][c_close], errors="coerce")
+                prev = pd.to_numeric(df.iloc[-2][c_close], errors="coerce")
+                pct = (close - prev) / prev * 100 if prev else None
+                d = str(df.iloc[-1][c_date])[:10] if c_date else ""
+                vol = f" 量{df.iloc[-1][c_vol]}" if c_vol else ""
+                return close, pct, d, vol, fname
             except Exception:
-                w(f"    {cn}({tk}) 匹配异常")
+                continue
+        return None, None, None, None, None
 
-        d = df.copy()
-        d[c_pct] = pd.to_numeric(d[c_pct], errors="coerce")
-        d = d.dropna(subset=[c_pct])
-        w("\n  ◆ 全美股涨幅前10：")
-        for _, r in d.sort_values(c_pct, ascending=False).head(10).iterrows():
-            w(f"    {r[c_name]}({r[c_sym]}) {r[c_pct]}%")
-        w("  ◆ 全美股跌幅前10：")
-        for _, r in d.sort_values(c_pct).head(10).iterrows():
-            w(f"    {r[c_name]}({r[c_sym]}) {r[c_pct]}%")
+    def _do():
+        ok = 0
+        for cn, tk in US_TICKERS:
+            close, pct, d, vol, src = _one(tk)
+            if close is not None:
+                pstr = f"{pct:+.2f}%" if pct is not None else ""
+                w(f"    {cn}({tk}) {close} {pstr}{vol}  [{d}]")
+                ok += 1
+            else:
+                w(f"    {cn}({tk}) [报空]")
+            time.sleep(1)
+        if ok == 0:
+            raise RuntimeError("所有个股接口均失败")
+        w(f"  （成功{ok}/{len(US_TICKERS)}只）")
     safe_run("美股个股", _do)
+
 
 
 # ========== 三、美股新闻 ==========
