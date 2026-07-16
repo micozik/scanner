@@ -81,16 +81,54 @@ def safe_run(title, func):
 
 
 def get_spot():
-    """全市场快照，一次拉取全局复用（东财主源，含量比/换手/60日涨跌幅）"""
+    """全市场快照：东财拆成4小份分抓（轻、不易超时、带全字段），失败再退新浪"""
     global SPOT_DF, SPOT_SRC
     if SPOT_DF is not None:
         return SPOT_DF
-    src, df = multi_source("全市场快照", [
-        ("东财", lambda: ak.stock_zh_a_spot_em()),
-        ("新浪", lambda: ak.stock_zh_a_spot()),
-    ])
-    SPOT_DF, SPOT_SRC = df, src
+
+    parts, names = [], []
+    for fname, label in [
+        ("stock_sh_a_spot_em", "沪A"),
+        ("stock_sz_a_spot_em", "深A"),
+        ("stock_cy_a_spot_em", "创业板"),
+        ("stock_kc_a_spot_em", "科创板"),
+    ]:
+        fn = getattr(ak, fname, None)
+        if fn is None:
+            continue
+        try:
+            df = with_retry(fn, tries=3, wait=5, timeout=60)
+            if df is not None and len(df) > 0:
+                parts.append(df)
+                names.append(f"{label}{len(df)}只")
+        except Exception as e:
+            w(f"  [跳过] 东财{label}：{type(e).__name__}")
+        time.sleep(2)
+
+    if parts:
+        try:
+            SPOT_DF = pd.concat(parts, ignore_index=True)
+            SPOT_SRC = "东财分市场(" + "+".join(names) + ")"
+            return SPOT_DF
+        except Exception as e:
+            w(f"  [跳过] 分市场合并失败：{type(e).__name__}")
+
+    try:
+        SPOT_DF = with_retry(ak.stock_zh_a_spot_em, tries=3, wait=8, timeout=120)
+        if SPOT_DF is not None and len(SPOT_DF) > 0:
+            SPOT_SRC = "东财全市场"
+            return SPOT_DF
+    except Exception as e:
+        w(f"  [跳过] 东财全市场：{type(e).__name__}")
+
+    try:
+        SPOT_DF = with_retry(ak.stock_zh_a_spot, tries=2, wait=5, timeout=120)
+        SPOT_SRC = "新浪(缺量比/换手/60日，冷低早会报空)"
+    except Exception as e:
+        w(f"  [报空] 全市场快照全源失败：{type(e).__name__}")
+        SPOT_DF = None
     return SPOT_DF
+
 
 
 # ========== 零、状态门 ==========
