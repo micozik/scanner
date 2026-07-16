@@ -279,38 +279,35 @@ def scan_cold_low():
 
         fl = None
         fsrc = None
-        try:
-            f = with_retry(lambda: ak.stock_individual_fund_flow_rank(indicator="今日"),
-                           tries=3, wait=8, timeout=90)
-            fc = pick_col(f, ["代码"])
-            fn = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入"])
-            fl = f[[fc, fn]].copy()
-            fl.columns = ["_c", "_net"]
-            fsrc = "东财"
-        except Exception as e:
-            w(f"  [切换] 东财资金流({type(e).__name__})，试同花顺...")
+        for ind in ["今日", "5日", "3日"]:
             try:
-                f = with_retry(lambda: ak.stock_fund_flow_individual(symbol="即时"),
-                               tries=2, wait=5, timeout=90)
-                fc = pick_col(f, ["股票代码", "代码"])
-                fn = pick_col(f, ["净额"])
-                fl = f[[fc, fn]].copy()
-                fl.columns = ["_c", "_net"]
-                fsrc = "同花顺"
-            except Exception as e2:
-                w(f"  [报空] 资金流双源均失败({type(e2).__name__})")
-                return
+                f = with_retry(lambda i=ind: ak.stock_individual_fund_flow_rank(indicator=i),
+                               tries=2, wait=10, timeout=90)
+                fc = pick_col(f, ["代码"])
+                fn = pick_col(f, ["主力净流入-净额"])
+                if fc and fn:
+                    fl = f[[fc, fn]].copy()
+                    fl.columns = ["_c", "_net"]
+                    fsrc = f"东财{ind}"
+                    break
+            except Exception as e:
+                w(f"  [切换] 东财{ind}({type(e).__name__})...")
 
-        fl["_code6"] = fl["_c"].astype(str).str.extract(r"(\d{6})")[0]
-        fl["主力净流入"] = pd.to_numeric(fl["_net"], errors="coerce")
-        fl = fl.dropna(subset=["_code6", "主力净流入"])
-        cand = cand.merge(fl[["_code6", "主力净流入"]], on="_code6", how="inner")
-        cand = cand[cand["主力净流入"] > 0].sort_values("主力净流入", ascending=False)
-        w(f"  ②主力暗流净流入>0（源：{fsrc}）：{len(cand)}只")
+        if fl is not None:
+            fl["_code6"] = fl["_c"].astype(str).str.extract(r"(\d{6})")[0]
+            fl["主力净流入"] = pd.to_numeric(fl["_net"], errors="coerce")
+            fl = fl.dropna(subset=["_code6", "主力净流入"])
+            cand = cand.merge(fl[["_code6", "主力净流入"]], on="_code6", how="inner")
+            cand = cand[cand["主力净流入"] > 0].sort_values("主力净流入", ascending=False)
+            w(f"  ②主力暗流净流入>0（源：{fsrc}）：{len(cand)}只")
+        else:
+            w("  [降级] 资金流全失败 → 只用K线三关(横盘+低位+缩量)")
+            cand["主力净流入"] = 0
+            cand = cand.reindex(cand[c_pct].abs().sort_values().index)
 
         w("  ③低位(60日跌>12%) ④缩量(5日/60日均量<0.8)：")
         got = 0
-        for _, r in cand.head(50).iterrows():
+        for _, r in cand.head(100).iterrows():
             if got >= 8:
                 break
             code6 = r["_code6"]
