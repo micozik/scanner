@@ -340,18 +340,40 @@ def scan_cold_low():
 
 # ========== 三、板块全景榜 ==========
 
-def scan_board_rank():
-    w("\n【三、板块全景榜】板块|涨跌|领涨股|连续性")
-
-    prev_top = []
+def _load_hist():
     try:
         if os.path.exists(HIST_FILE):
             with open(HIST_FILE, "r", encoding="utf-8") as f:
-                prev = json.load(f)
-                prev_top = prev.get("industry_top", [])
-                w(f"  （上次{prev.get('date','?')}领涨：{'、'.join(prev_top[:5])}...）")
+                h = json.load(f)
+                if isinstance(h, dict) and "days" in h:
+                    return h
     except Exception:
         pass
+    return {"days": {}}
+
+
+def _streak(hist, name, today):
+    ds = sorted([d for d in hist["days"] if d < today], reverse=True)
+    n = 0
+    for d in ds:
+        if name in hist["days"][d]:
+            n += 1
+        else:
+            break
+    return n
+
+
+def scan_board_rank():
+    w("\n【三、板块全景榜】板块|涨跌|领涨股|连涨天数")
+    bj = now_beijing()
+    today = bj.strftime("%Y-%m-%d")
+    is_intra = (bj.weekday() < 5) and (9 <= bj.hour < 15)
+    hist = _load_hist()
+    if hist["days"]:
+        last = sorted(hist["days"])[-1]
+        w(f"  （历史库：{len(hist['days'])}天，最近{last}）")
+    else:
+        w("  （历史库为空，今天收盘后开始积累）")
 
     today_top = []
 
@@ -362,7 +384,7 @@ def scan_board_rank():
             ("同花顺", lambda: ak.stock_board_industry_summary_ths()),
         ])
         if df is None:
-            raise RuntimeError("东财与同花顺行业榜均失败")
+            raise RuntimeError("行业榜双源失败")
         c_name = pick_col(df, ["板块名称", "板块", "名称"])
         c_pct = pick_col(df, ["涨跌幅", "涨跌"])
         c_lead = pick_col(df, ["领涨股票", "领涨股"])
@@ -372,7 +394,15 @@ def scan_board_rank():
         w(f"  ◆ 行业涨幅前15（源：{src}）：")
         for _, r in df.head(15).iterrows():
             name = str(r[c_name])
-            tag = "🔥持续" if name in prev_top else "🆕新面孔"
+            s = _streak(hist, name, today)
+            if s == 0:
+                tag = "🆕第1天(刚启动)"
+            elif s >= 4:
+                tag = f"🔥连{s+1}天 ⚠️高潮慎追"
+            elif s >= 2:
+                tag = f"🔥连{s+1}天"
+            else:
+                tag = f"连{s+1}天"
             lead = f" 领涨:{r[c_lead]}" if c_lead else ""
             w(f"    {name} | {r[c_pct]}%{lead} | {tag}")
         w("  ◆ 行业跌幅前5：")
@@ -383,28 +413,33 @@ def scan_board_rank():
     def _concept():
         src, df = multi_source("概念榜", [
             ("东财", lambda: ak.stock_board_concept_name_em()),
+            ("同花顺", lambda: ak.stock_board_concept_summary_ths()),
         ])
         if df is None:
-            raise RuntimeError("概念榜失败")
-        c_name = pick_col(df, ["板块名称", "名称"])
-        c_pct = pick_col(df, ["涨跌幅"])
-        c_lead = pick_col(df, ["领涨股票", "领涨股"])
+            raise RuntimeError("概念榜双源失败")
+        c_name = pick_col(df, ["板块名称", "概念名称", "名称"])
+        c_pct = pick_col(df, ["涨跌幅", "涨跌"])
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
         df = df.sort_values(c_pct, ascending=False)
         w(f"  ◆ 概念涨幅前15（源：{src}）：")
         for _, r in df.head(15).iterrows():
-            lead = f" 领涨:{r[c_lead]}" if c_lead else ""
-            w(f"    {r[c_name]} | {r[c_pct]}%{lead}")
+            name = str(r[c_name])
+            s = _streak(hist, name, today)
+            tag = "🆕第1天" if s == 0 else (f"🔥连{s+1}天 ⚠️" if s >= 4 else f"连{s+1}天")
+            w(f"    {name} | {r[c_pct]}% | {tag}")
     safe_run("概念板块榜", _concept)
 
-    try:
-        if today_top:
+    if today_top and not is_intra:
+        try:
+            hist["days"][today] = today_top
+            ks = sorted(hist["days"])[-40:]
+            hist["days"] = {k: hist["days"][k] for k in ks}
             os.makedirs("reports", exist_ok=True)
             with open(HIST_FILE, "w", encoding="utf-8") as f:
-                json.dump({"date": now_beijing().strftime("%Y-%m-%d %H:%M"),
-                           "industry_top": today_top}, f, ensure_ascii=False)
-    except Exception:
-        pass
+                json.dump(hist, f, ensure_ascii=False, indent=1)
+            w(f"  ✅ 已记录{today}领涨榜，历史库共{len(hist['days'])}天")
+        except Exception as e:
+            w(f"  [跳过] 历史写入失败：{type(e).__name__}")
 
 
 # ========== 四、板块资金流 ==========
