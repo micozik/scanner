@@ -81,53 +81,18 @@ def safe_run(title, func):
 
 
 def get_spot():
-    """全市场快照：东财拆成4小份分抓（轻、不易超时、带全字段），失败再退新浪"""
+    """东财快照被封，直接用新浪（含turnoverratio换手率）"""
     global SPOT_DF, SPOT_SRC
     if SPOT_DF is not None:
         return SPOT_DF
-
-    parts, names = [], []
-    for fname, label in [
-        ("stock_sh_a_spot_em", "沪A"),
-        ("stock_sz_a_spot_em", "深A"),
-        ("stock_cy_a_spot_em", "创业板"),
-        ("stock_kc_a_spot_em", "科创板"),
-    ]:
-        fn = getattr(ak, fname, None)
-        if fn is None:
-            continue
-        try:
-            df = with_retry(fn, tries=3, wait=5, timeout=60)
-            if df is not None and len(df) > 0:
-                parts.append(df)
-                names.append(f"{label}{len(df)}只")
-        except Exception as e:
-            w(f"  [跳过] 东财{label}：{type(e).__name__}")
-        time.sleep(2)
-
-    if parts:
-        try:
-            SPOT_DF = pd.concat(parts, ignore_index=True)
-            SPOT_SRC = "东财分市场(" + "+".join(names) + ")"
-            return SPOT_DF
-        except Exception as e:
-            w(f"  [跳过] 分市场合并失败：{type(e).__name__}")
-
     try:
-        SPOT_DF = with_retry(ak.stock_zh_a_spot_em, tries=3, wait=8, timeout=120)
-        if SPOT_DF is not None and len(SPOT_DF) > 0:
-            SPOT_SRC = "东财全市场"
-            return SPOT_DF
+        SPOT_DF = with_retry(ak.stock_zh_a_spot, tries=3, wait=5, timeout=120)
+        SPOT_SRC = "新浪"
     except Exception as e:
-        w(f"  [跳过] 东财全市场：{type(e).__name__}")
-
-    try:
-        SPOT_DF = with_retry(ak.stock_zh_a_spot, tries=2, wait=5, timeout=120)
-        SPOT_SRC = "新浪(缺量比/换手/60日，冷低早会报空)"
-    except Exception as e:
-        w(f"  [报空] 全市场快照全源失败：{type(e).__name__}")
+        w(f"  [报空] 新浪快照失败：{type(e).__name__}")
         SPOT_DF = None
     return SPOT_DF
+
 
 
 
@@ -263,71 +228,104 @@ def scan_spot():
 
 # ========== 二·5、冷低早候选筛选器（核心） ==========
 
+def _hist_close(code, symbol=None):
+    if symbol:
+        try:
+            k = with_retry(lambda: ak.stock_zh_a_daily(symbol=symbol), tries=1, timeout=25)
+            if k is not None and len(k) >= 45:
+                return k, pick_col(k, ["close", "收盘"])
+        except Exception:
+            pass
+    try:
+        end = now_beijing().strftime("%Y%m%d")
+        start = (now_beijing() - datetime.timedelta(days=120)).strftime("%Y%m%d")
+        k = with_retry(lambda: ak.stock_zh_a_hist(symbol=code, period="daily",
+                       start_date=start, end_date=end, adjust="qfq"), tries=1, timeout=25)
+        if k is not None and len(k) >= 45:
+            return k, pick_col(k, ["收盘", "close"])
+    except Exception:
+        pass
+    return None, None
+
+
 def scan_cold_low():
     w("\n★★★【冷低早候选·暗流吸筹筛选】★★★（冷+低+主力暗流，宁缺毋滥）")
 
     def _do():
         spot = get_spot()
         if spot is None:
-            raise RuntimeError("快照缺失，无法筛选")
-        c_code = pick_col(spot, ["代码"])
-        c_name = pick_col(spot, ["名称"])
-        c_price = pick_col(spot, ["最新价"])
-        c_pct = pick_col(spot, ["涨跌幅"])
-        c_lb = pick_col(spot, ["量比"])
-        c_turn = pick_col(spot, ["换手率"])
-        c_60 = pick_col(spot, ["60日涨跌幅"])
-        if not all([c_lb, c_turn, c_60]):
-            w("  [报空] 快照缺量比/换手/60日字段（可能走了新浪备源），本模块需东财主源")
+            raise RuntimeError("快照缺失")
+        c_code = pick_col(spot, ["代码", "code"])
+        c_name = pick_col(spot, ["名称", "name"])
+        c_price = pick_col(spot, ["最新价", "trade"])
+        c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
+        c_turn = pick_col(spot, ["换手率", "turnoverratio"])
+        c_sym = pick_col(spot, ["symbol"])
+        if not all([c_code, c_name, c_price, c_pct, c_turn]):
+            w("  [报空] 快照缺必要字段")
             return
 
         d = spot.copy()
-        d = d[~d[c_name].astype(str).str.contains("ST", na=False)]
-        for c in [c_price, c_pct, c_lb, c_turn, c_60]:
+        d = d[~d[c_name].astype(str).str.contains("ST|退|N ", na=False)]
+        for c in [c_price, c_pct, c_turn]:
             d[c] = pd.to_numeric(d[c], errors="coerce")
-        d = d.dropna(subset=[c_pct, c_lb, c_turn, c_60])
+        d = d.dropna(subset=[c_pct, c_turn, c_price])
+        d["_code6"] = d[c_code].astype(str).str[-6:].str.zfill(6)
+        d = d[~d["_code6"].str.startswith(("8", "4", "9"))]
 
-        # 冷低早暗流：微跌横盘 + 缩量 + 冷(低换手) + 低位(60日跌多) + 排除仙股/高价
-        cand = d[
-            (d[c_pct] >= -4) & (d[c_pct] <= 2) &      # 不追涨、微跌横盘
-            (d[c_lb] < 0.8) &                          # 缩量
-            (d[c_turn] < 5) &                          # 冷、不热
-            (d[c_60] < -12) &                          # 低位（60日跌超12%）
-            (d[c_price] >= 3) & (d[c_price] <= 100)     # 排除仙股/高价妖股
-        ].copy()
+        cand = d[(d[c_pct] >= -4) & (d[c_pct] <= 2) &
+                 (d[c_turn] < 3) &
+                 (d[c_price] >= 3) & (d[c_price] <= 100)].copy()
+        w(f"  ①冷+横盘：{len(cand)}只")
 
-        # 叠加主力净流入（暗流），有则优先按净流入排序
+        has_flow = False
         try:
-            flow = with_retry(lambda: ak.stock_individual_fund_flow_rank(indicator="今日"))
+            flow = with_retry(lambda: ak.stock_individual_fund_flow_rank(indicator="今日"),
+                              tries=2, wait=5, timeout=90)
             f_code = pick_col(flow, ["代码"])
             f_net = pick_col(flow, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入"])
-            flow[f_net] = pd.to_numeric(flow[f_net], errors="coerce")
-            flow2 = flow[[f_code, f_net]].rename(columns={f_code: c_code, f_net: "主力净流入"})
-            cand[c_code] = cand[c_code].astype(str).str.zfill(6)
-            flow2[c_code] = flow2[c_code].astype(str).str.zfill(6)
-            cand = cand.merge(flow2, on=c_code, how="left")
-            cand = cand[cand["主力净流入"] > 0]                     # 暗流：主力净流入为正
-            cand = cand.sort_values("主力净流入", ascending=False)
+            fl = flow[[f_code, f_net]].copy()
+            fl["_code6"] = fl[f_code].astype(str).str.zfill(6)
+            fl["主力净流入"] = pd.to_numeric(fl[f_net], errors="coerce")
+            cand = cand.merge(fl[["_code6", "主力净流入"]], on="_code6", how="inner")
+            cand = cand[cand["主力净流入"] > 0].sort_values("主力净流入", ascending=False)
             has_flow = True
+            w(f"  ②主力暗流净流入>0：{len(cand)}只")
         except Exception as e:
-            w(f"  （资金流叠加失败{type(e).__name__}，改按缩量排序）")
-            cand = cand.sort_values(c_lb)
-            has_flow = False
+            w(f"  [跳过] 资金流({type(e).__name__})，改按低换手排序")
+            cand = cand.sort_values(c_turn)
 
-        if len(cand) == 0:
-            w("  本次无标的（符合冷低早暗流特征的票为0）—— 这是特征不是故障。")
-            return
+        w("  ③低位验证（60日跌幅>12%）：")
+        got = 0
+        for _, r in cand.head(40).iterrows():
+            if got >= 8:
+                break
+            sym = r[c_sym] if c_sym else None
+            k, kc = _hist_close(r["_code6"], sym)
+            if k is None:
+                continue
+            try:
+                now_p = pd.to_numeric(k.iloc[-1][kc], errors="coerce")
+                p60 = pd.to_numeric(k.iloc[-45][kc], errors="coerce")
+                if not p60:
+                    continue
+                chg60 = (now_p - p60) / p60 * 100
+                if chg60 > -12:
+                    continue
+                ft = f" | 主力净流入{r['主力净流入']/1e4:.0f}万" if has_flow else ""
+                w(f"    {r[c_name]}({r['_code6']}) {r[c_price]} 今{r[c_pct]}% | "
+                  f"换手{r[c_turn]:.1f}% | 60日{chg60:.1f}%{ft}")
+                got += 1
+            except Exception:
+                continue
+            time.sleep(0.4)
 
-        w(f"  命中{len(cand)}只，取前8（需人工再验催化2-8周日期=第③关）：")
-        for _, r in cand.head(8).iterrows():
-            flowtxt = ""
-            if has_flow:
-                v = r["主力净流入"] / 1e8
-                flowtxt = f" | 主力净流入{v:.2f}亿"
-            w(f"    {r[c_name]}({r[c_code]}) {r[c_price]} 今{r[c_pct]}% | 量比{r[c_lb]:.2f} "
-              f"换手{r[c_turn]:.1f}% | 60日{r[c_60]:.1f}%{flowtxt}")
-        w("  ※ 代码已完成①冷②低④暗流机筛；③早(具体日期催化)⑤止损 由你我集中分析定。")
+        if got == 0:
+            w("    本次无标的 —— 这是特征不是故障。")
+        else:
+            w(f"  ※ 命中{got}只。③早(具体日期催化)⑤止损由你我集中分析定。")
     safe_run("冷低早筛选", _do)
+
 
 
 # ========== 三、板块全景榜 ==========
