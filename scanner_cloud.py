@@ -277,20 +277,36 @@ def scan_cold_low():
                  (d[c_price] >= 3) & (d[c_price] <= 100)].copy()
         w(f"  ①横盘微跌+价格区间：{len(cand)}只")
 
+                fl, fsrc = None, None
         try:
-            flow = with_retry(lambda: ak.stock_individual_fund_flow_rank(indicator="今日"),
-                              tries=2, wait=5, timeout=90)
-            f_code = pick_col(flow, ["代码"])
-            f_net = pick_col(flow, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入"])
-            fl = flow[[f_code, f_net]].copy()
-            fl["_code6"] = fl[f_code].astype(str).str.zfill(6)
-            fl["主力净流入"] = pd.to_numeric(fl[f_net], errors="coerce")
-            cand = cand.merge(fl[["_code6", "主力净流入"]], on="_code6", how="inner")
-            cand = cand[cand["主力净流入"] > 0].sort_values("主力净流入", ascending=False)
-            w(f"  ②主力暗流净流入>0：{len(cand)}只")
+            f = with_retry(lambda: ak.stock_individual_fund_flow_rank(indicator="今日"),
+                           tries=3, wait=8, timeout=90)
+            fc = pick_col(f, ["代码"])
+            fn = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入"])
+            fl = f[[fc, fn]].copy()
+            fl.columns = ["_c", "_net"]
+            fsrc = "东财"
         except Exception as e:
-            w(f"  [报空] 资金流失败({type(e).__name__})")
-            return
+            w(f"  [切换] 东财资金流({type(e).__name__})，试同花顺...")
+            try:
+                f = with_retry(lambda: ak.stock_fund_flow_individual(symbol="即时"),
+                               tries=2, wait=5, timeout=90)
+                fc = pick_col(f, ["股票代码", "代码"])
+                fn = pick_col(f, ["净额"])
+                fl = f[[fc, fn]].copy()
+                fl.columns = ["_c", "_net"]
+                fsrc = "同花顺"
+            except Exception as e2:
+                w(f"  [报空] 资金流双源均失败({type(e2).__name__})")
+                return
+
+        fl["_code6"] = fl["_c"].astype(str).str.extract(r"(\d{6})")[0]
+        fl["主力净流入"] = pd.to_numeric(fl["_net"], errors="coerce")
+        fl = fl.dropna(subset=["_code6", "主力净流入"])
+        cand = cand.merge(fl[["_code6", "主力净流入"]], on="_code6", how="inner")
+        cand = cand[cand["主力净流入"] > 0].sort_values("主力净流入", ascending=False)
+        w(f"  ②主力暗流净流入>0（源：{fsrc}）：{len(cand)}只")
+
 
         w("  ③低位(60日跌>12%) ④缩量(5日/60日均量<0.8)：")
         got = 0
