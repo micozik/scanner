@@ -277,7 +277,8 @@ def scan_cold_low():
                  (d[c_price] >= 3) & (d[c_price] <= 100)].copy()
         w(f"  ①横盘微跌+价格区间：{len(cand)}只")
 
-                fl, fsrc = None, None
+        fl = None
+        fsrc = None
         try:
             f = with_retry(lambda: ak.stock_individual_fund_flow_rank(indicator="今日"),
                            tries=3, wait=8, timeout=90)
@@ -307,7 +308,6 @@ def scan_cold_low():
         cand = cand[cand["主力净流入"] > 0].sort_values("主力净流入", ascending=False)
         w(f"  ②主力暗流净流入>0（源：{fsrc}）：{len(cand)}只")
 
-
         w("  ③低位(60日跌>12%) ④缩量(5日/60日均量<0.8)：")
         got = 0
         for _, r in cand.head(50).iterrows():
@@ -335,7 +335,7 @@ def scan_cold_low():
                         continue
                     vtxt = f" | 量能{v5/v60:.2f}倍缩量"
                 w(f"    {r[c_name]}({code6}) {r[c_price]} 今{r[c_pct]}% | "
-                  f"60日{chg60:.1f}%{vtxt} | 主力净流入{r['主力净流入']/1e4:.0f}万")
+                  f"60日{chg60:.1f}%{vtxt} | 净流入{r['主力净流入']}")
                 got += 1
             except Exception:
                 continue
@@ -346,6 +346,7 @@ def scan_cold_low():
         else:
             w(f"  ※ 命中{got}只。③早(日期催化)⑤止损由你我集中分析定。")
     safe_run("冷低早筛选", _do)
+
 
 
 
