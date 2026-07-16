@@ -352,7 +352,9 @@ def _load_hist():
     return {"days": {}}
 
 
-def _board_stats(hist, name, today, rank_now, pct_now):
+def _fmt_tag(hist, name, today, rank_now, pct_now):
+    if not hist["days"]:
+        return " | 🆕库空(今日起积累)"
     ds = sorted([d for d in hist["days"] if d < today], reverse=True)
     streak = 0
     for d in ds:
@@ -361,24 +363,17 @@ def _board_stats(hist, name, today, rank_now, pct_now):
             streak += 1
         else:
             break
+    days = streak + 1 if pct_now > 0 else 0
     cum = pct_now
     for d in ds[:2]:
         rec = hist["days"][d].get(name)
         if rec:
             cum += rec.get("pct", 0)
-    prev_rank = None
+    prev = None
     if ds:
         rec = hist["days"][ds[0]].get(name)
         if rec:
-            prev_rank = rec.get("rank")
-    return streak, cum, prev_rank
-
-
-def _fmt_tag(hist, name, today, rank_now, pct_now):
-    streak, cum3, prev = _board_stats(hist, name, today, rank_now, pct_now)
-    days = streak + 1 if pct_now > 0 else 0
-    if not hist["days"]:
-        return " | 🆕库空(今日起积累)"
+            prev = rec.get("rank")
     if days == 0:
         tag = "今日转跌"
     elif days == 1:
@@ -389,7 +384,7 @@ def _fmt_tag(hist, name, today, rank_now, pct_now):
         tag = f"🔥连{days}天"
     else:
         tag = f"连{days}天(仍早)"
-    c3 = f" 3日{cum3:+.1f}%" if len(hist["days"]) >= 2 else ""
+    c3 = f" 3日{cum:+.1f}%" if len(ds) >= 2 else ""
     rk = ""
     if prev:
         if prev - rank_now >= 8:
@@ -412,6 +407,8 @@ def scan_board_rank():
     else:
         w("  （历史库为空，今天收盘后开始积累）")
 
+    saved = {}
+
     def _rank(title, sources, keep):
         src, df = multi_source(title, sources)
         if df is None:
@@ -419,6 +416,8 @@ def scan_board_rank():
         c_name = pick_col(df, ["板块名称", "概念名称", "板块", "名称"])
         c_pct = pick_col(df, ["涨跌幅", "涨跌"])
         c_lead = pick_col(df, ["领涨股票", "领涨股"])
+        if not c_name or not c_pct:
+            raise RuntimeError(f"{title}缺字段")
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
         df = df.dropna(subset=[c_pct]).sort_values(c_pct, ascending=False)
         w(f"  ◆ {title}涨幅前15（源：{src}）：")
@@ -430,21 +429,14 @@ def scan_board_rank():
         for _, r in df.tail(5).iloc[::-1].iterrows():
             w(f"    {r[c_name]} | {r[c_pct]}%")
         if keep and not is_intra:
-            rec = {}
             for i, (_, r) in enumerate(df.iterrows(), 1):
-                rec[str(r[c_name])] = {"pct": round(float(r[c_pct]), 2), "rank": i}
-            return rec
-        return None
-
-    saved = {}
+                saved[str(r[c_name])] = {"pct": round(float(r[c_pct]), 2), "rank": i}
 
     def _industry():
-        r = _rank("行业", [
+        _rank("行业", [
             ("东财", lambda: ak.stock_board_industry_name_em()),
             ("同花顺", lambda: ak.stock_board_industry_summary_ths()),
         ], True)
-        if r:
-            saved.update(r)
     safe_run("行业板块榜", _industry)
 
     def _concept():
@@ -467,36 +459,7 @@ def scan_board_rank():
             w(f"  [跳过] 历史写入：{type(e).__name__}")
 
 
-    def _concept():
-        src, df = multi_source("概念榜", [
-            ("东财", lambda: ak.stock_board_concept_name_em()),
-            ("同花顺", lambda: ak.stock_board_concept_summary_ths()),
-        ])
-        if df is None:
-            raise RuntimeError("概念榜双源失败")
-        c_name = pick_col(df, ["板块名称", "概念名称", "名称"])
-        c_pct = pick_col(df, ["涨跌幅", "涨跌"])
-        df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
-        df = df.sort_values(c_pct, ascending=False)
-        w(f"  ◆ 概念涨幅前15（源：{src}）：")
-        for _, r in df.head(15).iterrows():
-            name = str(r[c_name])
-            s = _streak(hist, name, today)
-            tag = "🆕第1天" if s == 0 else (f"🔥连{s+1}天 ⚠️" if s >= 4 else f"连{s+1}天")
-            w(f"    {name} | {r[c_pct]}% | {tag}")
-    safe_run("概念板块榜", _concept)
 
-    if today_top and not is_intra:
-        try:
-            hist["days"][today] = today_top
-            ks = sorted(hist["days"])[-40:]
-            hist["days"] = {k: hist["days"][k] for k in ks}
-            os.makedirs("reports", exist_ok=True)
-            with open(HIST_FILE, "w", encoding="utf-8") as f:
-                json.dump(hist, f, ensure_ascii=False, indent=1)
-            w(f"  ✅ 已记录{today}领涨榜，历史库共{len(hist['days'])}天")
-        except Exception as e:
-            w(f"  [跳过] 历史写入失败：{type(e).__name__}")
 
 
 # ========== 四、板块资金流 ==========
