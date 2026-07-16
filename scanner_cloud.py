@@ -255,30 +255,28 @@ def scan_cold_low():
         spot = get_spot()
         if spot is None:
             raise RuntimeError("快照缺失")
-        c_code = pick_col(spot, ["代码", "code"])
+        w(f"  （源：{SPOT_SRC} 列名：{list(spot.columns)[:10]}）")
+        c_code = pick_col(spot, ["代码", "code", "symbol"])
         c_name = pick_col(spot, ["名称", "name"])
         c_price = pick_col(spot, ["最新价", "trade"])
         c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
-        c_turn = pick_col(spot, ["换手率", "turnoverratio"])
-        c_sym = pick_col(spot, ["symbol"])
-        if not all([c_code, c_name, c_price, c_pct, c_turn]):
+        if not all([c_code, c_name, c_price, c_pct]):
             w("  [报空] 快照缺必要字段")
             return
 
         d = spot.copy()
         d = d[~d[c_name].astype(str).str.contains("ST|退|N ", na=False)]
-        for c in [c_price, c_pct, c_turn]:
+        for c in [c_price, c_pct]:
             d[c] = pd.to_numeric(d[c], errors="coerce")
-        d = d.dropna(subset=[c_pct, c_turn, c_price])
-        d["_code6"] = d[c_code].astype(str).str[-6:].str.zfill(6)
+        d = d.dropna(subset=[c_pct, c_price])
+        d["_code6"] = d[c_code].astype(str).str.extract(r"(\d{6})")[0]
+        d = d.dropna(subset=["_code6"])
         d = d[~d["_code6"].str.startswith(("8", "4", "9"))]
 
         cand = d[(d[c_pct] >= -4) & (d[c_pct] <= 2) &
-                 (d[c_turn] < 3) &
                  (d[c_price] >= 3) & (d[c_price] <= 100)].copy()
-        w(f"  ①冷+横盘：{len(cand)}只")
+        w(f"  ①横盘微跌+价格区间：{len(cand)}只")
 
-        has_flow = False
         try:
             flow = with_retry(lambda: ak.stock_individual_fund_flow_rank(indicator="今日"),
                               tries=2, wait=5, timeout=90)
@@ -289,20 +287,20 @@ def scan_cold_low():
             fl["主力净流入"] = pd.to_numeric(fl[f_net], errors="coerce")
             cand = cand.merge(fl[["_code6", "主力净流入"]], on="_code6", how="inner")
             cand = cand[cand["主力净流入"] > 0].sort_values("主力净流入", ascending=False)
-            has_flow = True
             w(f"  ②主力暗流净流入>0：{len(cand)}只")
         except Exception as e:
-            w(f"  [跳过] 资金流({type(e).__name__})，改按低换手排序")
-            cand = cand.sort_values(c_turn)
+            w(f"  [报空] 资金流失败({type(e).__name__})")
+            return
 
-        w("  ③低位验证（60日跌幅>12%）：")
+        w("  ③低位(60日跌>12%) ④缩量(5日/60日均量<0.8)：")
         got = 0
-        for _, r in cand.head(40).iterrows():
+        for _, r in cand.head(50).iterrows():
             if got >= 8:
                 break
-            sym = r[c_sym] if c_sym else None
-            k, kc = _hist_close(r["_code6"], sym)
-            if k is None:
+            code6 = r["_code6"]
+            sym = ("sh" if code6.startswith("6") else "sz") + code6
+            k, kc = _hist_close(code6, sym)
+            if k is None or kc is None:
                 continue
             try:
                 now_p = pd.to_numeric(k.iloc[-1][kc], errors="coerce")
@@ -312,9 +310,16 @@ def scan_cold_low():
                 chg60 = (now_p - p60) / p60 * 100
                 if chg60 > -12:
                     continue
-                ft = f" | 主力净流入{r['主力净流入']/1e4:.0f}万" if has_flow else ""
-                w(f"    {r[c_name]}({r['_code6']}) {r[c_price]} 今{r[c_pct]}% | "
-                  f"换手{r[c_turn]:.1f}% | 60日{chg60:.1f}%{ft}")
+                kv = pick_col(k, ["volume", "成交量"])
+                vtxt = ""
+                if kv:
+                    v5 = pd.to_numeric(k[kv].tail(5), errors="coerce").mean()
+                    v60 = pd.to_numeric(k[kv].tail(45), errors="coerce").mean()
+                    if v60 and v5 / v60 >= 0.8:
+                        continue
+                    vtxt = f" | 量能{v5/v60:.2f}倍缩量"
+                w(f"    {r[c_name]}({code6}) {r[c_price]} 今{r[c_pct]}% | "
+                  f"60日{chg60:.1f}%{vtxt} | 主力净流入{r['主力净流入']/1e4:.0f}万")
                 got += 1
             except Exception:
                 continue
@@ -323,8 +328,9 @@ def scan_cold_low():
         if got == 0:
             w("    本次无标的 —— 这是特征不是故障。")
         else:
-            w(f"  ※ 命中{got}只。③早(具体日期催化)⑤止损由你我集中分析定。")
+            w(f"  ※ 命中{got}只。③早(日期催化)⑤止损由你我集中分析定。")
     safe_run("冷低早筛选", _do)
+
 
 
 
