@@ -248,19 +248,53 @@ def _hist_close(code, symbol=None):
     return None, None
 
 
+def _get_industry_map():
+    src, df = multi_source("行业榜(冷低早)", [
+        ("东财", lambda: ak.stock_board_industry_name_em()),
+        ("同花顺", lambda: ak.stock_board_industry_summary_ths()),
+    ])
+    if df is None:
+        return {}
+    c_name = pick_col(df, ["板块名称", "板块", "名称"])
+    c_pct = pick_col(df, ["涨跌幅", "涨跌"])
+    if not c_name or not c_pct:
+        return {}
+    m = {}
+    for _, r in df.iterrows():
+        try:
+            v = pd.to_numeric(r[c_pct], errors="coerce")
+            if pd.notna(v):
+                m[str(r[c_name])] = float(v)
+        except Exception:
+            continue
+    return m
+
+
+def _stock_industry(code6):
+    try:
+        info = with_retry(lambda: ak.stock_individual_info_em(symbol=code6),
+                          tries=1, timeout=20)
+        if info is None:
+            return None
+        for _, r in info.iterrows():
+            if "行业" in str(r.iloc[0]):
+                return str(r.iloc[1])
+    except Exception:
+        pass
+    return None
+
+
 def scan_cold_low():
-    w("\n★★★【冷低早候选·暗流吸筹】★★★（冷+低+缩量+涨日放量，宁缺毋滥）")
+    w("\n★★★【冷低早候选·暗流吸筹】★★★（大盘闸+冷+低+缩量+涨日放量+板块闸）")
 
     def _do():
         spot = get_spot()
         if spot is None:
             raise RuntimeError("快照缺失")
-        w(f"  （源：{SPOT_SRC} 全部列名：{list(spot.columns)}）")
         c_code = pick_col(spot, ["代码", "code", "symbol"])
         c_name = pick_col(spot, ["名称", "name"])
         c_price = pick_col(spot, ["最新价", "trade"])
         c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
-        c_amt = pick_col(spot, ["成交额", "amount"])
         if not all([c_code, c_name, c_price, c_pct]):
             w("  [报空] 快照缺必要字段")
             return
@@ -270,6 +304,18 @@ def scan_cold_low():
         for c in [c_price, c_pct]:
             d[c] = pd.to_numeric(d[c], errors="coerce")
         d = d.dropna(subset=[c_pct, c_price])
+
+        up = int((d[c_pct] > 0).sum())
+        dn = int((d[c_pct] < 0).sum())
+        ratio = up / (up + dn) * 100 if (up + dn) else 0
+        w(f"  ⓪大盘环境闸门：涨{up} 跌{dn} 上涨占比{ratio:.1f}%")
+        if ratio < 25:
+            w("  ⚠️【闸门触发】上涨占比<25% = 系统性杀跌日")
+            w("  >>> 今日不输出任何候选。形态再好，板块崩了照样跟着崩。")
+            return
+        if ratio < 35:
+            w("  ⚠️ 环境偏弱(占比<35%)，以下候选仅供观察，不建议当日开仓")
+
         d["_code6"] = d[c_code].astype(str).str.extract(r"(\d{6})")[0]
         d = d.dropna(subset=["_code6"])
         d = d[~d["_code6"].str.startswith(("8", "4", "9"))]
@@ -277,22 +323,20 @@ def scan_cold_low():
         cand = d[(d[c_pct] >= -3.5) & (d[c_pct] <= 0.5) &
                  (d[c_pct].abs() > 0.05) &
                  (d[c_price] >= 3) & (d[c_price] <= 100)].copy()
-        w(f"  ①横盘微跌(已排停牌僵尸)：{len(cand)}只")
+        w(f"  ①横盘微跌(排停牌)：{len(cand)}只")
 
+        c_amt = pick_col(spot, ["成交额", "amount"])
         if c_amt:
             cand[c_amt] = pd.to_numeric(cand[c_amt], errors="coerce")
             cand = cand.dropna(subset=[c_amt])
             cand = cand[(cand[c_amt] > 3e7) & (cand[c_amt] < 8e8)]
             cand = cand.sort_values(c_amt, ascending=False)
-            w(f"  ②成交额3千万-8亿(排僵尸/排爆炒)：{len(cand)}只")
-        else:
-            cand = cand.reindex(cand[c_pct].abs().sort_values().index)
-            w("  ②快照无成交额列，跳过")
+            w(f"  ②成交额3千万-8亿：{len(cand)}只")
 
-        w("  ③低位(60日跌>12%) ④缩量(5日/60日<0.8) ⑤涨日放量(暗流):")
-        got = 0
+        w("  ③低位(60日跌>12%) ④缩量(5日/60日<0.8) ⑤涨日放量：")
+        hits = []
         for _, r in cand.head(120).iterrows():
-            if got >= 8:
+            if len(hits) >= 10:
                 break
             code6 = r["_code6"]
             sym = ("sh" if code6.startswith("6") else "sz") + code6
@@ -322,17 +366,46 @@ def scan_cold_low():
                 dnv = k20[k20["_chg"] < 0]["_v"].mean()
                 if not dnv or pd.isna(upv) or upv / dnv < 1.1:
                     continue
-                w(f"    {r[c_name]}({code6}) {r[c_price]} 今{r[c_pct]}% | "
-                  f"60日{chg60:.1f}% | 缩量{v5/v60:.2f}倍 | 涨跌量比{upv/dnv:.2f}")
-                got += 1
+                hits.append({
+                    "code": code6, "name": str(r[c_name]), "price": r[c_price],
+                    "pct": r[c_pct], "chg60": chg60, "vr": v5 / v60, "ud": upv / dnv,
+                })
+                w(f"    候选：{r[c_name]}({code6}) {r[c_price]} 今{r[c_pct]}% | "
+                  f"60日{chg60:.1f}% | 缩量{v5/v60:.2f} | 涨跌量比{upv/dnv:.2f}")
             except Exception:
                 continue
             time.sleep(0.4)
 
-        if got == 0:
+        if not hits:
             w("    本次无标的 —— 这是特征不是故障。")
+            return
+
+        w("\n  ⑥板块环境闸门（所属板块在跌的直接否决）：")
+        imap = _get_industry_map()
+        if not imap:
+            w("    [报空] 行业榜拿不到，本关跳过（上面候选未经板块验证，慎用）")
+            return
+        passed = 0
+        for h in hits:
+            ind = _stock_industry(h["code"])
+            ipct = imap.get(ind) if ind else None
+            if ipct is None:
+                w(f"    ❓ {h['name']}({h['code']}) 行业[{ind or '未知'}] 无板块数据，存疑")
+                continue
+            if ipct < -1.5:
+                w(f"    ❌ {h['name']}({h['code']}) 板块[{ind}]{ipct:+.2f}% 逆风 → 否决")
+                continue
+            flag = "✅顺风" if ipct > 0 else "⚠️板块微跌"
+            w(f"    {flag} {h['name']}({h['code']}) {h['price']} 今{h['pct']}% | "
+              f"板块[{ind}]{ipct:+.2f}% | 60日{h['chg60']:.1f}% | "
+              f"缩量{h['vr']:.2f} | 量比{h['ud']:.2f}")
+            passed += 1
+            time.sleep(0.5)
+
+        if passed == 0:
+            w("    ⚠️ 全部候选被板块闸门否决 → 今日无标的")
         else:
-            w(f"  ※ 命中{got}只。⑥催化日期 ⑦止损 由你我集中分析定。")
+            w(f"  ※ 最终{passed}只过关。⑦催化日期 ⑧止损由你我集中分析定。")
     safe_run("冷低早筛选", _do)
 
 
