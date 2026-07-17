@@ -1,6 +1,7 @@
+
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V1.7（2026-07-17）
+A股作战扫描器 · 云端版 V1.7.1（2026-07-17 修历史库污染）
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -544,6 +545,10 @@ def scan_board_rank():
     bj = now_beijing()
     today = bj.strftime("%Y-%m-%d")
     is_intra = (bj.weekday() < 5) and (9 <= bj.hour < 15)
+    # 只有交易日收盘后(15点起)才写库；凌晨/盘前跑的数据属于上一交易日，写入会污染历史库
+    can_save = (bj.weekday() < 5) and (bj.hour >= 15)
+    if not is_intra and not can_save:
+        w("  ⚠️ 当前非收盘时段(数据属上一交易日)，本次只读不写库")
     hist_ind = _load_hist(HIST_FILE)
     hist_con = _load_hist(CONCEPT_FILE)
     w(f"  （行业库{len(hist_ind['days'])}天 | 概念库{len(hist_con['days'])}天）")
@@ -571,7 +576,7 @@ def scan_board_rank():
         w(f"  ◆ {title}跌幅前5：")
         for _, r in df.tail(5).iloc[::-1].iterrows():
             w(f"    {r[c_name]} | {r[c_pct]}%")
-        if not is_intra:
+        if can_save:
             for i, (_, r) in enumerate(df.iterrows(), 1):
                 store[str(r[c_name])] = {"pct": round(float(r[c_pct]), 2), "rank": i}
 
@@ -592,7 +597,7 @@ def scan_board_rank():
     safe_run("概念板块榜", _concept)
 
     def _save(store, hist, path, label):
-        if not store or is_intra:
+        if not store or not can_save:
             return
         try:
             hist["days"][today] = store
@@ -837,7 +842,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V1.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V1.7.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -867,7 +872,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V1.7完成 {prefix}_最新.txt")
+    print(f"\n✅ V1.7.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
