@@ -282,6 +282,63 @@ def _stock_industry(code6):
     except Exception:
         pass
     return None
+def scan_tomorrow_gate():
+    w("\n🚨【次日环境预判】（不是描述今天，是判断明天能不能动）")
+
+    def _do():
+        score = 0
+        reasons = []
+        try:
+            df = with_retry(lambda: ak.stock_market_activity_legu())
+            m = {str(r.iloc[0]): str(r.iloc[1]) for _, r in df.iterrows()}
+            up = float(m.get("上涨", 0))
+            dn = float(m.get("下跌", 0))
+            dt = float(m.get("跌停", 0))
+            act = float(str(m.get("活跃度", "0")).replace("%", ""))
+            ratio = up / (up + dn) * 100 if (up + dn) else 0
+            w(f"  今日：涨{up:.0f} 跌{dn:.0f} 上涨占比{ratio:.1f}% | 跌停{dt:.0f}只 | 活跃度{act:.1f}%")
+            if ratio < 40:
+                score += 2
+                reasons.append(f"广度恶化(占比{ratio:.0f}%)")
+            if dt >= 30:
+                score += 2
+                reasons.append(f"跌停{dt:.0f}只=恐慌")
+            elif dt >= 15:
+                score += 1
+                reasons.append(f"跌停{dt:.0f}只偏多")
+            if act < 50:
+                score += 2
+                reasons.append(f"活跃度{act:.0f}%低迷")
+            elif act < 60:
+                score += 1
+        except Exception as e:
+            w(f"  [跳过] 广度：{type(e).__name__}")
+
+        try:
+            df = with_retry(lambda: ak.stock_zt_pool_previous_em(
+                date=now_beijing().strftime("%Y%m%d")))
+            c_pct = pick_col(df, ["涨跌幅"])
+            avg = pd.to_numeric(df[c_pct], errors="coerce").mean()
+            w(f"  昨日涨停今日平均：{avg:.2f}%")
+            if avg < -1:
+                score += 2
+                reasons.append(f"涨停股退潮({avg:.1f}%)")
+            elif avg < 1:
+                score += 1
+                reasons.append("赚钱效应中性")
+        except Exception:
+            pass
+
+        w(f"\n  🚨 风险分：{score}/8　{'｜'.join(reasons) if reasons else '无警报'}")
+        if score >= 5:
+            w("  >>> 【明日高危】一票不碰，盈利仓主动减半锁利，破位无条件走")
+        elif score >= 3:
+            w("  >>> 【明日偏弱】不开新仓，只减不加")
+        elif score >= 1:
+            w("  >>> 【明日中性】仅最高确定性半仓")
+        else:
+            w("  >>> 【明日健康】可按七关开仓")
+    safe_run("次日预判", _do)
 
 
 def scan_cold_low():
