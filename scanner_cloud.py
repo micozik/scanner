@@ -820,6 +820,7 @@ def main():
         scan_news()
     else:
         scan_regime_gate()
+        scan_tomorrow_gate()
         scan_watchlist()
         scan_breadth()
         scan_spot()
