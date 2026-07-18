@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V1.7.1（2026-07-17 修历史库污染）
+A股作战扫描器 · 云端版 V1.7.2（2026-07-20 政策雷达+财联社备源）
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -750,6 +750,10 @@ NEWS_RADAR = {
                  "回购", "举牌", "分红", "中标", "定增", "ETF"],
     "⑦ 消费·养殖": ["白酒", "消费", "生猪", "猪价", "养殖", "宠物", "零售", "旅游",
                  "免税", "影视", "票房"],
+    "⑧ 政策·产业(专项)": ["锂电池", "锂电", "钠离子", "钠电", "消费税", "征税", "免税",
+                 "退税", "出清", "供给侧", "反内卷", "涨价", "限产", "减产", "关税",
+                 "出口管制", "反倾销", "专项债", "特别国债", "以旧换新", "设备更新",
+                 "收储", "涨电价", "电价", "集采", "国家队", "汇金", "平准", "增持回购"],
 }
 
 
@@ -773,6 +777,7 @@ def scan_news():
 
     sources = [
         ("财联社", lambda: ak.stock_info_global_cls(symbol="全部")),
+        ("财联社2", lambda: ak.stock_info_cjzc_em()),
         ("东财", lambda: ak.stock_info_global_em()),
         ("新浪", lambda: ak.stock_info_global_sina()),
         ("同花顺", lambda: ak.stock_info_global_ths()),
@@ -842,7 +847,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V1.7.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V1.7.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -872,7 +877,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V1.7.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V1.7.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
