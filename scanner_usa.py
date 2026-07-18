@@ -1,7 +1,10 @@
-
 # -*- coding: utf-8 -*-
 """
-美股夜盘扫描器 · 独立版 V1.0（北京凌晨4:35，美股收盘后）
+美股夜盘扫描器 · 独立版 V1.1（2026-07-20）
+V1.1新增：
+  1. 伯克希尔 BRK.A / BRK.B 加入重点个股
+  2. 新闻雷达新增【聪明钱专区】：巴菲特/伯克希尔、伯里、木头姐、段永平、
+     达里奥、阿克曼、索罗斯、13F 等大佬动向自动置顶
 输出：reports/美股_最新.txt + reports/美股_日期.txt
 与A股扫描器完全独立，互不影响
 """
@@ -18,11 +21,24 @@ US_TICKERS = [
     ("阿斯麦", "ASML"), ("英特尔", "INTC"), ("阿里巴巴", "BABA"), ("Meta", "META"),
     ("微软", "MSFT"), ("谷歌", "GOOGL"), ("亚马逊", "AMZN"), ("希捷", "STX"),
     ("西部数据", "WDC"), ("闪迪", "SNDK"), ("应用材料", "AMAT"), ("拉姆研究", "LRCX"),
+    ("伯克希尔B", "BRK.B"), ("伯克希尔A", "BRK.A"),
 ]
 
 US_INDEX = [
     ("道琼斯", ".DJI"), ("纳斯达克", ".IXIC"), ("标普500", ".INX"),
     ("费城半导体", ".SOX"),
+]
+
+# 聪明钱关键词（大佬动向自动置顶）
+SMART_MONEY = [
+    "巴菲特", "伯克希尔", "哈撒韦", "芒格", "阿贝尔", "13F",
+    "迈克尔·伯里", "伯里", "大空头",
+    "木头姐", "凯茜·伍德", "凯西·伍德", "ARK", "方舟",
+    "段永平",
+    "达里奥", "桥水", "Bridgewater",
+    "阿克曼", "潘兴广场", "Pershing",
+    "索罗斯", "格林布拉特", "德鲁肯米勒", "查诺斯",
+    "灰度", "贝莱德", "先锋领航", "景林", "高瓴",
 ]
 
 
@@ -89,7 +105,6 @@ def scan_index():
                     continue
                 last = df.iloc[-1]
                 c_close = pick_col(df, ["close", "收盘"])
-                c_open = pick_col(df, ["open", "开盘"])
                 c_date = pick_col(df, ["date", "日期"])
                 close = pd.to_numeric(last[c_close], errors="coerce")
                 pct = ""
@@ -105,13 +120,12 @@ def scan_index():
     safe_run("美股指数", _do)
 
 
-# ========== 二、重点个股 ==========
+# ========== 二、重点个股（含伯克希尔） ==========
 
 def scan_stocks():
-    w("\n【二、重点个股】（芯片/算力/存储/中概）")
+    w("\n【二、重点个股】（芯片/算力/存储/中概 + 伯克希尔）")
 
     def _one(tk):
-        """单只逐个抓，避开全市场快照的超时/限流"""
         for fname in ["stock_us_hist", "stock_us_daily"]:
             try:
                 fn = getattr(ak, fname, None)
@@ -157,8 +171,7 @@ def scan_stocks():
     safe_run("美股个股", _do)
 
 
-
-# ========== 三、美股新闻 ==========
+# ========== 三、美股新闻 + 聪明钱专区 ==========
 
 def scan_news():
     w("\n【三、美股/全球新闻】")
@@ -172,7 +185,7 @@ def scan_news():
     KW = ["美股", "纳斯达克", "道指", "标普", "美联储", "加息", "降息", "CPI", "通胀",
           "英伟达", "台积电", "美光", "AMD", "博通", "芯片", "半导体", "存储", "AI",
           "特斯拉", "苹果", "关税", "白宫", "特朗普", "鲍威尔", "沃什", "原油", "黄金",
-          "中概", "费城", "SOX", "算力", "数据中心"]
+          "中概", "费城", "SOX", "算力", "数据中心", "Meta", "谷歌", "微软", "亚马逊"]
 
     allnews = []
     for name, fn in sources:
@@ -207,6 +220,15 @@ def scan_news():
     except Exception:
         pass
 
+    # 聪明钱专区（最高优先级，置顶）
+    smart = [(tm, t) for tm, t in uniq if any(k in t for k in SMART_MONEY)]
+    w(f"\n  💰💰💰【聪明钱专区·大佬动向】（{len(smart)}条）💰💰💰")
+    if smart:
+        for tm, t in smart[:25]:
+            w(f"    [{tm}] {t[:80]}")
+    else:
+        w("    本次无大佬动向新闻（13F季度披露日前后最密集）")
+
     hits = [(tm, t) for tm, t in uniq if any(k in t for k in KW)]
     w(f"\n  ★★★ 美股相关情报（{len(hits)}条）★★★")
     for tm, t in hits[:40]:
@@ -224,7 +246,7 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V1.0 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V1.1 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
 
     scan_index()
@@ -234,10 +256,11 @@ def main():
     w("\n" + "=" * 60)
     w("★★★【明日A股开盘参考】★★★")
     w("  数据在上，具体操作由AI结合你的持仓在对话中给出。")
-    w("  核心看点：①费城半导体SOX涨跌 → A股半导体/芯片")
+    w("  核心看点：①费城半导体SOX → A股半导体/芯片")
     w("           ②英伟达/美光/存储链 → A股算力/存储/CPO/PCB")
-    w("           ③美联储/CPI表态 → 成长股整体估值")
+    w("           ③美联储/CPI → 成长股整体估值")
     w("           ④油价/黄金 → A股资源链")
+    w("           ⑤💰聪明钱专区 → 巴菲特等大佬持仓/表态（13F披露日重点看）")
     w("=" * 60)
 
     os.makedirs("reports", exist_ok=True)
@@ -246,7 +269,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V1.1完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
