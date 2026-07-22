@@ -1,7 +1,6 @@
-
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V1.7.2（2026-07-20 政策雷达+财联社备源）
+A股作战扫描器 · 云端版 V1.8（2026-07-22 重点盯盘个股模块）
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -22,6 +21,16 @@ REPORT = []
 HIST_FILE = "reports/top_sectors.json"
 CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
+
+# ★重点盯盘个股（独立抓取，不依赖截图）。格式：(代码, 名称, 标签)
+WATCH_STOCKS = [
+    ("603019", "中科曙光", "持仓"),
+    ("601872", "招商轮船", "持仓"),
+    ("000062", "深圳华强", "持仓"),
+    ("002714", "牧原股份", "持仓"),
+    ("300456", "赛微电子", "持仓"),
+    ("000066", "中国长城", "重点观察"),
+]
 SPOT_DF = None
 SPOT_SRC = None
 
@@ -252,6 +261,97 @@ def scan_watchlist():
                     seg += "（快照无此代码，请核对）"
                 w(seg)
     safe_run("我的清单", _do)
+
+
+# ========== ★重点盯盘个股（独立跟踪：价/量/资金/位置/连涨） ==========
+
+def scan_focus_stocks():
+    w("\n★★★【重点盯盘个股·独立跟踪】★★★（每天全维度盯，不看截图）")
+
+    def _flow_map():
+        """个股主力净流入映射：东财→同花顺"""
+        for name, fn in [
+            ("东财", lambda: ak.stock_individual_fund_flow_rank(indicator="今日")),
+            ("同花顺", lambda: ak.stock_fund_flow_individual(symbol="即时")),
+        ]:
+            try:
+                f = with_retry(fn, tries=2, wait=5, timeout=90)
+                fc = pick_col(f, ["代码", "股票代码"])
+                fn2 = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入", "净额"])
+                if not fc or not fn2:
+                    continue
+                m = {}
+                for _, r in f.iterrows():
+                    code6 = str(r[fc])[-6:].zfill(6)
+                    v = pd.to_numeric(r[fn2], errors="coerce")
+                    if pd.notna(v):
+                        m[code6] = v
+                return m, name
+            except Exception:
+                continue
+        return {}, None
+
+    def _do():
+        spot = get_spot()
+        if spot is None:
+            w("  快照缺失，无法盯盘")
+            return
+        c_code = pick_col(spot, ["代码", "code"])
+        c_price = pick_col(spot, ["最新价", "trade"])
+        c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
+        c_amt = pick_col(spot, ["成交额", "amount"])
+        c_vol = pick_col(spot, ["成交量", "volume"])
+
+        fmap, fsrc = _flow_map()
+        if fsrc:
+            w(f"  （资金源：{fsrc}）")
+
+        for code6, name, tag in WATCH_STOCKS:
+            try:
+                sym = ("sh" if code6.startswith("6") else "sz") + code6
+                row = spot[spot[c_code].astype(str).str.contains(code6, na=False)]
+                if len(row) == 0:
+                    w(f"  ◆ {name}({code6})[{tag}]：快照无数据")
+                    continue
+                r = row.iloc[0]
+                price = pd.to_numeric(r[c_price], errors="coerce")
+                pct = pd.to_numeric(r[c_pct], errors="coerce")
+                amt = pd.to_numeric(r[c_amt], errors="coerce") if c_amt else None
+
+                # K线算：60日位置 + 缩量 + 涨跌量比 + 均线
+                k, kc = _hist_close(code6, sym)
+                pos_txt = ""
+                if k is not None and kc is not None:
+                    kv = pick_col(k, ["volume", "成交量"])
+                    now_p = pd.to_numeric(k.iloc[-1][kc], errors="coerce")
+                    p60 = pd.to_numeric(k.iloc[-45][kc], errors="coerce")
+                    ma5 = pd.to_numeric(k[kc].tail(5), errors="coerce").mean()
+                    ma20 = pd.to_numeric(k[kc].tail(20), errors="coerce").mean()
+                    chg60 = (now_p - p60) / p60 * 100 if p60 else 0
+                    vr = ""
+                    if kv:
+                        v5 = pd.to_numeric(k[kv].tail(5), errors="coerce").mean()
+                        v60 = pd.to_numeric(k[kv].tail(45), errors="coerce").mean()
+                        if v60:
+                            vr = f" 量能{v5/v60:.2f}倍"
+                    ma_txt = ""
+                    if pd.notna(ma5) and price:
+                        ma_txt = f" {'站上' if price>=ma5 else '跌破'}MA5"
+                    pos_txt = f" | 60日{chg60:+.1f}%{vr}{ma_txt}(MA5={ma5:.2f} MA20={ma20:.2f})"
+
+                flow = fmap.get(code6)
+                flow_txt = ""
+                if flow is not None:
+                    fv = flow / 1e8 if abs(flow) > 1e4 else flow / 1e4
+                    unit = "亿" if abs(flow) > 1e4 else "万"
+                    flow_txt = f" | 主力{'+' if flow>0 else ''}{fv:.2f}{unit}"
+
+                amt_txt = f" 成交{amt/1e8:.2f}亿" if amt and pd.notna(amt) else ""
+                w(f"  ◆ {name}({code6})[{tag}]：现价{price} 今{pct:+.2f}%{amt_txt}{flow_txt}{pos_txt}")
+            except Exception as e:
+                w(f"  ◆ {name}({code6})[{tag}]：读取异常 {type(e).__name__}")
+            time.sleep(0.3)
+    safe_run("重点盯盘个股", _do)
 
 
 # ========== 一、市场广度 ==========
@@ -847,7 +947,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V1.7.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V1.8 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -856,6 +956,7 @@ def main():
         scan_regime_gate()
         scan_tomorrow_gate()
         scan_watchlist()
+        scan_focus_stocks()
         scan_breadth()
         scan_spot()
         scan_cold_low()
@@ -877,7 +978,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V1.7.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V1.8完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
