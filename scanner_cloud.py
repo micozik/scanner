@@ -24,12 +24,18 @@ WATCH_FILE = "我的清单.txt"
 
 # ★重点盯盘个股（独立抓取，不依赖截图）。格式：(代码, 名称, 标签)
 WATCH_STOCKS = [
+   WATCH_STOCKS = [
     ("603019", "中科曙光", "持仓"),
-    ("601872", "招商轮船", "持仓"),
-    ("000062", "深圳华强", "持仓"),
+    ("301269", "华大九天", "持仓"),
     ("002714", "牧原股份", "持仓"),
-    ("300456", "赛微电子", "持仓"),
+    ("000062", "深圳华强", "持仓"),
     ("000066", "中国长城", "重点观察"),
+    ("159558", "半导体设备ETF", "持仓"),
+    ("560390", "电网设备ETF", "持仓"),
+    ("159755", "电池ETF", "持仓"),
+
+]
+
 ]
 SPOT_DF = None
 SPOT_SRC = None
@@ -275,7 +281,7 @@ def scan_focus_stocks():
             ("同花顺", lambda: ak.stock_fund_flow_individual(symbol="即时")),
         ]:
             try:
-                f = with_retry(fn, tries=2, wait=5, timeout=90)
+                f = with_retry(fn, tries饭=2, wait=5, timeout=90)
                 fc = pick_col(f, ["代码", "股票代码"])
                 fn2 = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入", "净额"])
                 if not fc or not fn2:
