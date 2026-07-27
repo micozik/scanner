@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V2.0（2026-07-27 龙虎榜/游资多源+自动标注埋伏型追高型）
+A股作战扫描器 · 云端版 V2.1（2026-07-27 新增盘中游资雷达·实时埋伏池）
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -354,6 +354,130 @@ def scan_focus_stocks():
                 w(f"  ◆ {name}({code6})[{tag}]：读取异常 {type(e).__name__}")
             time.sleep(0.3)
     safe_run("重点盯盘个股", _do)
+
+
+# ========== ★盘中游资雷达（实时，不用等18:35） ==========
+
+def scan_intraday_hotmoney():
+    w("\n★★★【盘中游资雷达·实时】★★★（不用等18:35，盘中就知道钱往哪砸）")
+
+    def _flow_rank():
+        for name, fn in [
+            ("东财", lambda: ak.stock_individual_fund_flow_rank(indicator="今日")),
+            ("同花顺", lambda: ak.stock_fund_flow_individual(symbol="即时")),
+        ]:
+            try:
+                f = with_retry(fn, tries=2, wait=5, timeout=90)
+                fc = pick_col(f, ["代码", "股票代码"])
+                fn2 = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入", "净额"])
+                if not fc or not fn2:
+                    continue
+                m = {}
+                for _, r in f.iterrows():
+                    code6 = str(r[fc])[-6:].zfill(6)
+                    v = pd.to_numeric(r[fn2], errors="coerce")
+                    if pd.notna(v):
+                        m[code6] = v
+                return m, name
+            except Exception:
+                continue
+        return {}, None
+
+    def _do():
+        spot = get_spot()
+        if spot is None:
+            w("  快照缺失")
+            return
+        c_code = pick_col(spot, ["代码", "code"])
+        c_name = pick_col(spot, ["名称", "name"])
+        c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
+        c_price = pick_col(spot, ["最新价", "trade"])
+        c_high = pick_col(spot, ["最高", "high"])
+        c_low = pick_col(spot, ["最低", "low"])
+        c_pre = pick_col(spot, ["昨收", "settlement", "preclose"])
+        c_amt = pick_col(spot, ["成交额", "amount"])
+        if not all([c_code, c_name, c_pct]):
+            w("  [报空] 快照缺字段")
+            return
+
+        d = spot.copy()
+        d = d[~d[c_name].astype(str).str.contains("退|N ", na=False)]
+        d[c_pct] = pd.to_numeric(d[c_pct], errors="coerce")
+        d = d.dropna(subset=[c_pct])
+        d["_code6"] = d[c_code].astype(str).str.extract(r"(\d{6})")[0]
+        d = d.dropna(subset=["_code6"])
+        if c_amt:
+            d[c_amt] = pd.to_numeric(d[c_amt], errors="coerce")
+
+        # ① 今晚必上龙虎榜（偏离值≥7% 或 振幅≥15%）
+        w("  ◆①【今晚必上龙虎榜】涨跌幅≥±7% 或 振幅≥15%（交易所硬规则）")
+        big = d[d[c_pct].abs() >= 7].copy()
+        amp_list = []
+        if c_high and c_low and c_pre:
+            for c in [c_high, c_low, c_pre]:
+                d[c] = pd.to_numeric(d[c], errors="coerce")
+            d["_amp"] = (d[c_high] - d[c_low]) / d[c_pre] * 100
+            amp_list = d[(d["_amp"] >= 15) & (d[c_pct].abs() < 7)]
+        up_big = big[big[c_pct] > 0].sort_values(c_pct, ascending=False)
+        dn_big = big[big[c_pct] < 0].sort_values(c_pct)
+        w(f"    上榜候选：大涨{len(up_big)}只 | 大跌{len(dn_big)}只 | 高振幅{len(amp_list)}只")
+        if len(dn_big) > 0:
+            w("    ⚠️ 大跌上榜（今晚看是谁在接）：" +
+              "、".join(f"{r[c_name]}({r[c_pct]:.1f}%)"
+                        for _, r in dn_big.head(8).iterrows()))
+
+        # ② 实时埋伏池：跌着被主力大单买
+        fmap, fsrc = _flow_rank()
+        w(f"  ◆②【实时埋伏池】跌着却被主力净买（源：{fsrc or '无'}）")
+        if not fmap:
+            w("    [报空] 资金流双源均失败")
+        else:
+            d["_flow"] = d["_code6"].map(fmap)
+            amb = d[(d[c_pct] < 0) & (d["_flow"] > 0)].copy()
+            if c_amt:
+                amb = amb[amb[c_amt] > 5e7]
+            amb = amb.sort_values("_flow", ascending=False)
+            if len(amb) == 0:
+                w("    今日无『跌着被买』标的 → 全场追涨，次日谨慎")
+            else:
+                for _, r in amb.head(12).iterrows():
+                    fv = r["_flow"]
+                    unit = "亿" if abs(fv) > 1e4 else "万"
+                    fvv = fv / 1e8 if abs(fv) > 1e4 else fv / 1e4
+                    amt_txt = f" 成交{r[c_amt]/1e8:.1f}亿" if c_amt and pd.notna(r[c_amt]) else ""
+                    w(f"    🎯 {r[c_name]}({r['_code6']}) {r[c_pct]:+.2f}%{amt_txt} | 主力净买+{fvv:.2f}{unit}")
+                w(f"    ※ 共{len(amb)}只跌着被买。这就是实时版埋伏信号——")
+                w("      有人在下跌中收货，次日看板块是否启动。")
+
+        # ③ 涨停封单强度
+        w("  ◆③【涨停板强度】")
+        try:
+            zt = with_retry(lambda: ak.stock_zt_pool_em(
+                date=now_beijing().strftime("%Y%m%d")), tries=1, timeout=60)
+            if zt is None or len(zt) == 0:
+                w("    暂无涨停数据")
+            else:
+                z_name = pick_col(zt, ["名称"])
+                z_seal = pick_col(zt, ["封板资金"])
+                z_fail = pick_col(zt, ["炸板次数"])
+                z_ind = pick_col(zt, ["所属行业", "行业"])
+                if z_seal:
+                    zt[z_seal] = pd.to_numeric(zt[z_seal], errors="coerce")
+                    zz = zt.sort_values(z_seal, ascending=False)
+                    w(f"    涨停{len(zt)}只，封单最强前6：")
+                    for _, r in zz.head(6).iterrows():
+                        seal = r[z_seal] / 1e8 if pd.notna(r[z_seal]) else 0
+                        ind = f" [{r[z_ind]}]" if z_ind else ""
+                        fail = f" 炸板{r[z_fail]}次" if z_fail else ""
+                        w(f"      {r[z_name]}{ind} 封单{seal:.2f}亿{fail}")
+                if z_fail:
+                    zt[z_fail] = pd.to_numeric(zt[z_fail], errors="coerce")
+                    nf = int((zt[z_fail] > 0).sum())
+                    w(f"    ⚠️ 有炸板记录的{nf}只/{len(zt)}只 → " +
+                      ("情绪不稳" if nf > len(zt) * 0.3 else "封板扎实"))
+        except Exception as e:
+            w(f"    [跳过] 涨停池：{type(e).__name__}")
+    safe_run("盘中游资雷达", _do)
 
 
 # ========== 一、市场广度 ==========
@@ -1064,7 +1188,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V2.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V2.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -1074,6 +1198,7 @@ def main():
         scan_tomorrow_gate()
         scan_watchlist()
         scan_focus_stocks()
+        scan_intraday_hotmoney()
         scan_breadth()
         scan_spot()
         scan_cold_low()
@@ -1097,7 +1222,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V2.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V2.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
