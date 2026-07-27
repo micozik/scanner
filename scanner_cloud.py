@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V1.9（2026-07-24 决策卡·强制七项检查）
+A股作战扫描器 · 云端版 V2.0（2026-07-27 龙虎榜/游资多源+自动标注埋伏型追高型）
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -33,7 +33,6 @@ WATCH_STOCKS = [
     ("560390", "电网设备ETF", "持仓"),
     ("159755", "电池ETF", "持仓"),
 ]
-
 SPOT_DF = None
 SPOT_SRC = None
 
@@ -278,7 +277,7 @@ def scan_focus_stocks():
             ("同花顺", lambda: ak.stock_fund_flow_individual(symbol="即时")),
         ]:
             try:
-                f = with_retry(fn, tries饭=2, wait=5, timeout=90)
+                f = with_retry(fn, tries=2, wait=5, timeout=90)
                 fc = pick_col(f, ["代码", "股票代码"])
                 fn2 = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额", "主力净流入", "净额"])
                 if not fc or not fn2:
@@ -771,55 +770,124 @@ def scan_zt_pool():
     safe_run("涨停池", _do)
 
 
-# ========== 六、龙虎榜 ==========
+# ========== 六、龙虎榜（多源 + 自动标注 埋伏型/追高型） ==========
+
+AMBUSH_POOL = []   # 埋伏池：当天在跌却被大额净买的票（铁律B）
+
 
 def scan_lhb():
-    w("\n【六、龙虎榜·个股】（约18:35后更新）")
+    w("\n【六、龙虎榜·个股】（约18:35后更新｜自动标注 埋伏型/追高型）")
 
     def _do():
         today = now_beijing().strftime("%Y%m%d")
-        df = with_retry(lambda: ak.stock_lhb_detail_em(start_date=today, end_date=today))
+        src, df = multi_source("龙虎榜", [
+            ("东财", lambda: ak.stock_lhb_detail_em(start_date=today, end_date=today)),
+            ("新浪", lambda: ak.stock_lhb_detail_daily_sina(
+                date=today, symbol="涨幅偏离值达7%的证券")),
+            ("东财机构", lambda: ak.stock_lhb_jgmmtj_em(
+                start_date=today, end_date=today)),
+        ])
         if df is None or len(df) == 0:
-            w("  今日龙虎榜暂未发布")
+            w("  今日龙虎榜暂未发布（18:35后再看）")
             return
-        c_name = pick_col(df, ["名称"])
-        c_pct = pick_col(df, ["涨跌幅"])
-        c_reason = pick_col(df, ["上榜原因", "解读"])
-        c_net = pick_col(df, ["净买额", "龙虎榜净买额"])
+
+        c_name = pick_col(df, ["名称", "股票简称", "简称"])
+        c_code = pick_col(df, ["代码", "股票代码"])
+        c_pct = pick_col(df, ["涨跌幅", "涨跌幅度", "收盘涨跌幅"])
+        c_reason = pick_col(df, ["上榜原因", "解读", "指标"])
+        c_net = pick_col(df, ["净买额", "龙虎榜净买额", "机构买入净额", "净额"])
+
+        if not c_name:
+            w(f"  [报空] 龙虎榜(源:{src})缺名称列，实际列名={list(df.columns)[:10]}")
+            return
+
+        df = df.copy()
         if c_net:
-            df[c_net] = (pd.to_numeric(df[c_net], errors="coerce") / 1e8).round(2)
+            df[c_net] = pd.to_numeric(df[c_net], errors="coerce")
+            if df[c_net].abs().max() and df[c_net].abs().max() > 1e6:
+                df[c_net] = (df[c_net] / 1e8).round(2)
             df = df.sort_values(c_net, ascending=False)
-        for _, r in df.head(15).iterrows():
-            reason = str(r[c_reason])[:20] if c_reason else ""
-            net = f" 净买{r[c_net]}亿" if c_net else ""
-            w(f"    {r[c_name]} {r[c_pct]}%{net} {reason}")
+        if c_pct:
+            df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
+
+        w(f"  （源：{src}，共{len(df)}条）")
+        ambush, chase = [], []
+        for _, r in df.head(20).iterrows():
+            nm = str(r[c_name])
+            pct = r[c_pct] if c_pct else None
+            net = r[c_net] if c_net else None
+            code = str(r[c_code])[-6:] if c_code else ""
+            tag = ""
+            if pct is not None and pd.notna(pct):
+                if pct < 0:
+                    tag = "✅埋伏型(跌着被买)"
+                    if net is None or (pd.notna(net) and net > 0):
+                        ambush.append((nm, code, pct, net))
+                elif pct >= 9.8:
+                    tag = "⚠️追高型(涨停被买)"
+                    chase.append((nm, code, pct, net))
+                else:
+                    tag = "中性"
+            pct_txt = f" {pct:+.2f}%" if pct is not None and pd.notna(pct) else ""
+            net_txt = f" 净买{net}亿" if net is not None and pd.notna(net) else ""
+            reason = str(r[c_reason])[:18] if c_reason else ""
+            w(f"    {nm}({code}){pct_txt}{net_txt} {tag} {reason}")
+
+        global AMBUSH_POOL
+        AMBUSH_POOL = ambush
+        w("")
+        w("  ★★★【埋伏池·铁律B】游资在『当天下跌』的票上砸钱 = 明天最可能启动 ★★★")
+        if ambush:
+            for nm, code, pct, net in ambush[:10]:
+                net_txt = f" 净买{net}亿" if net is not None and pd.notna(net) else ""
+                w(f"    🎯 {nm}({code}) 今{pct:+.2f}%{net_txt}")
+            w(f"    ※ 共{len(ambush)}只。次日重点验证：所属板块是否启动、是否放量。")
+        else:
+            w("    今日无『跌着被买』标的（全是追涨停接力）→ 次日谨慎")
+        if chase:
+            w(f"  ⚠️ 追高型{len(chase)}只（涨停被买，次日易炸板）：" +
+              "、".join(n for n, _, _, _ in chase[:8]))
     safe_run("龙虎榜", _do)
 
 
-# ========== 七、游资席位 ==========
+# ========== 七、游资席位（多源 + 列名自诊断） ==========
 
 def scan_hot_money():
     w("\n【七、游资席位·活跃营业部】（谁在扫货/出货，约18:35后完整）")
 
     def _do():
         date = now_beijing().strftime("%Y%m%d")
-        df = with_retry(lambda: ak.stock_lhb_hyyyb_em(start_date=date, end_date=date))
+        src, df = multi_source("游资席位", [
+            ("东财", lambda: ak.stock_lhb_hyyyb_em(start_date=date, end_date=date)),
+            ("新浪", lambda: ak.stock_lhb_yytj_sina(symbol="近一月")),
+            ("东财机构", lambda: ak.stock_lhb_jgstatistic_em(symbol="近一月")),
+        ])
         if df is None or len(df) == 0:
             w("  今日活跃营业部暂未发布（18:35后再看）")
             return
-        c_name = pick_col(df, ["营业部名称", "营业部"])
-        c_net = pick_col(df, ["总买卖净额", "净额", "净买"])
-        c_stock = pick_col(df, ["买入股票", "买入个股"])
+
+        c_name = pick_col(df, ["营业部名称", "营业部", "机构名称"])
+        c_net = pick_col(df, ["总买卖净额", "净额", "净买", "买入总金额"])
+        c_stock = pick_col(df, ["买入股票", "买入个股", "买入股票代码"])
+
+        if not c_name:
+            w(f"  [报空] 游资(源:{src})缺营业部列，实际列名={list(df.columns)[:10]}")
+            return
+
+        df = df.copy()
         if c_net:
             df[c_net] = pd.to_numeric(df[c_net], errors="coerce")
             if df[c_net].abs().max() and df[c_net].abs().max() > 1e6:
                 df[c_net] = (df[c_net] / 1e8).round(2)
             df = df.sort_values(c_net, ascending=False)
-        w("  ◆ 净买入最猛席位前10（游资进攻）：")
+
+        w(f"  ◆ 净买入最猛席位前10（源：{src}）：")
         for _, r in df.head(10).iterrows():
-            stock = f" 主买:{r[c_stock]}" if c_stock else ""
-            net = f" 净{r[c_net]}亿" if c_net else ""
+            stock = f" 主买:{str(r[c_stock])[:60]}" if c_stock else ""
+            net = f" 净{r[c_net]}亿" if c_net and pd.notna(r[c_net]) else ""
             w(f"    {r[c_name]}{net}{stock}")
+        w("  ※ 判读：席位集中买『当天在跌』的方向=埋伏，明天看它启动；")
+        w("    集中买『当天涨停』的=追高接力，次日易崩。")
     safe_run("游资席位", _do)
 
 
@@ -996,7 +1064,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V1.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V2.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -1029,9 +1097,8 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V1.9完成 {prefix}_最新.txt")
+    print(f"\n✅ V2.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
     main()
-
