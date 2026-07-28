@@ -1,6 +1,8 @@
+
+
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V2.3（2026-07-28 六大补齐：ETF可见/行业缓存/结构风险/卖出卡/推荐台账/冷低早回测）
+A股作战扫描器 · 云端版 V2.5（2026-07-28 修复行业缓存超时：同花顺优先+5分钟总预算+失败熔断）
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -23,15 +25,17 @@ CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
 
 # ★重点盯盘个股（独立抓取，不依赖截图）。格式：(代码, 名称, 标签)
+# ★重点盯盘（代码, 名称, 标签, 成本价, 止损价, 所属板块名）
+# 成本/止损填0=不算；板块名用于自动带出板块状态
 WATCH_STOCKS = [
-    ("603019", "中科曙光", "持仓"),
-    ("301269", "华大九天", "持仓"),
-    ("002714", "牧原股份", "持仓"),
-    ("000062", "深圳华强", "持仓"),
-    ("000066", "中国长城", "重点观察"),
-    ("159558", "半导体设备ETF", "持仓"),
-    ("560390", "电网设备ETF", "持仓"),
-    ("159755", "电池ETF", "持仓"),
+    ("603019", "中科曙光", "持仓", 89.199, 87.50, "计算机设备"),
+    ("301269", "华大九天", "持仓", 91.999, 84.00, "软件开发"),
+    ("002714", "牧原股份", "持仓", 39.613, 36.50, "养殖业"),
+    ("000062", "深圳华强", "持仓", 23.087, 21.24, "元件"),
+    ("159558", "半导体设备ETF", "持仓", 1.180, 1.100, "半导体"),
+    ("560390", "电网设备ETF", "持仓", 0.854, 0.800, "电网设备"),
+    ("159755", "电池ETF", "持仓", 0.849, 0.790, "电池"),
+    ("000066", "中国长城", "重点观察", 0, 0, "计算机设备"),
 ]
 IND_MAP_FILE = "reports/industry_map.json"
 COLD_HIST_FILE = "reports/cold_low_history.json"
@@ -354,6 +358,43 @@ def scan_watchlist():
 
 # ========== ★重点盯盘个股（独立跟踪：价/量/资金/位置/连涨） ==========
 
+def _pos_txt(price, cost, stop):
+    """成本盈亏 + 止损距离"""
+    out = ""
+    try:
+        if cost and cost > 0 and price and pd.notna(price):
+            pnl = (float(price) - cost) / cost * 100
+            out += f" | 成本{cost} 盈亏{pnl:+.2f}%"
+        if stop and stop > 0 and price and pd.notna(price):
+            gap = (float(price) - stop) / stop * 100
+            if float(price) <= stop:
+                out += f" | 止损{stop} 🔴已破位!!!"
+            elif gap <= 2:
+                out += f" | 止损{stop} ⚠️仅剩{gap:.1f}%"
+            else:
+                out += f" | 止损{stop} 距离{gap:.1f}%"
+    except Exception:
+        pass
+    return out
+
+
+def _sect_txt(sect_map, sect):
+    """所属板块今日状态"""
+    if not sect or not sect_map:
+        return ""
+    for k, (p, v) in sect_map.items():
+        if sect in k or k in sect:
+            pt = f"{p:+.2f}%" if p is not None and pd.notna(p) else "?"
+            vt = f" 资金{v:+.2f}亿" if v is not None and pd.notna(v) else ""
+            warn = ""
+            if p is not None and pd.notna(p) and p < -2:
+                warn = " ⚠️板块逆风"
+            elif p is not None and pd.notna(p) and p > 2:
+                warn = " ✅板块顺风"
+            return f"\n      └ 板块[{k}] {pt}{vt}{warn}"
+    return f"\n      └ 板块[{sect}] 无数据"
+
+
 def scan_focus_stocks():
     w("\n★★★【重点盯盘个股·独立跟踪】★★★（每天全维度盯，不看截图）")
 
@@ -395,8 +436,29 @@ def scan_focus_stocks():
         if fsrc:
             w(f"  （资金源：{fsrc}）")
 
+        # 板块状态映射：名称→(涨跌幅, 资金净额)
+        sect_map = {}
+        try:
+            _, bdf = multi_source("板块状态(盯盘)", [
+                ("同花顺", lambda: ak.stock_fund_flow_industry(symbol="即时")),
+                ("东财", lambda: ak.stock_sector_fund_flow_rank(
+                    indicator="今日", sector_type="行业资金流")),
+            ])
+            if bdf is not None:
+                bn = pick_col(bdf, ["名称", "行业"])
+                bp = pick_col(bdf, ["涨跌幅", "行业指数涨跌", "涨跌"])
+                bv = pick_col(bdf, ["主力净流入-净额", "主力净流入", "净额", "流入资金"])
+                for _, rr in bdf.iterrows():
+                    v = pd.to_numeric(rr[bv], errors="coerce") if bv else None
+                    if v is not None and pd.notna(v) and abs(v) > 1e6:
+                        v = v / 1e8
+                    p = pd.to_numeric(rr[bp], errors="coerce") if bp else None
+                    sect_map[str(rr[bn])] = (p, v)
+        except Exception:
+            pass
+
         etf_df = None
-        for code6, name, tag in WATCH_STOCKS:
+        for code6, name, tag, cost, stop, sect in WATCH_STOCKS:
             try:
                 is_etf = code6.startswith(("15", "51", "56", "58", "159", "588"))
                 sym = ("sh" if code6.startswith("6") else "sz") + code6
@@ -416,7 +478,8 @@ def scan_focus_stocks():
                             pc = pd.to_numeric(r0[epc], errors="coerce")
                             am = pd.to_numeric(r0[ea], errors="coerce") if ea else None
                             at = f" 成交{am/1e8:.2f}亿" if am and pd.notna(am) else ""
-                            w(f"  ◆ {name}({code6})[{tag}]：现价{pr} 今{pc:+.2f}%{at} [ETF源]")
+                            w(f"  ◆ {name}({code6})[{tag}]：现价{pr} 今{pc:+.2f}%{at} [ETF源]"
+                              + _pos_txt(pr, cost, stop) + _sect_txt(sect_map, sect))
                             continue
                 if len(row) == 0:
                     w(f"  ◆ {name}({code6})[{tag}]：快照无数据")
@@ -455,7 +518,8 @@ def scan_focus_stocks():
                     flow_txt = f" | 主力{'+' if flow>0 else ''}{fv:.2f}{unit}"
 
                 amt_txt = f" 成交{amt/1e8:.2f}亿" if amt and pd.notna(amt) else ""
-                w(f"  ◆ {name}({code6})[{tag}]：现价{price} 今{pct:+.2f}%{amt_txt}{flow_txt}{pos_txt}")
+                w(f"  ◆ {name}({code6})[{tag}]：现价{price} 今{pct:+.2f}%{amt_txt}{flow_txt}"
+                  + _pos_txt(price, cost, stop) + pos_txt + _sect_txt(sect_map, sect))
             except Exception as e:
                 w(f"  ◆ {name}({code6})[{tag}]：读取异常 {type(e).__name__}")
             time.sleep(0.3)
@@ -665,46 +729,84 @@ def _load_ind_cache():
 
 
 def _build_ind_cache():
-    """一周建一次：代码→行业 对照表（避免每次实时查被东财封）"""
-    w("  [建缓存] 行业对照表过期/缺失，正在重建（约1-2分钟，每周一次）...")
+    """一周建一次：代码→行业 对照表
+    ⚠️东财对GitHub海外服务器封锁 → 同花顺优先；总预算5分钟；连败3次熔断"""
+    t0 = time.time()
+    BUDGET = 300          # 总时长上限（秒）
+    w("  [建缓存] 行业对照表重建中（上限5分钟，每周一次）...")
     m = {}
     try:
         names = None
-        for fn in [lambda: ak.stock_board_industry_name_em(),
-                   lambda: ak.stock_board_industry_summary_ths()]:
+        for fn in [lambda: ak.stock_board_industry_summary_ths(),
+                   lambda: ak.stock_board_industry_name_em()]:
             try:
-                d = with_retry(fn, tries=1, timeout=60)
+                d = with_retry(fn, tries=1, wait=2, timeout=30)
                 if d is not None and len(d) > 0:
-                    nc = pick_col(d, ["板块名称", "板块", "名称"])
+                    nc = pick_col(d, ["板块名称", "板块", "名称", "行业"])
                     names = [str(x) for x in d[nc].tolist()]
                     break
             except Exception:
                 continue
         if not names:
-            w("  [建缓存] 拿不到行业列表，放弃")
+            w("  [建缓存] 拿不到行业列表，放弃（本次⑥闸门降级为实时查）")
             return {}
-        for i, nm in enumerate(names[:95]):
-            for fn in [lambda n=nm: ak.stock_board_industry_cons_em(symbol=n),
-                       lambda n=nm: ak.stock_board_industry_cons_ths(symbol=n)]:
+
+        ths_fail = em_fail = 0
+        done = 0
+        for nm in names[:95]:
+            if time.time() - t0 > BUDGET:
+                w(f"  [建缓存] 到达5分钟预算上限，已完成{done}个行业，保存现有结果")
+                break
+            got = False
+            # 同花顺优先（东财在GitHub海外机被封）
+            if ths_fail < 3:
                 try:
-                    c = with_retry(fn, tries=1, wait=2, timeout=40)
-                    if c is None or len(c) == 0:
-                        continue
-                    cc = pick_col(c, ["代码", "股票代码"])
-                    for _, rr in c.iterrows():
-                        code6 = str(rr[cc])[-6:].zfill(6)
-                        m[code6] = nm
-                    break
+                    c = with_retry(lambda n=nm: ak.stock_board_industry_cons_ths(symbol=n),
+                                   tries=1, wait=1, timeout=15)
+                    if c is not None and len(c) > 0:
+                        cc = pick_col(c, ["代码", "股票代码"])
+                        if cc:
+                            for _, rr in c.iterrows():
+                                m[str(rr[cc])[-6:].zfill(6)] = nm
+                            got = True
+                            ths_fail = 0
                 except Exception:
-                    continue
-            time.sleep(0.6)
-        os.makedirs("reports", exist_ok=True)
-        with open(IND_MAP_FILE, "w", encoding="utf-8") as f:
-            json.dump({"built": now_beijing().strftime("%Y-%m-%d"), "map": m},
-                      f, ensure_ascii=False)
-        w(f"  [建缓存] 完成，共{len(m)}只个股入库")
+                    ths_fail += 1
+                    if ths_fail == 3:
+                        w("  [建缓存] 同花顺连败3次，熔断切东财")
+            if not got and em_fail < 3:
+                try:
+                    c = with_retry(lambda n=nm: ak.stock_board_industry_cons_em(symbol=n),
+                                   tries=1, wait=1, timeout=15)
+                    if c is not None and len(c) > 0:
+                        cc = pick_col(c, ["代码", "股票代码"])
+                        if cc:
+                            for _, rr in c.iterrows():
+                                m[str(rr[cc])[-6:].zfill(6)] = nm
+                            got = True
+                            em_fail = 0
+                except Exception:
+                    em_fail += 1
+                    if em_fail == 3:
+                        w("  [建缓存] 东财连败3次(海外封锁)，熔断")
+            if ths_fail >= 3 and em_fail >= 3:
+                w("  [建缓存] 双源均熔断，停止重建")
+                break
+            if got:
+                done += 1
+            time.sleep(0.3)
+
+        if m:
+            os.makedirs("reports", exist_ok=True)
+            with open(IND_MAP_FILE, "w", encoding="utf-8") as f:
+                json.dump({"built": now_beijing().strftime("%Y-%m-%d"), "map": m},
+                          f, ensure_ascii=False)
+            w(f"  [建缓存] 完成：{done}个行业 / {len(m)}只个股入库 "
+              f"（耗时{time.time()-t0:.0f}秒）")
+        else:
+            w("  [建缓存] 一条都没拿到，本次跳过")
     except Exception as e:
-        w(f"  [建缓存] 失败：{type(e).__name__}")
+        w(f"  [建缓存] 异常：{type(e).__name__}")
     return m
 
 
@@ -1113,6 +1215,24 @@ def scan_zt_pool():
         c_industry = pick_col(df, ["所属行业", "行业"])
         c_lbc = pick_col(df, ["连板数"])
         w(f"  今日涨停共 {len(df)} 只")
+        try:
+            c_code_zt = pick_col(df, ["代码"])
+            if c_code_zt and c_industry:
+                cache, _a = _load_ind_cache()
+                add = 0
+                for _, rr in df.iterrows():
+                    k = str(rr[c_code_zt])[-6:].zfill(6)
+                    if k not in cache:
+                        cache[k] = str(rr[c_industry])
+                        add += 1
+                if add:
+                    os.makedirs("reports", exist_ok=True)
+                    with open(IND_MAP_FILE, "w", encoding="utf-8") as f:
+                        json.dump({"built": now_beijing().strftime("%Y-%m-%d"),
+                                   "map": cache}, f, ensure_ascii=False)
+                    w(f"  （顺手补充行业对照表 +{add}只，累计{len(cache)}只）")
+        except Exception:
+            pass
         if c_industry:
             for k, v in df[c_industry].value_counts().head(8).items():
                 w(f"    {k}：{v}只")
@@ -1539,7 +1659,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V2.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V2.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -1575,7 +1695,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V2.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V2.5完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
