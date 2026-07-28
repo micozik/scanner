@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-龙虎榜/游资 独立扫描器 V1.0（2026-07-28）
+龙虎榜/游资 独立扫描器 V1.1（2026-07-28 自动回溯最近有数据的交易日）
 专职：每晚18:40跑，抓当日龙虎榜 + 活跃营业部
 核心：自动标注【埋伏型】(跌着被买=明天机会) / 【追高型】(涨停被买=次日易崩)
 输出：reports/龙虎榜_最新.txt + reports/龙虎榜_日期.txt
@@ -65,21 +65,41 @@ def multi_source(title, sources):
     return None, None
 
 
+
+def _try_dates(max_back=7):
+    """从今天往前找，返回候选日期列表(YYYYMMDD)，跳过周末"""
+    out = []
+    d = now_beijing()
+    for _ in range(max_back):
+        if d.weekday() < 5:
+            out.append(d.strftime("%Y%m%d"))
+        d -= datetime.timedelta(days=1)
+    return out
+
+
 # ========== 一、龙虎榜（埋伏型 vs 追高型） ==========
 
 def scan_lhb():
     w("\n【一、龙虎榜·个股】自动标注 埋伏型/追高型")
-    today = now_beijing().strftime("%Y%m%d")
-    src, df = multi_source("龙虎榜", [
-        ("东财明细", lambda: ak.stock_lhb_detail_em(start_date=today, end_date=today)),
-        ("东财机构", lambda: ak.stock_lhb_jgmmtj_em(start_date=today, end_date=today)),
-        ("新浪偏离7", lambda: ak.stock_lhb_detail_daily_sina(
-            date=today, symbol="涨幅偏离值达7%的证券")),
-        ("新浪个股统计", lambda: ak.stock_lhb_ggtj_sina(symbol="5")),
-    ])
+    src, df, use_date = None, None, None
+    for d in _try_dates(7):
+        src, df = multi_source(f"龙虎榜({d})", [
+            ("东财明细", lambda dd=d: ak.stock_lhb_detail_em(start_date=dd, end_date=dd)),
+            ("东财机构", lambda dd=d: ak.stock_lhb_jgmmtj_em(start_date=dd, end_date=dd)),
+            ("新浪偏离7", lambda dd=d: ak.stock_lhb_detail_daily_sina(
+                date=dd, symbol="涨幅偏离值达7%的证券")),
+        ])
+        if df is not None and len(df) > 0:
+            use_date = d
+            break
+        w(f"  {d} 无数据，往前回溯...")
     if df is None or len(df) == 0:
-        w("  [报空] 全部数据源失败或今日无数据（确认已过18:35？）")
+        w("  [报空] 近7个交易日均无龙虎榜数据（接口异常）")
         return [], []
+    w(f"  ✅ 命中数据日期：{use_date}")
+    if use_date != now_beijing().strftime("%Y%m%d"):
+        w(f"  ⚠️ 注意：这是【{use_date}】的龙虎榜，不是今天的。")
+        w("     今日龙虎榜18:35后发布，届时重跑可得最新。")
 
     c_name = pick_col(df, ["名称", "股票简称", "简称"])
     c_code = pick_col(df, ["代码", "股票代码"])
@@ -141,15 +161,26 @@ def scan_lhb():
 
 def scan_hot_money():
     w("\n【二、游资席位·活跃营业部】谁在扫货")
-    date = now_beijing().strftime("%Y%m%d")
-    src, df = multi_source("游资席位", [
-        ("东财活跃营业部", lambda: ak.stock_lhb_hyyyb_em(start_date=date, end_date=date)),
-        ("东财机构统计", lambda: ak.stock_lhb_jgstatistic_em(symbol="近一月")),
-        ("新浪营业部", lambda: ak.stock_lhb_yytj_sina(symbol="近一月")),
-    ])
+    src, df, use_date = None, None, None
+    for d in _try_dates(7):
+        try:
+            r = with_retry(lambda dd=d: ak.stock_lhb_hyyyb_em(start_date=dd, end_date=dd),
+                           tries=2, wait=4, timeout=60)
+            if r is not None and len(r) > 0:
+                src, df, use_date = "东财活跃营业部", r, d
+                break
+        except Exception:
+            pass
+    if df is None:
+        src, df = multi_source("游资席位(备)", [
+            ("东财机构统计", lambda: ak.stock_lhb_jgstatistic_em(symbol="近一月")),
+            ("新浪营业部", lambda: ak.stock_lhb_yytj_sina(symbol="近一月")),
+        ])
     if df is None or len(df) == 0:
         w("  [报空] 全部数据源失败")
         return
+    if use_date:
+        w(f"  ✅ 数据日期：{use_date}")
     c_name = pick_col(df, ["营业部名称", "营业部", "机构名称"])
     c_net = pick_col(df, ["总买卖净额", "净额", "净买", "买入总金额"])
     c_stock = pick_col(df, ["买入股票", "买入个股"])
@@ -175,12 +206,21 @@ def scan_hot_money():
 
 def scan_jg():
     w("\n【三、机构专用席位】（机构才是真钱，游资是快钱）")
-    today = now_beijing().strftime("%Y%m%d")
+    df, use_date = None, None
+    for d in _try_dates(7):
+        try:
+            r = with_retry(lambda dd=d: ak.stock_lhb_jgmmtj_em(start_date=dd, end_date=dd),
+                           tries=1, wait=3, timeout=60)
+            if r is not None and len(r) > 0:
+                df, use_date = r, d
+                break
+        except Exception:
+            continue
     try:
-        df = with_retry(lambda: ak.stock_lhb_jgmmtj_em(start_date=today, end_date=today))
         if df is None or len(df) == 0:
-            w("  今日无机构上榜")
+            w("  近7交易日无机构上榜数据")
             return
+        w(f"  ✅ 数据日期：{use_date}")
         c_name = pick_col(df, ["名称", "简称"])
         c_pct = pick_col(df, ["涨跌幅"])
         c_buy = pick_col(df, ["机构买入总额", "买入金额"])
@@ -206,7 +246,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V1.0 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V1.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     if bj.weekday() >= 5:
         w("周末无龙虎榜数据")
