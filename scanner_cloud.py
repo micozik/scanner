@@ -1,6 +1,7 @@
+
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V2.2（2026-07-28 决策卡升级：持续性催化+仓位类型+固定输出骨架）
+A股作战扫描器 · 云端版 V2.3（2026-07-28 六大补齐：ETF可见/行业缓存/结构风险/卖出卡/推荐台账/冷低早回测）
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -33,6 +34,19 @@ WATCH_STOCKS = [
     ("560390", "电网设备ETF", "持仓"),
     ("159755", "电池ETF", "持仓"),
 ]
+IND_MAP_FILE = "reports/industry_map.json"
+COLD_HIST_FILE = "reports/cold_low_history.json"
+
+# ★AI推荐台账（每次推荐后由AI更新此表）
+# 格式：(日期, 代码, 名称, 成本价, 类型A事件/B周期, 预期周期, 逻辑破的定义)
+RECOMMENDATIONS = [
+    ("2026-07-22", "159558", "半导体设备ETF", 1.180, "A", "长鑫7/27上市兑现即走", "上市日已过=逻辑失效"),
+    ("2026-07-23", "560390", "电网设备ETF", 0.854, "A", "规划发布日兑现", "发布日已过=逻辑失效"),
+    ("2026-07-27", "159755", "电池ETF", 0.849, "B", "5周(至9/1消费税)", "消费税取消 或 钠电订单证伪"),
+    ("2026-07-27", "301269", "华大九天", 91.999, "B", "8周(国产EDA替代)", "EDA国产化政策转向 或 软件板块持续失血"),
+    ("2026-07-17", "000062", "深圳华强", 23.087, "A", "元件板块事件", "跌破21.24 或 元件板块连续失血"),
+]
+
 SPOT_DF = None
 SPOT_SRC = None
 
@@ -95,6 +109,26 @@ def safe_run(title, func):
     except Exception as e:
         w(f"  [报空] {title}：{type(e).__name__}: {str(e)[:90]}")
     time.sleep(2)
+
+
+ETF_DF = None
+
+
+def get_etf_spot():
+    """ETF专用行情（新浪股票快照抓不到ETF）"""
+    global ETF_DF
+    if ETF_DF is not None:
+        return ETF_DF
+    for name, fn in [("东财ETF", lambda: ak.fund_etf_spot_em()),
+                     ("新浪ETF", lambda: ak.fund_etf_category_sina(symbol="ETF基金"))]:
+        try:
+            df = with_retry(fn, tries=2, wait=4, timeout=90)
+            if df is not None and len(df) > 0:
+                ETF_DF = df
+                return ETF_DF
+        except Exception:
+            continue
+    return None
 
 
 def get_spot():
@@ -185,12 +219,66 @@ def scan_tomorrow_gate():
         except Exception:
             pass
 
-        w(f"\n  🚨 风险分：{score}/8　{'｜'.join(reasons) if reasons else '无警报'}")
-        if score >= 5:
+        # ★结构分化维度（治"家数是平的但科技在崩"的盲区）
+        try:
+            idx = with_retry(lambda: ak.stock_zh_index_spot_sina(), tries=2, timeout=60)
+            ic = pick_col(idx, ["代码", "symbol"])
+            inm = pick_col(idx, ["名称", "name"])
+            ipc = pick_col(idx, ["涨跌幅", "changepercent"])
+            worst = 0.0
+            for key in ["399006", "000688", "399005"]:
+                r = idx[idx[ic].astype(str).str.contains(key, na=False)]
+                if len(r) > 0:
+                    v = pd.to_numeric(r.iloc[0][ipc], errors="coerce")
+                    if pd.notna(v):
+                        w(f"  {r.iloc[0][inm]}：{v:+.2f}%")
+                        worst = min(worst, float(v))
+            if worst <= -4:
+                score += 2
+                reasons.append(f"⚠️结构崩塌(成长指数{worst:.1f}%)")
+            elif worst <= -2:
+                score += 1
+                reasons.append(f"结构分化({worst:.1f}%)")
+        except Exception as e:
+            w(f"  [跳过] 指数分化：{type(e).__name__}")
+
+        # ★科技链资金流出（单日>300亿=系统性撤离）
+        try:
+            _, fdf = multi_source("资金(风险分)", [
+                ("同花顺", lambda: ak.stock_fund_flow_industry(symbol="即时")),
+                ("东财", lambda: ak.stock_sector_fund_flow_rank(
+                    indicator="今日", sector_type="行业资金流")),
+            ])
+            if fdf is not None:
+                fn_ = pick_col(fdf, ["名称", "行业"])
+                fv_ = pick_col(fdf, ["主力净流入-净额", "主力净流入", "净额", "流入资金"])
+                fdf[fv_] = pd.to_numeric(fdf[fv_], errors="coerce")
+                if fdf[fv_].abs().max() and fdf[fv_].abs().max() > 1e6:
+                    fdf[fv_] = fdf[fv_] / 1e8
+                tech = ["半导体", "通信设备", "元件", "光学光电子", "消费电子",
+                        "计算机设备", "软件开发"]
+                out = 0.0
+                for _, rr in fdf.iterrows():
+                    if any(t in str(rr[fn_]) for t in tech):
+                        v = rr[fv_]
+                        if pd.notna(v) and v < 0:
+                            out += float(v)
+                w(f"  科技链资金净额：{out:.1f}亿")
+                if out <= -300:
+                    score += 2
+                    reasons.append(f"科技链失血{abs(out):.0f}亿")
+                elif out <= -150:
+                    score += 1
+                    reasons.append(f"科技链流出{abs(out):.0f}亿")
+        except Exception as e:
+            w(f"  [跳过] 科技链资金：{type(e).__name__}")
+
+        w(f"\n  🚨 风险分：{score}/12　{'｜'.join(reasons) if reasons else '无警报'}")
+        if score >= 7:
             w("  >>> 【明日高危】一票不碰，盈利仓主动减半锁利，破位无条件走")
-        elif score >= 3:
+        elif score >= 4:
             w("  >>> 【明日偏弱】不开新仓，只减不加")
-        elif score >= 1:
+        elif score >= 2:
             w("  >>> 【明日中性】仅最高确定性半仓")
         else:
             w("  >>> 【明日健康】可按七关开仓")
@@ -308,10 +396,29 @@ def scan_focus_stocks():
         if fsrc:
             w(f"  （资金源：{fsrc}）")
 
+        etf_df = None
         for code6, name, tag in WATCH_STOCKS:
             try:
+                is_etf = code6.startswith(("15", "51", "56", "58", "159", "588"))
                 sym = ("sh" if code6.startswith("6") else "sz") + code6
                 row = spot[spot[c_code].astype(str).str.contains(code6, na=False)]
+                if len(row) == 0 and is_etf:
+                    if etf_df is None:
+                        etf_df = get_etf_spot()
+                    if etf_df is not None:
+                        ec = pick_col(etf_df, ["代码", "symbol"])
+                        ep = pick_col(etf_df, ["最新价", "trade"])
+                        epc = pick_col(etf_df, ["涨跌幅", "changepercent"])
+                        ea = pick_col(etf_df, ["成交额", "amount"])
+                        er = etf_df[etf_df[ec].astype(str).str.contains(code6, na=False)]
+                        if len(er) > 0:
+                            r0 = er.iloc[0]
+                            pr = pd.to_numeric(r0[ep], errors="coerce")
+                            pc = pd.to_numeric(r0[epc], errors="coerce")
+                            am = pd.to_numeric(r0[ea], errors="coerce") if ea else None
+                            at = f" 成交{am/1e8:.2f}亿" if am and pd.notna(am) else ""
+                            w(f"  ◆ {name}({code6})[{tag}]：现价{pr} 今{pc:+.2f}%{at} [ETF源]")
+                            continue
                 if len(row) == 0:
                     w(f"  ◆ {name}({code6})[{tag}]：快照无数据")
                     continue
@@ -544,6 +651,64 @@ def _hist_close(code, symbol=None):
     return None, None
 
 
+def _load_ind_cache():
+    try:
+        if os.path.exists(IND_MAP_FILE):
+            with open(IND_MAP_FILE, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            ts = d.get("built", "")
+            age = (now_beijing() - datetime.datetime.strptime(ts, "%Y-%m-%d")).days if ts else 99
+            if age <= 7 and d.get("map"):
+                return d["map"], age
+    except Exception:
+        pass
+    return {}, 99
+
+
+def _build_ind_cache():
+    """一周建一次：代码→行业 对照表（避免每次实时查被东财封）"""
+    w("  [建缓存] 行业对照表过期/缺失，正在重建（约1-2分钟，每周一次）...")
+    m = {}
+    try:
+        names = None
+        for fn in [lambda: ak.stock_board_industry_name_em(),
+                   lambda: ak.stock_board_industry_summary_ths()]:
+            try:
+                d = with_retry(fn, tries=1, timeout=60)
+                if d is not None and len(d) > 0:
+                    nc = pick_col(d, ["板块名称", "板块", "名称"])
+                    names = [str(x) for x in d[nc].tolist()]
+                    break
+            except Exception:
+                continue
+        if not names:
+            w("  [建缓存] 拿不到行业列表，放弃")
+            return {}
+        for i, nm in enumerate(names[:95]):
+            for fn in [lambda n=nm: ak.stock_board_industry_cons_em(symbol=n),
+                       lambda n=nm: ak.stock_board_industry_cons_ths(symbol=n)]:
+                try:
+                    c = with_retry(fn, tries=1, wait=2, timeout=40)
+                    if c is None or len(c) == 0:
+                        continue
+                    cc = pick_col(c, ["代码", "股票代码"])
+                    for _, rr in c.iterrows():
+                        code6 = str(rr[cc])[-6:].zfill(6)
+                        m[code6] = nm
+                    break
+                except Exception:
+                    continue
+            time.sleep(0.6)
+        os.makedirs("reports", exist_ok=True)
+        with open(IND_MAP_FILE, "w", encoding="utf-8") as f:
+            json.dump({"built": now_beijing().strftime("%Y-%m-%d"), "map": m},
+                      f, ensure_ascii=False)
+        w(f"  [建缓存] 完成，共{len(m)}只个股入库")
+    except Exception as e:
+        w(f"  [建缓存] 失败：{type(e).__name__}")
+    return m
+
+
 def _get_industry_map():
     src, df = multi_source("行业榜(冷低早)", [
         ("东财", lambda: ak.stock_board_industry_name_em()),
@@ -680,13 +845,18 @@ def scan_cold_low():
             return
 
         w("\n  ⑥板块环境闸门（所属板块跌超1.5%的直接否决）：")
+        ind_cache, cage = _load_ind_cache()
+        if not ind_cache:
+            ind_cache = _build_ind_cache()
+        else:
+            w(f"  （行业对照表：{len(ind_cache)}只，缓存{cage}天前建）")
         imap = _get_industry_map()
         if not imap:
             w("    [报空] 行业榜拿不到，本关跳过（上面候选未经板块验证，慎用）")
             return
         passed = 0
         for h in hits:
-            ind = _stock_industry(h["code"])
+            ind = ind_cache.get(h["code"]) or _stock_industry(h["code"])
             ipct = imap.get(ind) if ind else None
             if ipct is None:
                 w(f"    ❓ {h['name']}({h['code']}) 行业[{ind or '未知'}] 无板块数据，存疑")
@@ -705,7 +875,67 @@ def scan_cold_low():
             w("    ⚠️ 全部候选被板块闸门否决 → 今日无标的")
         else:
             w(f"  ※ 最终{passed}只过关。⑦催化日期 ⑧止损由你我集中分析定。")
+
+        # ★存档 + 5日回测（验证这个筛选器到底行不行）
+        _cold_archive_and_backtest(hits, spot, c_code, c_name, c_price)
     safe_run("冷低早筛选", _do)
+
+
+def _cold_archive_and_backtest(hits, spot, c_code, c_name, c_price):
+    """把今天筛出的票存档；并回测5个交易日前那批现在赚没赚"""
+    bj = now_beijing()
+    today = bj.strftime("%Y-%m-%d")
+    can_save = (bj.weekday() < 5) and (bj.hour >= 15)
+    try:
+        hist = {}
+        if os.path.exists(COLD_HIST_FILE):
+            with open(COLD_HIST_FILE, "r", encoding="utf-8") as f:
+                hist = json.load(f)
+    except Exception:
+        hist = {}
+
+    # 回测：找5个交易日前的记录
+    days = sorted([d for d in hist if d < today])
+    if len(days) >= 5:
+        base = days[-5]
+        recs = hist[base]
+        w(f"\n  ★★【冷低早回测】{base} 那批（{len(recs)}只）现在如何：")
+        tot, win = 0.0, 0
+        for rec in recs:
+            try:
+                r = spot[spot[c_code].astype(str).str.contains(rec["code"], na=False)]
+                if len(r) == 0:
+                    continue
+                now_p = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
+                if pd.isna(now_p):
+                    continue
+                pnl = (now_p - rec["price"]) / rec["price"] * 100
+                tot += pnl
+                if pnl > 0:
+                    win += 1
+                w(f"    {rec['name']}({rec['code']}) {rec['price']}→{now_p} {pnl:+.2f}%")
+            except Exception:
+                continue
+        n = len(recs) if recs else 1
+        w(f"    ★5日胜率：{win}/{len(recs)} | 平均收益 {tot/n:+.2f}%")
+        if tot / n < 0:
+            w("    ⚠️ 平均为负 → 这个筛选器当前参数在这种行情下无效，")
+            w("       不要照单买，必须配合板块启动信号")
+    else:
+        w(f"\n  （冷低早回测：已存{len(days)}天，满5天后自动出胜率）")
+
+    if can_save and hits:
+        try:
+            hist[today] = [{"code": h["code"], "name": h["name"],
+                            "price": float(h["price"])} for h in hits]
+            ks = sorted(hist)[-60:]
+            hist = {k: hist[k] for k in ks}
+            os.makedirs("reports", exist_ok=True)
+            with open(COLD_HIST_FILE, "w", encoding="utf-8") as f:
+                json.dump(hist, f, ensure_ascii=False)
+            w(f"  ✅ 已存档今日{len(hits)}只候选，历史{len(hist)}天")
+        except Exception as e:
+            w(f"  [跳过] 冷低早存档：{type(e).__name__}")
 
 
 # ========== 三、板块全景榜（行业 + 概念，都有历史库） ==========
@@ -1127,6 +1357,96 @@ def scan_news():
         w(f"    [{tm}] {t[:70]}")
 
 
+# ========== ★AI推荐台账（自动对账，战绩不靠记忆） ==========
+
+def scan_ledger():
+    w("\n★★★【AI推荐台账·自动对账】★★★（战绩机器记账，赖不掉）")
+    if not RECOMMENDATIONS:
+        w("  台账为空")
+        return
+
+    def _do():
+        spot = get_spot()
+        etf = None
+        c_code = pick_col(spot, ["代码", "code"]) if spot is not None else None
+        c_price = pick_col(spot, ["最新价", "trade"]) if spot is not None else None
+        today = now_beijing()
+        win = lose = 0
+        for d, code, name, cost, typ, period, broken in RECOMMENDATIONS:
+            price = None
+            try:
+                if spot is not None:
+                    r = spot[spot[c_code].astype(str).str.contains(code, na=False)]
+                    if len(r) > 0:
+                        price = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
+                if price is None or pd.isna(price):
+                    if etf is None:
+                        etf = get_etf_spot()
+                    if etf is not None:
+                        ec = pick_col(etf, ["代码", "symbol"])
+                        ep = pick_col(etf, ["最新价", "trade"])
+                        r = etf[etf[ec].astype(str).str.contains(code, na=False)]
+                        if len(r) > 0:
+                            price = pd.to_numeric(r.iloc[0][ep], errors="coerce")
+            except Exception:
+                pass
+            days = (today - datetime.datetime.strptime(d, "%Y-%m-%d")).days
+            if price is None or pd.isna(price):
+                w(f"  {d} {name}({code}) @{cost} [{typ}类] → 取价失败")
+                continue
+            pnl = (price - cost) / cost * 100
+            if pnl > 0:
+                win += 1
+            else:
+                lose += 1
+            flag = "✅" if pnl > 0 else "❌"
+            extra = ""
+            if typ == "A":
+                extra = f" ⚠️事件仓已持有{days}天，事件仓不该超3天"
+            else:
+                extra = f" 周期仓第{days}天/{period}"
+            w(f"  {flag} {d} {name}({code}) @{cost}→{price} {pnl:+.2f}% [{typ}类]{extra}")
+            w(f"       逻辑破的定义：{broken}")
+        w(f"\n  ★战绩：{win}胜 {lose}负")
+        w("  ⚠️ A类事件仓超期未走 = 违反铁律，立即处理")
+        w("  ⚠️ B类周期仓在期内跌5-8% = 噪音，不许砍（铁律F）")
+    safe_run("推荐台账", _do)
+
+
+# ========== ★卖出决策卡（治"买入用长线逻辑，卖出用短线跌幅"） ==========
+
+def scan_sell_card():
+    w("\n" + "=" * 60)
+    w("★★★【卖出决策卡 · 想卖之前必须填完】★★★")
+    w("=" * 60)
+    w("  标的：____________")
+    w("")
+    w("  ① 当初买入是 A类事件仓 还是 B类周期仓？")
+    w("     → ______________________")
+    w("")
+    w("  ② 当初写死的『逻辑破』定义是什么？（去台账里查，不许现编）")
+    w("     → ______________________")
+    w("")
+    w("  ③ 这个定义现在触发了吗？  □是 → 走  □否 → 看④")
+    w("     → ______________________")
+    w("")
+    w("  ④ 没触发却想卖，理由是什么？")
+    w("     『它跌了X%』         → ❌ 不是理由，B类仓5-8%是噪音")
+    w("     『我怕』             → ❌ 不是理由")
+    w("     『大盘不好』         → ❌ 除非驱动链本身断了")
+    w("     『催化取消/证伪』     → ✅ 这才是理由")
+    w("     『板块驱动链断裂』    → ✅ 这才是理由")
+    w("     『A类事件已兑现』     → ✅ 这才是理由")
+    w("     → ______________________")
+    w("")
+    w("  ⑤ 如果卖了，这笔钱去哪？（说不出去处 = 不该卖）")
+    w("     → ______________________")
+    w("  ─────────────────────────────────────")
+    w("  ⚠️ 填不出④里的✅项 = 不许卖")
+    w("  ⚠️ 铁律F：买入用产业周期逻辑，就不许用短线跌幅卖出")
+    w("=" * 60)
+
+
 # ========== ★决策卡（任何买卖建议前必填，防止AI忘记自己的铁律） ==========
 
 def scan_decision_card():
@@ -1200,6 +1520,8 @@ def scan_decision_card():
     w("     资金事件/消费养殖/政策产业专项）——不许等用户提醒")
     w("  ⑥ 决策卡（要买卖时逐项填，含③-B ⑧ ⑨）")
     w("  ⑦ 持仓逐个指令（持有/减/清 + 理由）")
+    w("  ⑧ AI推荐台账对账（A类超期？B类在期内？）")
+    w("  ⑨ 要卖时必填【卖出决策卡】，④里填不出✅项=不许卖")
     w("=" * 60)
 
 
@@ -1218,7 +1540,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V2.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V2.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     if weekend:
@@ -1241,6 +1563,8 @@ def main():
             scan_north()
         scan_news()
 
+    scan_ledger()
+    scan_sell_card()
     scan_decision_card()
 
     os.makedirs("reports", exist_ok=True)
@@ -1252,7 +1576,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V2.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V2.3完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
