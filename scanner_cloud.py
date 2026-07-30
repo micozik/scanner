@@ -303,6 +303,20 @@ def scan_tomorrow_gate():
         except Exception as e:
             w(f"  [跳过] 科技链资金：{type(e).__name__}")
 
+        # ★美联储/美债维度：决议内容不重要，市场解读才重要
+        try:
+            idx2 = with_retry(lambda: ak.stock_zh_index_spot_sina(), tries=1, timeout=40)
+            i2c = pick_col(idx2, ["代码", "symbol"])
+            i2p = pick_col(idx2, ["涨跌幅", "changepercent"])
+            hk = idx2[idx2[i2c].astype(str).str.contains("HSI|000001", na=False)]
+            if len(hk) > 0:
+                pass
+        except Exception:
+            pass
+        w("  ※ 美联储事件判读：不看决议内容，看市场解读——")
+        w("    美债收益率飙升+股债双杀 = 市场认为『行动过晚』= 利空成长股")
+        w("    美债收益率回落+股涨 = 真鸽派 = 利好成长股")
+
         w(f"\n  🚨 风险分：{score}/12　{'｜'.join(reasons) if reasons else '无警报'}")
         if score >= 7:
             w("  >>> 【明日高危】一票不碰，盈利仓主动减半锁利，破位无条件走")
@@ -741,6 +755,51 @@ def _hist_close(code, symbol=None):
     return None, None
 
 
+SPOT_IND = {}
+
+
+def _build_spot_ind():
+    """兜底：用同花顺行业成分一次性建全市场映射（东财挂了也能用）"""
+    global SPOT_IND
+    if SPOT_IND:
+        return SPOT_IND
+    try:
+        for fn in [lambda: ak.stock_board_industry_summary_ths(),
+                   lambda: ak.stock_fund_flow_industry(symbol="即时")]:
+            try:
+                d = with_retry(fn, tries=1, wait=2, timeout=30)
+                if d is None or len(d) == 0:
+                    continue
+                nc = pick_col(d, ["板块", "行业", "板块名称", "名称"])
+                names = [str(x) for x in d[nc].tolist()][:95]
+                t0 = time.time()
+                fail = 0
+                for nm in names:
+                    if time.time() - t0 > 180 or fail >= 3:
+                        break
+                    try:
+                        c = with_retry(lambda n=nm: ak.stock_board_industry_cons_ths(symbol=n),
+                                       tries=1, wait=1, timeout=12)
+                        if c is not None and len(c) > 0:
+                            cc = pick_col(c, ["代码", "股票代码"])
+                            if cc:
+                                for _, rr in c.iterrows():
+                                    SPOT_IND[str(rr[cc])[-6:].zfill(6)] = nm
+                                fail = 0
+                                continue
+                        fail += 1
+                    except Exception:
+                        fail += 1
+                    time.sleep(0.25)
+                if SPOT_IND:
+                    return SPOT_IND
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return SPOT_IND
+
+
 def _load_ind_cache():
     try:
         if os.path.exists(IND_MAP_FILE):
@@ -976,6 +1035,11 @@ def scan_cold_low():
         ind_cache, cage = _load_ind_cache()
         if not ind_cache:
             ind_cache = _build_ind_cache()
+        if len(ind_cache) < 800:
+            w(f"  （对照表仅{len(ind_cache)}只，启动同花顺兜底补全...）")
+            _build_spot_ind()
+            if SPOT_IND:
+                w(f"  （兜底补全 {len(SPOT_IND)} 只）")
         else:
             w(f"  （行业对照表：{len(ind_cache)}只，缓存{cage}天前建）")
         imap = _get_industry_map()
@@ -984,7 +1048,8 @@ def scan_cold_low():
             return
         passed = 0
         for h in hits:
-            ind = ind_cache.get(h["code"]) or _stock_industry(h["code"])
+            ind = ind_cache.get(h["code"]) or SPOT_IND.get(h["code"]) \
+                or _stock_industry(h["code"])
             ipct = imap.get(ind) if ind else None
             if ipct is None:
                 w(f"    ❓ {h['name']}({h['code']}) 行业[{ind or '未知'}] 无板块数据，存疑")
@@ -1686,7 +1751,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V2.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V3.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -1724,11 +1789,12 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V2.9完成 {prefix}_最新.txt")
+    print(f"\n✅ V3.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
     main()
+)
 
 
 
