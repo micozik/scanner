@@ -40,6 +40,8 @@ WATCH_STOCKS = [
 ]
 IND_MAP_FILE = "reports/industry_map.json"
 COLD_HIST_FILE = "reports/cold_low_history.json"
+AMBUSH_HIST_FILE = "reports/ambush_history.json"
+HEAT_HIST_FILE = "reports/heat_history.json"
 
 # ★AI推荐台账（每次推荐后由AI更新此表）
 # 格式：(日期, 代码, 名称, 成本价, 类型A事件/B周期, 预期周期, 逻辑破的定义)
@@ -659,6 +661,11 @@ def scan_intraday_hotmoney():
                     w(f"    🎯 {r[c_name]}({r['_code6']}) {r[c_pct]:+.2f}%{amt_txt} | 主力净买+{fvv:.2f}{unit}")
                 w(f"    ※ 共{len(amb)}只跌着被买。这就是实时版埋伏信号——")
                 w("      有人在下跌中收货，次日看板块是否启动。")
+                global TODAY_AMBUSH
+                TODAY_AMBUSH = [{"code": r["_code6"], "name": str(r[c_name]),
+                                 "price": float(r[c_price])}
+                                for _, r in amb.head(15).iterrows()
+                                if pd.notna(r[c_price])]
 
         # ③ 涨停封单强度
         w("  ◆③【涨停板强度】")
@@ -1337,6 +1344,7 @@ def scan_zt_pool():
 
 # ========== 六、龙虎榜（多源 + 自动标注 埋伏型/追高型） ==========
 
+TODAY_AMBUSH = []
 AMBUSH_POOL = []   # 埋伏池：当天在跌却被大额净买的票（铁律B）
 
 
@@ -1541,6 +1549,8 @@ SECTOR_KEYWORDS = {
 
 
 # 多空判定词（判断一条催化是利多还是利空）
+TODAY_HEAT_TOP3 = []
+
 BULL_WORDS = ["涨价", "上调", "提价", "缺货", "紧缺", "短缺", "供不应求", "满产",
               "扩产", "增产能", "新增产能", "订单", "中标", "签约", "获批", "并网",
               "投产", "量产", "创新高", "增长", "暴增", "大增", "翻倍", "超预期",
@@ -1593,6 +1603,8 @@ def scan_catalyst_heat(uniq_news):
 
     ranked = sorted(hits.items(), key=lambda x: len(x[1][0]) - len(x[1][1]), reverse=True)
 
+    global TODAY_HEAT_TOP3
+    TODAY_HEAT_TOP3 = [k for k, (b, r, n) in ranked[:3] if len(b) - len(r) > 0]
     w("\n  ★ 净利多排行（利多↑ 利空↓ 中性=）：")
     for i, (sect, (bu, be, ne)) in enumerate(ranked, 1):
         net = len(bu) - len(be)
@@ -1699,6 +1711,159 @@ def scan_news():
         w(f"    [{tm}] {t[:70]}")
 
     scan_catalyst_heat(uniq)
+
+
+
+def _bt_load(path):
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def _bt_save(path, data):
+    try:
+        ks = sorted(data)[-60:]
+        data = {k: data[k] for k in ks}
+        os.makedirs("reports", exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def backtest_ambush(today_pool):
+    """埋伏池回测：验证铁律B(机构/游资在跌时买入=明天机会)到底有没有用"""
+    w("\n" + "=" * 60)
+    w("📊【埋伏池回测】铁律B到底成不成立 —— 用胜率说话")
+    w("=" * 60)
+    bj = now_beijing()
+    today = bj.strftime("%Y-%m-%d")
+    can_save = (bj.weekday() < 5) and (bj.hour >= 15)
+    hist = _bt_load(AMBUSH_HIST_FILE)
+    spot = get_spot()
+    if spot is None:
+        w("  快照缺失，无法回测")
+        return
+    c_code = pick_col(spot, ["代码", "code"])
+    c_price = pick_col(spot, ["最新价", "trade"])
+
+    days = sorted([d for d in hist if d < today])
+    for lag, label in [(1, "次日"), (5, "5日")]:
+        if len(days) < lag:
+            continue
+        base = days[-lag]
+        recs = hist[base]
+        win, tot, n = 0, 0.0, 0
+        detail = []
+        for r in recs:
+            try:
+                row = spot[spot[c_code].astype(str).str.contains(r["code"], na=False)]
+                if len(row) == 0:
+                    continue
+                now_p = pd.to_numeric(row.iloc[0][c_price], errors="coerce")
+                if pd.isna(now_p) or not r.get("price"):
+                    continue
+                pnl = (now_p - r["price"]) / r["price"] * 100
+                tot += pnl
+                n += 1
+                if pnl > 0:
+                    win += 1
+                detail.append((r["name"], pnl))
+            except Exception:
+                continue
+        if n:
+            wr = win / n * 100
+            avg = tot / n
+            verdict = "✅铁律B成立，可信" if wr >= 55 and avg > 0 else \
+                      ("⚠️边缘，谨慎用" if wr >= 45 else "❌铁律B在当前行情不成立，停止依赖")
+            w(f"\n  ◆ {base} 那批（{n}只）{label}后：")
+            w(f"    胜率 {win}/{n} = {wr:.1f}% | 平均收益 {avg:+.2f}% → {verdict}")
+            for nm, p in sorted(detail, key=lambda x: -x[1])[:5]:
+                w(f"      {nm} {p:+.2f}%")
+    if not days:
+        w("  首次运行，今日起积累（需1天出次日胜率，5天出5日胜率）")
+
+    if can_save and today_pool:
+        hist[today] = today_pool
+        _bt_save(AMBUSH_HIST_FILE, hist)
+        w(f"  ✅ 已存档今日埋伏池{len(today_pool)}只，历史{len(hist)}天")
+
+
+def backtest_heat(top3):
+    """热力图回测：净利多前3的板块，之后真的跑赢吗"""
+    w("\n" + "=" * 60)
+    w("📊【热力图回测】净利多前3 到底跑不跑赢 —— 用超额说话")
+    w("=" * 60)
+    bj = now_beijing()
+    today = bj.strftime("%Y-%m-%d")
+    can_save = (bj.weekday() < 5) and (bj.hour >= 15)
+    hist = _bt_load(HEAT_HIST_FILE)
+
+    _, bdf = multi_source("板块回测", [
+        ("同花顺", lambda: ak.stock_fund_flow_industry(symbol="即时")),
+        ("东财", lambda: ak.stock_board_industry_name_em()),
+    ])
+    cur = {}
+    if bdf is not None:
+        bn = pick_col(bdf, ["名称", "行业", "板块"])
+        bp = pick_col(bdf, ["涨跌幅", "行业指数涨跌", "涨跌"])
+        if bn and bp:
+            for _, r in bdf.iterrows():
+                v = pd.to_numeric(r[bp], errors="coerce")
+                if pd.notna(v):
+                    cur[str(r[bn])] = float(v)
+
+    days = sorted([d for d in hist if d < today])
+    if days and cur:
+        base = days[-1]
+        rec = hist[base]
+        w(f"\n  ◆ {base} 的净利多前3 → 今日表现：")
+        hit = 0
+        for sect in rec.get("top3", []):
+            matched = [(k, v) for k, v in cur.items()
+                       if any(x in k for x in sect.replace("/", " ").split())]
+            if matched:
+                k, v = matched[0]
+                flag = "✅跑赢" if v > 0 else "❌未兑现"
+                w(f"    {sect} → 对应[{k}] {v:+.2f}% {flag}")
+                if v > 0:
+                    hit += 1
+            else:
+                w(f"    {sect} → 无对应板块数据")
+        w(f"    ★命中 {hit}/3")
+        w("    ⚠️ 连续5次命中<1/3 → 热力图排序无效，需调整词典权重")
+    else:
+        w("  首次运行或板块数据缺失，今日起积累")
+
+    if can_save and top3:
+        hist[today] = {"top3": top3}
+        _bt_save(HEAT_HIST_FILE, hist)
+        w(f"  ✅ 已存档今日净利多前3：{'、'.join(top3)}")
+
+
+def scan_rule_scorecard():
+    """规则记分卡：哪条规则真的有用，一目了然"""
+    w("\n" + "=" * 60)
+    w("📊【规则记分卡】我编的规则，哪条经得起检验")
+    w("=" * 60)
+    w("  规则                     验证方式              当前状态")
+    w("  ─────────────────────────────────────────────")
+    for name, how, f in [
+        ("铁律B·埋伏池", "次日/5日胜率", AMBUSH_HIST_FILE),
+        ("热力图·净利多前3", "次日板块涨跌", HEAT_HIST_FILE),
+        ("冷低早·六关", "5日胜率", COLD_HIST_FILE),
+    ]:
+        d = _bt_load(f)
+        n = len(d)
+        st = f"已积累{n}天" + ("（够了，看上面胜率）" if n >= 5 else "（需≥5天）")
+        w(f"  {name:<22} {how:<18} {st}")
+    w("\n  ⚠️ 铁律：任何规则连续验证胜率<45%，立即停用，不许再拿它推荐")
+    w("  ⚠️ AI不许说『这条规则有用』，只许说『它的历史胜率是X%』")
+    w("=" * 60)
 
 
 # ========== ★AI推荐台账（自动对账，战绩不靠记忆） ==========
@@ -1884,7 +2049,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V3.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V3.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -1909,6 +2074,10 @@ def main():
             scan_north()
         scan_news()
 
+    if not weekend:
+        safe_run("埋伏池回测", lambda: backtest_ambush(TODAY_AMBUSH))
+        safe_run("热力图回测", lambda: backtest_heat(TODAY_HEAT_TOP3))
+    scan_rule_scorecard()
     scan_ledger()
     scan_sell_card()
     scan_decision_card()
@@ -1922,9 +2091,8 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V3.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V3.3完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
     main()
-
