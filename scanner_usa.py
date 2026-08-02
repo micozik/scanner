@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-美股夜盘扫描器 · 独立版 V1.1（2026-07-20）
+美股夜盘扫描器 · 独立版 V2.0（2026-08-02 对齐A股V3.5：催化热力图/多空/地域过滤/映射A股）
 V1.1新增：
   1. 伯克希尔 BRK.A / BRK.B 加入重点个股
   2. 新闻雷达新增【聪明钱专区】：巴菲特/伯克希尔、伯里、木头姐、段永平、
@@ -173,6 +173,89 @@ def scan_stocks():
 
 # ========== 三、美股新闻 + 聪明钱专区 ==========
 
+
+# ★美股→A股 板块映射（美股是A股的先行指标）
+US_SECTOR_MAP = {
+    "存储芯片→A股存储/长鑫链": ["美光", "Micron", "SK海力士", "海力士", "闪迪",
+        "SanDisk", "西部数据", "希捷", "铠侠", "DRAM", "NAND", "HBM", "存储"],
+    "半导体设备→A股北方华创/中微": ["应用材料", "拉姆", "Lam", "阿斯麦", "ASML",
+        "KLA", "科天", "半导体设备", "光刻", "刻蚀"],
+    "AI算力→A股紫光/中科曙光": ["英伟达", "NVIDIA", "AMD", "博通", "Broadcom",
+        "数据中心", "capex", "资本开支", "云计算", "AWS", "Azure", "算力"],
+    "光模块CPO→A股中际旭创/新易盛": ["光模块", "CPO", "硅光", "Coherent",
+        "Lumentum", "康宁", "800G", "1.6T"],
+    "消费电子→A股立讯/歌尔": ["苹果", "Apple", "iPhone", "消费电子", "手机出货"],
+    "软件AI应用→A股金山/华大九天": ["微软", "Microsoft", "谷歌", "Google",
+        "Meta", "OpenAI", "大模型", "Copilot", "软件"],
+    "电动车→A股比亚迪链": ["特斯拉", "Tesla", "电动车", "EV", "电池"],
+    "医药→A股创新药": ["辉瑞", "礼来", "默沙东", "FDA", "临床", "减肥药"],
+    "金融→A股银行/保险": ["美联储", "加息", "降息", "美债", "收益率", "银行"],
+    "能源→A股油气": ["原油", "WTI", "布伦特", "OPEC", "埃克森", "雪佛龙"],
+}
+
+US_BULL = ["涨", "上调", "创新高", "超预期", "大增", "暴增", "增长", "回购",
+           "订单", "扩产", "紧缺", "缺货", "涨价", "提价", "利好", "反弹",
+           "看好", "买入", "跑赢", "翻倍", "强劲", "复苏", "突破"]
+US_BEAR = ["跌", "下调", "暴跌", "重挫", "不及预期", "下滑", "减产", "裁员",
+           "亏损", "砍单", "推迟", "取消", "调查", "制裁", "抛售", "去杠杆",
+           "利空", "承压", "疲软", "警告", "泡沫", "回撤", "熊市"]
+
+
+def _pol(t):
+    b = sum(1 for x in US_BULL if x in t)
+    r = sum(1 for x in US_BEAR if x in t)
+    return 1 if b > r else (-1 if r > b else 0)
+
+
+def scan_us_heat(uniq):
+    """美股催化热力图 → 直接映射到A股对应板块"""
+    w("\n" + "=" * 60)
+    w("🔥【美股催化热力图 → A股映射】美股是A股的先行指标")
+    w("=" * 60)
+    hits = {}
+    for sect, kws in US_SECTOR_MAP.items():
+        bu, be, seen = [], [], set()
+        for tm, t in uniq:
+            for k in kws:
+                if k in t and t[:26] not in seen:
+                    seen.add(t[:26])
+                    p = _pol(t)
+                    if p > 0:
+                        bu.append((tm, t, k))
+                    elif p < 0:
+                        be.append((tm, t, k))
+                    break
+        if bu or be:
+            hits[sect] = (bu, be)
+    if not hits:
+        w("  本次无命中")
+        return
+    ranked = sorted(hits.items(), key=lambda x: len(x[1][0]) - len(x[1][1]), reverse=True)
+    w("\n  ★净利多排行（美股利多→次日A股对应板块大概率跟涨）：")
+    for i, (sect, (bu, be)) in enumerate(ranked, 1):
+        net = len(bu) - len(be)
+        f = " 🔥🔥🔥重点" if net >= 4 else (" 🔥🔥" if net >= 2 else
+            (" 🔥" if net >= 1 else (" ❄️❄️回避" if net <= -3 else
+             (" ❄️偏空" if net <= -1 else " ⚖️"))))
+        w(f"    {i}. {sect}：净{net:+d}（↑{len(bu)} ↓{len(be)}）{f}")
+    w("\n  ★前3名的具体催化：")
+    for sect, (bu, be) in ranked[:3]:
+        if len(bu) - len(be) < 1:
+            continue
+        w(f"\n  ◆【{sect}】↑{len(bu)} ↓{len(be)}")
+        for tm, t, k in bu[:5]:
+            w(f"      ↑[{tm}] ({k}) {t[:58]}")
+    w("\n  ★利空最重（次日A股对应板块回避）：")
+    for sect, (bu, be) in ranked[-2:]:
+        if len(bu) - len(be) < 0:
+            w(f"    ❄️ {sect}：净{len(bu)-len(be):+d}")
+            for tm, t, k in be[:3]:
+                w(f"        ↓[{tm}] ({k}) {t[:58]}")
+    w("\n  ⚠️ 判读：美股某板块净利多高 → 次日A股对应板块优先看")
+    w("     但仍需过A股决策卡①②④⑤（板块第几天/资金/位置/游资）")
+    w("=" * 60)
+
+
 def scan_news():
     w("\n【三、美股/全球新闻】")
 
@@ -238,6 +321,8 @@ def scan_news():
     for tm, t in uniq[:60]:
         w(f"    [{tm}] {t[:70]}")
 
+    scan_us_heat(uniq)
+
 
 # ========== 主程序 ==========
 
@@ -246,7 +331,7 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V1.1 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V2.0 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
 
     scan_index()
@@ -269,7 +354,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描V1.1完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V2.0完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
