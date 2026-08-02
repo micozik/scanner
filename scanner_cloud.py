@@ -1566,6 +1566,24 @@ BEAR_WORDS = ["暴跌", "大跌", "下跌", "跌破", "跌超", "下滑", "下�
               "加息", "紧缩", "衰退", "风险", "利空", "承压", "疲软", "低迷"]
 
 
+FOREIGN_WORDS = ["匈牙利", "希腊", "西班牙", "葡萄牙", "意大利", "法国", "德国",
+                 "英国", "俄罗斯", "乌克兰", "波兰", "瑞典", "挪威", "芬兰",
+                 "印度", "印尼", "越南", "泰国", "菲律宾", "马来西亚", "巴西",
+                 "阿根廷", "墨西哥", "土耳其", "埃及", "南非", "澳大利亚",
+                 "新西兰", "加拿大", "智利", "秘鲁", "尼日利亚", "肯尼亚",
+                 "克罗地亚", "斯洛文尼亚", "亚美尼亚", "刚果", "阿森松岛"]
+
+
+def _is_foreign(text):
+    """外国新闻不计入A股板块评分（如匈牙利核电停机≠A股电力利空）"""
+    if any(f in text for f in FOREIGN_WORDS):
+        cn = ["中国", "A股", "国内", "我国", "央行", "发改委", "工信部",
+              "出口", "进口", "对华", "中方", "国产"]
+        if not any(c in text for c in cn):
+            return True
+    return False
+
+
 def _news_polarity(text):
     """判断一条新闻的多空方向：+1利多 / -1利空 / 0中性"""
     b = sum(1 for w_ in BULL_WORDS if w_ in text)
@@ -1582,6 +1600,7 @@ def scan_catalyst_heat(uniq_news):
     w("\n" + "=" * 60)
     w("🔥🔥【催化热力图·多空版】新闻→板块 + 方向识别 🔥🔥")
     w("=" * 60)
+    w("  （V3.4：净利多排序 + 外国新闻已过滤，不污染A股板块评分）")
     w("  （V3.2升级：只数条数会误判——油价暴跌10条也是10条，")
     w("    但那是利空。现在按【净利多 = 利多条数 − 利空条数】排序）")
 
@@ -1589,6 +1608,8 @@ def scan_catalyst_heat(uniq_news):
     for sect, kws in SECTOR_KEYWORDS.items():
         bull, bear, neu, seen = [], [], [], set()
         for tm, t in uniq_news:
+            if _is_foreign(t):
+                continue
             for k in kws:
                 if k in t and t[:26] not in seen:
                     seen.add(t[:26])
@@ -2049,7 +2070,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V3.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V3.4 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2091,7 +2112,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V3.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V3.4完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
