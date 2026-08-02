@@ -1540,44 +1540,102 @@ SECTOR_KEYWORDS = {
 }
 
 
+# 多空判定词（判断一条催化是利多还是利空）
+BULL_WORDS = ["涨价", "上调", "提价", "缺货", "紧缺", "短缺", "供不应求", "满产",
+              "扩产", "增产能", "新增产能", "订单", "中标", "签约", "获批", "并网",
+              "投产", "量产", "创新高", "增长", "暴增", "大增", "翻倍", "超预期",
+              "回购", "增持", "利好", "受益", "突破", "领先", "第一", "开源",
+              "规划", "支持", "补贴", "减税", "宽松", "降准", "降息", "扩内需",
+              "净利润同比增", "预增", "反弹", "修复", "回暖", "复苏", "看好", "增配"]
+
+BEAR_WORDS = ["暴跌", "大跌", "下跌", "跌破", "跌超", "下滑", "下降", "减产",
+              "停产", "关停", "裁员", "亏损", "预亏", "下修", "下调", "砍单",
+              "取消", "推迟", "延期", "叫停", "禁止", "制裁", "封锁", "调查",
+              "处罚", "罚款", "爆仓", "强平", "去杠杆", "抛售", "净流出", "减持",
+              "溢价风险", "过剩", "降价", "压价", "集采", "降本", "缩水", "warning",
+              "加息", "紧缩", "衰退", "风险", "利空", "承压", "疲软", "低迷"]
+
+
+def _news_polarity(text):
+    """判断一条新闻的多空方向：+1利多 / -1利空 / 0中性"""
+    b = sum(1 for w_ in BULL_WORDS if w_ in text)
+    r = sum(1 for w_ in BEAR_WORDS if w_ in text)
+    if b > r:
+        return 1
+    if r > b:
+        return -1
+    return 0
+
+
 def scan_catalyst_heat(uniq_news):
-    """催化热力图：把新闻映射到板块，按条数排序 —— 谁的催化最密集一目了然"""
+    """催化热力图 V2：新闻映射板块 + 多空方向识别，按【净利多】排序"""
     w("\n" + "=" * 60)
-    w("🔥🔥【催化热力图】新闻自动映射板块 · 谁的催化最密集 🔥🔥")
+    w("🔥🔥【催化热力图·多空版】新闻→板块 + 方向识别 🔥🔥")
     w("=" * 60)
-    w("  （治AI通病：催化分散在不同新闻类目里，看不出是同一个方向）")
+    w("  （V3.2升级：只数条数会误判——油价暴跌10条也是10条，")
+    w("    但那是利空。现在按【净利多 = 利多条数 − 利空条数】排序）")
+
     hits = {}
     for sect, kws in SECTOR_KEYWORDS.items():
-        matched, seen = [], set()
+        bull, bear, neu, seen = [], [], [], set()
         for tm, t in uniq_news:
             for k in kws:
                 if k in t and t[:26] not in seen:
                     seen.add(t[:26])
-                    matched.append((tm, t, k))
+                    p = _news_polarity(t)
+                    (bull if p > 0 else bear if p < 0 else neu).append((tm, t, k))
                     break
-        if matched:
-            hits[sect] = matched
+        if bull or bear or neu:
+            hits[sect] = (bull, bear, neu)
     if not hits:
         w("  本期无命中")
         return
-    ranked = sorted(hits.items(), key=lambda x: len(x[1]), reverse=True)
-    w(f"\n  ★ 催化密度排行（共{len(ranked)}个板块命中）：")
-    for i, (sect, ms) in enumerate(ranked, 1):
-        flag = ""
-        if len(ms) >= 8:
+
+    ranked = sorted(hits.items(), key=lambda x: len(x[1][0]) - len(x[1][1]), reverse=True)
+
+    w("\n  ★ 净利多排行（利多↑ 利空↓ 中性=）：")
+    for i, (sect, (bu, be, ne)) in enumerate(ranked, 1):
+        net = len(bu) - len(be)
+        if net >= 5:
             flag = " 🔥🔥🔥催化爆发·重点关注"
-        elif len(ms) >= 5:
+        elif net >= 3:
             flag = " 🔥🔥催化密集"
-        elif len(ms) >= 3:
+        elif net >= 1:
             flag = " 🔥有催化"
-        w(f"    {i}. {sect}：{len(ms)}条{flag}")
-    w("\n  ★ 前5名板块的具体催化：")
-    for sect, ms in ranked[:5]:
-        w(f"\n  ◆ 【{sect}】{len(ms)}条")
-        for tm, t, k in ms[:6]:
-            w(f"      [{tm}] ({k}) {t[:60]}")
-    w("\n  ⚠️ 判读：催化条数多 ≠ 立刻买。仍需过决策卡①②④⑤")
-    w("     但催化密度前3的板块，AI不许在候选里漏掉它们")
+        elif net <= -3:
+            flag = " ❄️❄️利空密集·回避"
+        elif net <= -1:
+            flag = " ❄️偏空"
+        else:
+            flag = " ⚖️多空平衡"
+        w(f"    {i}. {sect}：净{net:+d}（↑{len(bu)} ↓{len(be)} ={len(ne)}）{flag}")
+
+    w("\n  ★ 净利多前3名的具体利多催化：")
+    shown = 0
+    for sect, (bu, be, ne) in ranked:
+        if len(bu) - len(be) < 1 or shown >= 3:
+            continue
+        shown += 1
+        w(f"\n  ◆ 【{sect}】利多{len(bu)}条 / 利空{len(be)}条")
+        for tm, t, k in bu[:6]:
+            w(f"      ↑[{tm}] ({k}) {t[:58]}")
+        if be:
+            w("      ── 该板块的利空（对冲项）──")
+            for tm, t, k in be[:3]:
+                w(f"      ↓[{tm}] ({k}) {t[:58]}")
+    if shown == 0:
+        w("    ⚠️ 本期无任何板块净利多为正 → 全市场偏空，谨慎")
+
+    w("\n  ★ 利空最密集的板块（明确回避）：")
+    for sect, (bu, be, ne) in ranked[-3:]:
+        net = len(bu) - len(be)
+        if net < 0:
+            w(f"    ❄️ {sect}：净{net:+d}")
+            for tm, t, k in be[:3]:
+                w(f"        ↓[{tm}] ({k}) {t[:58]}")
+
+    w("\n  ⚠️ 判读：净利多≠立刻买，仍需过决策卡①②④⑤")
+    w("     但【净利多前3】不许在候选里漏掉；【净利空】不许推荐")
     w("=" * 60)
 
 
@@ -1826,7 +1884,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V3.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V3.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -1864,8 +1922,9 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V3.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V3.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
     main()
+
