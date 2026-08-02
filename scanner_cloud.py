@@ -18,6 +18,7 @@ import akshare as ak
 import pandas as pd
 
 REPORT = []
+LAST_RISK_SCORE = None
 HIST_FILE = "reports/top_sectors.json"
 CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
@@ -26,18 +27,19 @@ WATCH_FILE = "我的清单.txt"
 # ★重点盯盘（代码, 名称, 标签, 成本价, 止损价, 所属板块名）
 # 成本/止损填0=不算；板块名用于自动带出板块状态
 # ★重点盯盘（代码, 名称, 标签, 成本价, 止损价, 所属板块名）
+# ★重点盯盘（代码, 名称, 标签, 成本, 止损, 板块, 驱动链, 持仓市值万元）
 WATCH_STOCKS = [
-    # 持仓
-    ("159796", "电池ETF汇", "持仓", 0.840, 0.790, "电池"),
-    ("301269", "华大九天", "持仓", 91.999, 84.00, "软件开发"),
-    ("002714", "牧原股份", "持仓", 39.613, 36.50, "养殖业"),
-    # 重点观察
-    ("000066", "中国长城", "重点观察", 0, 0, "计算机设备"),
-    ("002579", "中京电子", "候选·MLCC涨价", 0, 0, "元件"),
-    ("300657", "弘信电子", "候选·MLCC涨价", 0, 0, "元件"),
-    ("300308", "中际旭创", "观察·机构抄底", 0, 0, "通信设备"),
-    ("300502", "新易盛", "观察·机构抄底", 0, 0, "通信设备"),
+    ("000938", "紫光股份", "持仓", 34.681, 29.48, "计算机设备", "AI算力链", 3.1),
+    ("159796", "电池ETF汇", "持仓", 0.840, 0.790, "电池", "锂电/钠电链", 4.7),
+    ("301269", "华大九天", "持仓", 91.999, 84.00, "软件开发", "AI算力链", 0.9),
+    ("002714", "牧原股份", "持仓", 39.613, 36.50, "养殖业", "农业(独立)", 3.1),
+    ("000066", "中国长城", "重点观察", 0, 0, "计算机设备", "AI算力链", 0),
+    ("002579", "中京电子", "候选·MLCC", 0, 0, "元件", "涨价链", 0),
+    ("300657", "弘信电子", "候选·MLCC", 0, 0, "元件", "涨价链", 0),
+    ("300308", "中际旭创", "观察·机构抄底", 0, 0, "通信设备", "AI算力链", 0),
+    ("300502", "新易盛", "观察·机构抄底", 0, 0, "通信设备", "AI算力链", 0),
 ]
+TOTAL_ASSET = 17.6   # 总资产（万元），买卖后AI更新此数
 IND_MAP_FILE = "reports/industry_map.json"
 COLD_HIST_FILE = "reports/cold_low_history.json"
 AMBUSH_HIST_FILE = "reports/ambush_history.json"
@@ -319,6 +321,8 @@ def scan_tomorrow_gate():
         w("    美债收益率飙升+股债双杀 = 市场认为『行动过晚』= 利空成长股")
         w("    美债收益率回落+股涨 = 真鸽派 = 利好成长股")
 
+        global LAST_RISK_SCORE
+        LAST_RISK_SCORE = score
         w(f"\n  🚨 风险分：{score}/12　{'｜'.join(reasons) if reasons else '无警报'}")
         if score >= 7:
             w("  >>> 【明日高危】一票不碰，盈利仓主动减半锁利，破位无条件走")
@@ -501,7 +505,7 @@ def scan_focus_stocks():
             pass
 
         etf_df = None
-        for code6, name, tag, cost, stop, sect in WATCH_STOCKS:
+        for code6, name, tag, cost, stop, sect, chain, mv in WATCH_STOCKS:
             try:
                 is_etf = code6.startswith(("15", "51", "56", "58", "159", "588"))
                 sym = ("sh" if code6.startswith("6") else "sz") + code6
@@ -1887,6 +1891,88 @@ def scan_rule_scorecard():
     w("=" * 60)
 
 
+# ========== ★仓位建议 + 驱动链集中度 + 组合健康度 ==========
+
+def scan_position_advice(risk_score=None):
+    w("\n" + "=" * 60)
+    w("💰【仓位建议 + 驱动链集中度 + 组合健康度】")
+    w("=" * 60)
+
+    if risk_score is not None:
+        if risk_score <= 1:
+            adv, txt = "70-80%", "环境健康，可进攻"
+        elif risk_score <= 3:
+            adv, txt = "50-60%", "中性，正常持仓"
+        elif risk_score <= 6:
+            adv, txt = "30-40%", "偏弱，只减不加"
+        elif risk_score <= 9:
+            adv, txt = "20%以下", "高危，大幅降仓"
+        else:
+            adv, txt = "空仓", "极端风险，清仓观望"
+        w(f"  ★风险分 {risk_score}/12 → 建议仓位 【{adv}】（{txt}）")
+    else:
+        w("  ★风险分未取到，仓位建议跳过")
+
+    held = [(n, ch, mv) for _, n, t, _, _, _, ch, mv in WATCH_STOCKS
+            if t == "持仓" and mv > 0]
+    if not held:
+        w("  无持仓数据")
+        return
+    total_mv = sum(m for _, _, m in held)
+    pos_pct = total_mv / TOTAL_ASSET * 100 if TOTAL_ASSET else 0
+    w(f"  ★当前仓位：{total_mv:.1f}万 / {TOTAL_ASSET:.1f}万 = {pos_pct:.0f}%")
+    if risk_score is not None:
+        lo = {0: 70, 1: 70, 2: 50, 3: 50, 4: 30, 5: 30, 6: 30,
+              7: 0, 8: 0, 9: 0}.get(risk_score, 0)
+        hi = {0: 80, 1: 80, 2: 60, 3: 60, 4: 40, 5: 40, 6: 40,
+              7: 20, 8: 20, 9: 20}.get(risk_score, 0)
+        if pos_pct > hi:
+            w(f"  🔴 超出建议上限{hi}% → 应减 {(pos_pct-hi)/100*TOTAL_ASSET:.1f}万")
+        elif pos_pct < lo:
+            w(f"  🟡 低于建议下限{lo}% → 可加 {(lo-pos_pct)/100*TOTAL_ASSET:.1f}万")
+        else:
+            w("  ✅ 仓位在建议区间内")
+
+    w("\n  ★驱动链集中度（同一条链>40%=危险，7/28全AI链一起挨打的教训）：")
+    chains = {}
+    for n, ch, mv in held:
+        chains.setdefault(ch, []).append((n, mv))
+    warn = False
+    for ch, items in sorted(chains.items(), key=lambda x: -sum(i[1] for i in x[1])):
+        amt = sum(i[1] for i in items)
+        pct = amt / TOTAL_ASSET * 100 if TOTAL_ASSET else 0
+        names = " + ".join(f"{n}{m}万" for n, m in items)
+        flag = " 🔴超40%危险！" if pct > 40 else (" ⚠️接近40%" if pct > 30 else " ✅")
+        if pct > 40:
+            warn = True
+        w(f"    {ch}：{names} = {amt:.1f}万 / {pct:.0f}%{flag}")
+    if warn:
+        w("    🔴 一条链超40% → 该链一崩全仓挨打，必须分散")
+
+    score = 100
+    notes = []
+    if risk_score is not None:
+        if risk_score >= 7 and pos_pct > 30:
+            score -= 30
+            notes.append("高危环境仍重仓")
+        elif risk_score >= 4 and pos_pct > 60:
+            score -= 15
+            notes.append("偏弱环境仓位偏高")
+    mx = max((sum(i[1] for i in v) / TOTAL_ASSET * 100) for v in chains.values())
+    if mx > 40:
+        score -= 25
+        notes.append(f"驱动链集中度{mx:.0f}%")
+    elif mx > 30:
+        score -= 10
+        notes.append(f"驱动链{mx:.0f}%偏高")
+    if len(chains) < 2:
+        score -= 20
+        notes.append("只有1条驱动链")
+    w(f"\n  ★★组合健康度：{max(score,0)}/100" +
+      (f"　问题：{'｜'.join(notes)}" if notes else "　✅无问题"))
+    w("=" * 60)
+
+
 # ========== ★AI推荐台账（自动对账，战绩不靠记忆） ==========
 
 def scan_ledger():
@@ -2070,7 +2156,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V3.4 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V3.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2098,6 +2184,7 @@ def main():
     if not weekend:
         safe_run("埋伏池回测", lambda: backtest_ambush(TODAY_AMBUSH))
         safe_run("热力图回测", lambda: backtest_heat(TODAY_HEAT_TOP3))
+    safe_run("仓位建议", lambda: scan_position_advice(LAST_RISK_SCORE))
     scan_rule_scorecard()
     scan_ledger()
     scan_sell_card()
@@ -2112,7 +2199,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V3.4完成 {prefix}_最新.txt")
+    print(f"\n✅ V3.5完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
