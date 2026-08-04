@@ -1843,6 +1843,26 @@ def backtest_ambush(today_pool):
         w(f"  ✅ 已存档今日埋伏池{len(today_pool)}只，历史{len(hist)}天")
 
 
+HEAT_TO_SECTOR = {
+    "算力/云计算": ["计算机设备", "通信设备", "IT服务", "软件开发"],
+    "存储芯片": ["半导体", "元件", "电子化学品"],
+    "半导体设备/材料": ["半导体", "电子化学品", "非金属材料"],
+    "光模块/CPO": ["通信设备", "光学光电子"],
+    "软件/EDA/AI应用": ["软件开发", "IT服务"],
+    "电力/核电/特高压": ["电力", "电网设备", "输变电设备", "其他电源设备"],
+    "锂电/钠电": ["电池", "能源金属", "小金属"],
+    "机器人": ["自动化设备", "通用设备", "电机"],
+    "创新药/医药": ["医疗服务", "化学制药", "生物制品", "中药"],
+    "军工/航天": ["航天装备", "航空装备", "军工电子", "地面兵装"],
+    "油气/煤炭": ["油气开采", "炼化及贸易", "煤炭开采", "焦炭"],
+    "有色/稀土": ["小金属", "工业金属", "贵金属", "能源金属"],
+    "消费/食饮": ["白酒", "食品加工", "饮料乳品", "休闲食品"],
+    "汽车/新能源车": ["汽车整车", "汽车零部件", "汽车服务"],
+    "养殖/农业": ["养殖业", "饲料", "农产品加工"],
+    "影视/传媒/游戏": ["影视院线", "游戏", "广告营销", "出版"],
+}
+
+
 def backtest_heat(top3):
     """热力图回测：净利多前3的板块，之后真的跑赢吗"""
     w("\n" + "=" * 60)
@@ -1874,10 +1894,16 @@ def backtest_heat(top3):
         w(f"\n  ◆ {base} 的净利多前3 → 今日表现：")
         hit = 0
         for sect in rec.get("top3", []):
-            matched = [(k, v) for k, v in cur.items()
-                       if any(x in k for x in sect.replace("/", " ").split())]
+            targets = HEAT_TO_SECTOR.get(sect, sect.replace("/", " ").split())
+            matched = []
+            for k, v in cur.items():
+                if any(t in k or k in t for t in targets):
+                    matched.append((k, v))
             if matched:
-                k, v = matched[0]
+                # 取该组板块的平均涨跌，比只取第一个准
+                avg = sum(x[1] for x in matched) / len(matched)
+                k = "、".join(x[0] for x in matched[:3])
+                v = avg
                 flag = "✅跑赢" if v > 0 else "❌未兑现"
                 w(f"    {sect} → 对应[{k}] {v:+.2f}% {flag}")
                 if v > 0:
@@ -2497,11 +2523,16 @@ def scan_ledger():
                 w(f"  {d} {name}({code}) @{cost} [{typ}类] → 取价失败")
                 continue
             pnl = (price - cost) / cost * 100
-            if pnl > 0:
+            # ★胜利标准（V4.4）：≥10%才算赚钱，扣掉手续费/印花税/滑点后才有意义
+            if pnl >= 10:
                 win += 1
+                flag = "✅赚钱"
+            elif pnl > 0:
+                lose += 0
+                flag = "⏳在途(未达10%不算赚)"
             else:
                 lose += 1
-            flag = "✅" if pnl > 0 else "❌"
+                flag = "❌"
             extra = ""
             if typ == "A":
                 extra = f" ⚠️事件仓已持有{days}天，事件仓不该超3天"
@@ -2509,7 +2540,9 @@ def scan_ledger():
                 extra = f" 周期仓第{days}天/{period}"
             w(f"  {flag} {d} {name}({code}) @{cost}→{price} {pnl:+.2f}% [{typ}类]{extra}")
             w(f"       逻辑破的定义：{broken}")
-        w(f"\n  ★战绩：{win}胜 {lose}负")
+        w(f"\n  ★战绩：{win}胜(≥10%) {lose}负")
+        w("  ⚠️ 胜利标准=盈利≥10%。低于10%只算『在途』，")
+        w("     扣手续费/印花税/滑点后基本无利润，不许当成功。")
         w("  ⚠️ A类事件仓超期未走 = 违反铁律，立即处理")
         w("  ⚠️ B类周期仓在期内跌5-8% = 噪音，不许砍（铁律F）")
     safe_run("推荐台账", _do)
@@ -2647,7 +2680,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V4.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V4.4 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2692,7 +2725,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V4.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V4.4完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
