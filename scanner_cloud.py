@@ -2162,6 +2162,113 @@ def scan_deduction(uniq_news, heat_top=None):
     w("=" * 60)
 
 
+# ========== ★买入后复核（防御系统核心：提早发现"我买错了"） ==========
+# 用户原话："做错方向不可怕，提早发现做错并及时止损才是真正厉害的地方"
+# 卖出卡管的是【逻辑破了】(外部变了)；本模块管的是【我当初就判断错了】(内部错了)
+
+# 买入时的关键判据快照（AI每次推荐后必须填这张表）
+ENTRY_SNAPSHOT = {
+    "603220": {"name": "中贝通信", "date": "2026-08-04",
+               "sector": "通信服务", "sector_fund": "+103.74亿(通信设备全场第一)",
+               "sector_day": "连3天", "ambush": "冷低早量比1.31(暗流)",
+               "key": "AI算力capex 7500亿 + 冷低早90%胜率"},
+    "159611": {"name": "电力ETF广", "date": "2026-08-03",
+               "sector": "电力", "sector_fund": "+21.61亿",
+               "sector_day": "连2天", "ambush": "⚠️封单大但机构零参与(当时误判为埋伏)",
+               "key": "十五五电力规划 + 8台核电1700亿"},
+    "000938": {"name": "紫光股份", "date": "2026-07-31",
+               "sector": "计算机设备", "sector_fund": "板块流入",
+               "sector_day": "🆕第1天", "ambush": "✅机构净买5.06亿(占92%)",
+               "key": "算力网4万亿 + 云厂capex"},
+    "159796": {"name": "电池ETF汇", "date": "2026-07-27",
+               "sector": "电池", "sector_fund": "+68.14亿(全场第一)",
+               "sector_day": "🆕第1天", "ambush": "⚠️埋伏池为空",
+               "key": "9/1消费税倒计时"},
+    "301269": {"name": "华大九天", "date": "2026-07-27",
+               "sector": "软件开发", "sector_fund": "+57.9亿",
+               "sector_day": "🆕第1天", "ambush": "⚠️埋伏池为空",
+               "key": "国产EDA替代"},
+    "002714": {"name": "牧原股份", "date": "2026-07-10",
+               "sector": "养殖业", "sector_fund": "—",
+               "sector_day": "—", "ambush": "—",
+               "key": "⚠️政治局'稳定生猪价格'(事后发现是中性表述，非利好)"},
+}
+
+
+def scan_entry_review():
+    """买入后复核：用今天的数据，重新审当初的判断对不对"""
+    w("\n" + "=" * 60)
+    w("🛡️【买入后复核·防御核心】提早发现『我当初就买错了』")
+    w("=" * 60)
+    w("  卖出卡管【逻辑破了】(外部变)；本模块管【我判断错了】(内部错)")
+    w("  ⚠️ 两者都要走，但触发条件不同：")
+    w("     逻辑破 → 按买入时写死的定义走")
+    w("     判断错 → 关键判据反转即走，不必等逻辑破")
+
+    def _do():
+        _, bdf = multi_source("板块(复核)", [
+            ("同花顺", lambda: ak.stock_fund_flow_industry(symbol="即时")),
+            ("东财", lambda: ak.stock_sector_fund_flow_rank(
+                indicator="今日", sector_type="行业资金流")),
+        ])
+        cur = {}
+        if bdf is not None:
+            bn = pick_col(bdf, ["名称", "行业", "板块"])
+            bp = pick_col(bdf, ["涨跌幅", "行业指数涨跌", "涨跌"])
+            bv = pick_col(bdf, ["主力净流入-净额", "主力净流入", "净额", "流入资金"])
+            for _, r in bdf.iterrows():
+                v = pd.to_numeric(r[bv], errors="coerce") if bv else None
+                if v is not None and pd.notna(v) and abs(v) > 1e6:
+                    v = v / 1e8
+                p = pd.to_numeric(r[bp], errors="coerce") if bp else None
+                cur[str(r[bn])] = (p, v)
+
+        for code, snap in ENTRY_SNAPSHOT.items():
+            w(f"\n  ◆ {snap['name']}({code})  买入日 {snap['date']}")
+            w(f"     当初理由：{snap['key']}")
+            w(f"     当初板块：{snap['sector']} 资金{snap['sector_fund']} {snap['sector_day']}")
+            w(f"     当初游资：{snap['ambush']}")
+            flags = []
+            # 复核1：买入时⑤就是"埋伏池为空/追高型" = 当初判据本身有瑕疵
+            if "⚠️" in snap["ambush"]:
+                flags.append("买入时⑤游资项就有瑕疵（当时不该给A级）")
+            if "⚠️" in snap["key"]:
+                flags.append("买入理由本身存疑（事后发现误读）")
+            # 复核2：板块资金是否反转
+            hit = None
+            for k, (p, v) in cur.items():
+                if snap["sector"] in k or k in snap["sector"]:
+                    hit = (k, p, v)
+                    break
+            if hit:
+                k, p, v = hit
+                pt = f"{p:+.2f}%" if p is not None and pd.notna(p) else "?"
+                vt = f"{v:+.2f}亿" if v is not None and pd.notna(v) else "?"
+                w(f"     今日板块：[{k}] {pt} 资金{vt}")
+                if v is not None and pd.notna(v) and v < -10 and "+" in snap["sector_fund"]:
+                    flags.append(f"板块资金从流入反转为流出{v:.1f}亿")
+            else:
+                w("     今日板块：无数据")
+
+            if not flags:
+                w("     ✅【初判成立】关键判据未反转，按原计划持有")
+            elif len(flags) == 1:
+                w(f"     ⚠️【初判存疑】{flags[0]}")
+                w("        → 建议：不加仓，反弹减半，止损上移")
+            else:
+                w("     🔴【初判已错】" + "；".join(flags))
+                w("        → 建议：不等逻辑破，直接减仓或退出")
+                w("        （这就是『提早发现做错』——比等逻辑破更早）")
+
+        w("\n  ⚠️ 铁律J（V4.1新增）：")
+        w("    买入后48小时内，必须用新数据复核一次关键判据")
+        w("    ①板块资金反转 ②游资从埋伏变追高 ③买入理由被证伪")
+        w("    → 命中2项 = 初判已错 = 立刻减仓，不许等逻辑破")
+        w("    ★区别：逻辑破=外部变了(认赔)；初判错=我看错了(认错)")
+        w("      认错要比认赔更快，因为错的是起点不是过程")
+    safe_run("买入后复核", _do)
+
+
 # ========== ★埋伏信号转化率（治"识别到却不买"） ==========
 # 高价股/买不起的票 → 自动映射到可买的ETF
 HIGH_PRICE_ETF = {
@@ -2413,7 +2520,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V4.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V4.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2443,6 +2550,7 @@ def main():
         safe_run("热力图回测", lambda: backtest_heat(TODAY_HEAT_TOP3))
     safe_run("仓位建议", lambda: scan_position_advice(LAST_RISK_SCORE))
     scan_rule_scorecard()
+    safe_run("买入后复核", scan_entry_review)
     scan_signal_conversion()
     scan_ledger()
     scan_sell_card()
@@ -2457,7 +2565,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V4.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V4.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
