@@ -1146,7 +1146,9 @@ def _cold_archive_and_backtest(hits, spot, c_code, c_name, c_price):
                 continue
         n = len(recs) if recs else 1
         w(f"    ★5日胜率：{win}/{len(recs)} | 平均收益 {tot/n:+.2f}%")
-        if tot / n < 0:
+        if len(recs) < 5:
+            w(f"    ⚠️ 样本仅{len(recs)}只，统计无意义，不下结论（需≥5只）")
+        elif tot / n < 0:
             w("    ⚠️ 平均为负 → 这个筛选器当前参数在这种行情下无效，")
             w("       不要照单买，必须配合板块启动信号")
     else:
@@ -1829,8 +1831,14 @@ def backtest_ambush(today_pool):
         if n:
             wr = win / n * 100
             avg = tot / n
-            verdict = "✅铁律B成立，可信" if wr >= 55 and avg > 0 else \
-                      ("⚠️边缘，谨慎用" if wr >= 45 else "❌铁律B在当前行情不成立，停止依赖")
+            if n < 5:
+                verdict = f"⚠️样本仅{n}只，统计无意义，不下结论（需≥5只）"
+            elif wr >= 55 and avg > 0:
+                verdict = "✅铁律B成立，可信"
+            elif wr >= 45:
+                verdict = "⚠️边缘，谨慎用"
+            else:
+                verdict = "❌铁律B在当前行情不成立，停止依赖"
             w(f"\n  ◆ {base} 那批（{n}只）{label}后：")
             w(f"    胜率 {win}/{n} = {wr:.1f}% | 平均收益 {avg:+.2f}% → {verdict}")
             for nm, p in sorted(detail, key=lambda x: -x[1])[:5]:
@@ -1936,7 +1944,12 @@ def scan_rule_scorecard():
     ]:
         d = _bt_load(f)
         n = len(d)
-        st = f"已积累{n}天" + ("（够了，看上面胜率）" if n >= 5 else "（需≥5天）")
+        total_samples = sum(len(v) if isinstance(v, list) else
+                            len(v.get("top3", [])) if isinstance(v, dict) else 0
+                            for v in d.values())
+        st = (f"已积累{n}天/{total_samples}个样本" +
+              ("（够了，看上面胜率）" if n >= 5 and total_samples >= 15
+               else "（需≥5天且≥15样本）"))
         w(f"  {name:<22} {how:<18} {st}")
     w("\n  ⚠️ 铁律：任何规则连续验证胜率<45%，立即停用，不许再拿它推荐")
     w("  ⚠️ AI不许说『这条规则有用』，只许说『它的历史胜率是X%』")
@@ -2701,7 +2714,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V4.6 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V4.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2746,7 +2759,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V4.6完成 {prefix}_最新.txt")
+    print(f"\n✅ V4.7完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
