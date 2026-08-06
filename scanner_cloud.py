@@ -1769,6 +1769,7 @@ def scan_news():
 
     scan_catalyst_heat(uniq)
     scan_deduction(uniq, TODAY_HEAT_TOP3)
+    scan_all_sector_cross(uniq)
     scan_deep_meaning(uniq, TODAY_AMBUSH)
     scan_announcements()
     scan_unexplained()
@@ -2745,7 +2746,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V4.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2790,7 +2791,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V4.9完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
