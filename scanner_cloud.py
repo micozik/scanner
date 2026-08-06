@@ -2191,6 +2191,208 @@ DEDUCTION_CHAINS = [
 ]
 
 
+ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "增资",
+                 "预增", "扭亏", "业绩", "投资", "定增", "回购", "增持",
+                 "资质", "许可", "获批", "量产", "投产", "涨价", "扩产",
+                 "英伟达", "华为", "特斯拉", "苹果", "台积电", "算力"]
+
+
+def scan_announcements():
+    """公司公告雷达：补快讯盲区（通宇通讯收购案的教训）"""
+    w("\n" + "=" * 60)
+    w("📢【公司公告雷达】补快讯盲区 —— 涨停背后的真实原因")
+    w("=" * 60)
+    d = now_beijing().strftime("%Y%m%d")
+
+    def _do():
+        df = None
+        for fn in [lambda: ak.stock_notice_report_em(symbol="全部", date=d),
+                   lambda: ak.stock_notice_report_em(symbol="重大事项", date=d)]:
+            try:
+                r = with_retry(fn, tries=1, wait=2, timeout=40)
+                if r is not None and len(r) > 0:
+                    df = r
+                    break
+            except Exception:
+                continue
+        if df is None:
+            w("  [报空] 公告源不可用")
+            return
+        c_name = pick_col(df, ["名称", "股票简称", "简称"])
+        c_code = pick_col(df, ["代码", "股票代码"])
+        c_title = pick_col(df, ["公告标题", "标题"])
+        if not c_title:
+            w(f"  [报空] 缺标题列 {list(df.columns)[:6]}")
+            return
+        hits = []
+        for _, r in df.iterrows():
+            try:
+                t = str(r[c_title])
+                if any(k in t for k in ANNOUNCE_KEYS):
+                    nm = str(r[c_name]) if c_name else ""
+                    cd = str(r[c_code])[-6:] if c_code else ""
+                    hits.append((nm, cd, t))
+            except Exception:
+                continue
+        w(f"  （共{len(df)}条公告，关键词命中{len(hits)}条）")
+        for nm, cd, t in hits[:25]:
+            w(f"    ▸ {nm}({cd}) {t[:52]}")
+        globals()["TODAY_ANNOUNCE"] = {h[1]: h[2] for h in hits}
+    safe_run("公司公告雷达", _do)
+
+
+def scan_unexplained():
+    """异动未解释清单：涨停但说不出原因=盲区，AI必须主动搜"""
+    w("\n" + "=" * 60)
+    w("❓【异动未解释清单】说不出原因 = 盲区，AI必须主动搜索")
+    w("=" * 60)
+    w("  ★铁律M：涨停股如果我说不出它为什么涨，就是我的信息盲区")
+
+    def _do():
+        ann = globals().get("TODAY_ANNOUNCE", {})
+        try:
+            zt = with_retry(lambda: ak.stock_zt_pool_em(
+                date=now_beijing().strftime("%Y%m%d")), tries=1, timeout=45)
+        except Exception:
+            zt = None
+        if zt is None or len(zt) == 0:
+            w("  涨停池无数据")
+            return
+        z_name = pick_col(zt, ["名称"])
+        z_code = pick_col(zt, ["代码"])
+        z_ind = pick_col(zt, ["所属行业", "行业"])
+        if not z_name or not z_code:
+            w("  [报空] 涨停池缺字段")
+            return
+        explained, unknown = [], []
+        for _, r in zt.iterrows():
+            try:
+                cd = str(r[z_code])[-6:].zfill(6)
+                nm = str(r[z_name])
+                ind = str(r[z_ind]) if z_ind else ""
+                if cd in ann:
+                    explained.append((nm, cd, ind, ann[cd][:36]))
+                else:
+                    unknown.append((nm, cd, ind))
+            except Exception:
+                continue
+        w(f"\n  ✅有公告解释（{len(explained)}只）：")
+        for nm, cd, ind, t in explained[:12]:
+            w(f"    {nm}({cd})[{ind}] ← {t}")
+        w(f"\n  ❓无公告解释（{len(unknown)}只）→ ★AI必须逐个追问★")
+        for nm, cd, ind in unknown[:20]:
+            w(f"    {nm}({cd})[{ind}] ← 原因未知，需主动搜索")
+        w("\n  ⚠️ ①同行业≥3只无解释涨停→板块级消息，去搜行业新闻")
+        w("     ②AI必须写『我查了，原因是XXX』或『我查不到』，不许跳过")
+    safe_run("异动未解释", _do)
+
+
+def scan_all_sector_cross(uniq_news):
+    """全板块×新闻自动交叉：477个板块逐个扫，绝对不漏（V5.0核心）"""
+    w("\n" + "=" * 60)
+    w("🌐🌐【全板块 × 新闻 自动交叉】477个板块逐个扫 · 绝对不漏 🌐🌐")
+    w("=" * 60)
+    w("  逻辑：手工词典必漏；直接用市场公认的行业+概念分类去撞新闻")
+    w("       板块有新闻催化 + 位置好(刚启动) = 真机会")
+
+    def _do():
+        rows = []
+        for tag, fn, nk, pk in [
+            ("行业", lambda: ak.stock_fund_flow_industry(symbol="即时"),
+             ["行业", "名称", "板块"], ["涨跌幅", "行业指数涨跌", "涨跌"]),
+            ("概念", lambda: ak.stock_fund_flow_concept(symbol="即时"),
+             ["行业", "概念名称", "名称", "板块"], ["涨跌幅", "行业指数涨跌", "涨跌"]),
+        ]:
+            try:
+                df = with_retry(fn, tries=1, wait=2, timeout=40)
+                if df is None or len(df) == 0:
+                    w(f"  [跳过] {tag}源空")
+                    continue
+                nc = pick_col(df, nk)
+                pc = pick_col(df, pk)
+                if not nc:
+                    w(f"  [跳过] {tag}缺名称列 {list(df.columns)[:6]}")
+                    continue
+                for _, r in df.iterrows():
+                    try:
+                        v = pd.to_numeric(r[pc], errors="coerce") if pc else None
+                        rows.append((tag, str(r[nc]), v))
+                    except Exception:
+                        continue
+            except Exception as e:
+                w(f"  [跳过] {tag}：{type(e).__name__}")
+
+        if not rows:
+            w("  [报空] 板块数据不可用")
+            return
+        w(f"  （共扫描 {len(rows)} 个板块）")
+
+        SKIP = {"其他", "综合", "综合Ⅱ", "证金持股", "融资融券", "沪股通",
+                "深股通", "标准普尔", "MSCI中国", "富时罗素", "预盈预增",
+                "转债标的", "破净股", "低价股", "高送转", "壳资源"}
+        results = []
+        for kind, name, chg in rows:
+            nm = str(name).strip()
+            if not nm or nm in SKIP or len(nm) < 2:
+                continue
+            keys = {nm}
+            for suf in ["概念", "行业", "板块", "Ⅱ", "Ⅲ", "指数", "产业"]:
+                if nm.endswith(suf) and len(nm) > len(suf) + 1:
+                    keys.add(nm[: -len(suf)])
+            keys = {k for k in keys if len(k) >= 2}
+            bull, bear, seen = [], [], set()
+            for tm, t in uniq_news:
+                if t[:24] in seen:
+                    continue
+                try:
+                    if _is_foreign(t):
+                        continue
+                except Exception:
+                    pass
+                if any(k in t for k in keys):
+                    seen.add(t[:24])
+                    try:
+                        p = _news_polarity(t)
+                    except Exception:
+                        p = 0
+                    (bull if p >= 0 else bear).append((tm, t))
+            net = len(bull) - len(bear)
+            if len(bull) + len(bear) < 2:
+                continue
+            pos = 0
+            if chg is not None and pd.notna(chg):
+                c = float(chg)
+                pos = 3 if c < 0 else (2 if c < 1.5 else (1 if c < 4 else -1))
+            results.append((net * 2 + pos, kind, nm, chg, net,
+                            len(bull), len(bear), bull))
+
+        if not results:
+            w("  今日无板块命中≥2条新闻")
+            return
+        results.sort(key=lambda x: -x[0])
+        w("\n  ★★【有催化 且 位置好】前15（净利多×2 + 位置分）：")
+        w("    位置分：跌着有催化=3 | 微涨<1.5%=2 | 涨1.5-4%=1 | 涨>4%=-1")
+        for i, (sc, kind, nm, chg, net, nb, nr, _) in enumerate(results[:15], 1):
+            ct = f"{chg:+.2f}%" if chg is not None and pd.notna(chg) else "?"
+            flag = ""
+            if chg is not None and pd.notna(chg):
+                if float(chg) < 1.5 and net >= 2:
+                    flag = " 🔥★有催化但还没涨★"
+                elif float(chg) > 4:
+                    flag = " ⚠️已大涨"
+            w(f"    {i:2d}. [{kind}]{nm} {ct} 新闻净{net:+d}(↑{nb}↓{nr}) 得分{sc}{flag}")
+        w("\n  ★前5名的具体新闻催化：")
+        for sc, kind, nm, chg, net, nb, nr, bull in results[:5]:
+            ct = f"{chg:+.2f}%" if chg is not None and pd.notna(chg) else "?"
+            w(f"\n  ◆【{nm}】{ct} 得分{sc}")
+            for tm, t in bull[:4]:
+                w(f"      ▸[{tm}] {t[:56]}")
+        w("\n  ⚠️ 铁律N：★『有催化但还没涨』的板块 = 明天首选★")
+        w("    手工词典必漏，全板块交叉才不漏。")
+        w("    仍需过①-B：这个板块的驱动，和它涨的原因是同一个吗？")
+    safe_run("全板块交叉", _do)
+
+
 def scan_deduction(uniq_news, heat_top=None):
     """产业链推演：从已发生的事实，推出还没被市场发现的下游"""
     w("\n" + "=" * 60)
@@ -2771,7 +2973,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2816,7 +3018,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
