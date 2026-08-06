@@ -197,6 +197,7 @@ def scan_skeleton_top():
     w("  ⑦ 持仓逐个指令（持有/减/清 + 理由）")
     w("  ⑧ AI推荐台账对账（A类超期？B类在期内？）")
     w("  ⑨ 【系统自检】今天发现什么漏洞→怎么修（无则写无）")
+    w("  ⑩ ★异动未解释清单★：涨停股说不出原因=盲区，必须主动搜索后回答")
     w("")
     w("  ⚠️ 缺任何一节 = 失职，用户可当场追责")
     w("  ⚠️ 越是『崩了/快看/紧急』的时候越容易漏第⑤节，越要先写它")
@@ -1580,6 +1581,7 @@ SECTOR_KEYWORDS = {
 
 # 多空判定词（判断一条催化是利多还是利空）
 TODAY_HEAT_TOP3 = []
+TODAY_ANNOUNCE = {}
 
 BULL_WORDS = ["涨价", "上调", "提价", "缺货", "紧缺", "短缺", "供不应求", "满产",
               "扩产", "增产能", "新增产能", "订单", "中标", "签约", "获批", "并网",
@@ -1764,6 +1766,8 @@ def scan_news():
     scan_catalyst_heat(uniq)
     scan_deduction(uniq, TODAY_HEAT_TOP3)
     scan_deep_meaning(uniq, TODAY_AMBUSH)
+    scan_announcements()
+    scan_unexplained()
 
 
 
@@ -2714,7 +2718,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V4.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V4.8 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -2759,7 +2763,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V4.7完成 {prefix}_最新.txt")
+    print(f"\n✅ V4.8完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
