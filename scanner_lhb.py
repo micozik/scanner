@@ -242,11 +242,95 @@ def scan_jg():
         w(f"  [报空] 机构席位：{type(e).__name__}")
 
 
+
+# ★高价股→可买ETF（一手>总资产10%就给ETF，不许说"买不起"）
+HIGH_PRICE_ETF = {
+    "中际旭创": "通信ETF 515880 / 光模块ETF 159516",
+    "新易盛": "通信ETF 515880 / 光模块ETF 159516",
+    "天孚通信": "通信ETF 515880",
+    "寒武纪": "科创芯片ETF 588200",
+    "海光信息": "科创芯片ETF 588200",
+    "北方华创": "半导体设备ETF 561980",
+    "中微公司": "半导体设备ETF 561980",
+    "长鑫科技": "科创芯片ETF 588200",
+    "生益科技": "电子ETF 515260",
+    "药明康德": "创新药ETF 516080",
+}
+TOTAL_ASSET_WAN = 18.3      # 总资产(万)，买卖后更新
+
+
+def gen_order(ambush, jg_rows=None):
+    """★强制下单指令：把埋伏信号直接变成可执行的买点+止损+仓位
+    治转化率0%：7/28中际旭创+19.6%、7/30长电科技、8/3德明利 三次全错过"""
+    w("\n" + "=" * 60)
+    w("🔫🔫【强制下单指令】机构在跌的票砸钱 = 直接给买点，不许说观察 🔫🔫")
+    w("=" * 60)
+    w("  ★铁律H：识别到机构埋伏=必须当场给可执行标的★")
+    w("  ★历史转化率0%：7/28中际旭创(后+19.6%)、7/30长电科技、8/3德明利")
+    w("    三次识别全对，三次都只说『观察』→ 全部错过")
+
+    orders = []
+    for item in (ambush or []):
+        try:
+            nm, cd, pct, net = item[0], item[1], item[2], item[3]
+        except Exception:
+            continue
+        amt = None
+        try:
+            amt = float(net) if net is not None else None
+        except Exception:
+            pass
+        # 门槛：净买≥1亿 且 当天下跌
+        if amt is None or amt < 1.0 or (pct is not None and pct >= 0):
+            continue
+        orders.append((amt, nm, cd, pct))
+
+    if not orders:
+        w("\n  今日无【机构/游资在跌的票上净买≥1亿】的标的")
+        w("  → 明确结论：今晚不产生下单指令（不硬凑，铁律D）")
+        return
+    orders.sort(key=lambda x: -x[0])
+
+    w(f"\n  ★★今日触发下单条件 {len(orders)} 只 —— 逐个给指令★★\n")
+    for i, (amt, nm, cd, pct) in enumerate(orders[:5], 1):
+        etf = None
+        for k, v in HIGH_PRICE_ETF.items():
+            if k in nm:
+                etf = v
+                break
+        w(f"  ══════ 指令{i}：{nm}({cd}) ══════")
+        w(f"    信号：今日{pct:+.2f}% 被净买 {amt:.2f}亿（跌着被买=埋伏型）")
+        if etf:
+            w(f"    ⚠️ 股价高，一手可能>总资产10% → ★改买ETF：{etf}★")
+            w("       （铁律H②：个股太贵就给ETF，不许说买不起）")
+        else:
+            w(f"    🎯 标的：{nm}({cd}) —— 直接买个股")
+        w("    ─────────────────────────")
+        w("    【买点】次日开盘不追高：")
+        w("      · 低开或平开 → 直接买")
+        w("      · 高开>5% → 等回踩到分时均价")
+        w("      · 高开>9% → 放弃，改等第2个回踩日")
+        w(f"    【仓位】{TOTAL_ASSET_WAN*0.11:.1f}万（约总资产11%，单笔上限）")
+        w("    【止损】-12%（机构建仓要时间，给足空间）")
+        w("    【类型】B类周期仓，最少持有3个交易日")
+        w("      ★铁律H④：信号次日若下跌，不算信号错，不许当天砍")
+        w("    【兑现】+10%减半锁利，剩余移动止盈(最高点回落5%)")
+        w("    【逻辑破】①该板块连续3天资金流出 ②机构次日在龙虎榜净卖出")
+        w("")
+
+    w("  ⚠️ 执行纪律（写死，不许绕过）：")
+    w("    1. 上面每条指令都是【可直接下单】的，不是建议")
+    w("    2. AI在对话里不许把它降级为『观察』『关注』『等明天验证』")
+    w("    3. 若因仓位不足只能选一只 → 选净买额最大的那只")
+    w("    4. 若全部是高价股 → 买对应ETF，仍然要下单")
+    w("=" * 60)
+
+
 def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V1.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V2.0 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     if bj.weekday() >= 5:
         w("周末无龙虎榜数据")
@@ -256,6 +340,7 @@ def main():
     ambush, chase = scan_lhb()
     scan_hot_money()
     scan_jg()
+    gen_order(ambush)
 
     w("\n" + "=" * 60)
     w("★★★【明日作战提示】★★★")
