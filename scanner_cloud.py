@@ -1790,6 +1790,7 @@ def scan_news():
     scan_deduction(uniq, TODAY_HEAT_TOP3)
     scan_all_sector_cross(uniq)
     scan_deep_meaning(uniq, TODAY_AMBUSH)
+    scan_launch_radar()
     scan_stock_picker()
     scan_announcements()
     scan_unexplained()
@@ -2204,6 +2205,82 @@ ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "�
                  "预增", "扭亏", "业绩", "投资", "定增", "回购", "增持",
                  "资质", "许可", "获批", "量产", "投产", "涨价", "扩产",
                  "英伟达", "华为", "特斯拉", "苹果", "台积电", "算力"]
+
+
+def scan_launch_radar():
+    """启动日雷达：排名跳升≥30位=当天必须出手（V5.6核心）"""
+    w("\n" + "=" * 60)
+    w("🚀🚀【启动日雷达】排名跳升≥30位 = 当天必须出手 🚀🚀")
+    w("=" * 60)
+    w("  ★不看涨幅，只看排名跳升★")
+    w("  涨幅大=已经涨完；排名跳升大=资金刚进来")
+    w("  教训：8/6医疗服务跳61位我只提一句，8/7才推 → 慢一天=最肥的没了")
+
+    def _do():
+        moved = []
+        for f, kind in [(HIST_FILE, "行业"), (CONCEPT_FILE, "概念")]:
+            try:
+                if not os.path.exists(f):
+                    continue
+                with open(f, "r", encoding="utf-8") as fp:
+                    hist = json.load(fp)
+            except Exception:
+                continue
+            if not isinstance(hist, dict):
+                continue
+            days = sorted(hist.keys())
+            if len(days) < 2:
+                continue
+
+            def _rank(obj):
+                out = {}
+                lst = obj if isinstance(obj, list) else (
+                    obj.get("list") or obj.get("data") or [])
+                for i, x in enumerate(lst, 1):
+                    if isinstance(x, dict):
+                        nm = x.get("name") or x.get("板块") or x.get("名称")
+                        cg = x.get("chg") or x.get("涨跌幅")
+                    else:
+                        nm, cg = str(x), None
+                    if nm:
+                        out[str(nm)] = (i, cg)
+                return out
+
+            pr = _rank(hist[days[-2]])
+            cu = _rank(hist[days[-1]])
+            for nm, (i, cg) in cu.items():
+                if nm not in pr:
+                    continue
+                jump = pr[nm][0] - i
+                if jump >= 30:
+                    try:
+                        cgv = float(cg) if cg is not None else None
+                    except Exception:
+                        cgv = None
+                    moved.append((jump, kind, nm, i, pr[nm][0], cgv))
+        if not moved:
+            w("  今日无板块排名跳升≥30位")
+            w("  （若历史库不足2天或结构不匹配，明天起生效）")
+            return
+        moved.sort(key=lambda x: -x[0])
+        w(f"\n  ★★今日跳升≥30位的板块（共{len(moved)}个）：")
+        for jump, kind, nm, now_r, old_r, cg in moved[:15]:
+            ct = f" {cg:+.2f}%" if cg is not None else ""
+            flag = ""
+            if cg is not None:
+                if cg < 2:
+                    flag = " 🔥★刚启动+涨幅小=最佳买点★"
+                elif cg < 4:
+                    flag = " 🔥可上"
+                else:
+                    flag = " ⚠️已涨多，等回踩"
+            w(f"    [{kind}]{nm}{ct} 🚀{old_r}→{now_r}名（跳{jump}位）{flag}")
+        w("\n  ⚠️ 铁律Q（V5.6）：★排名跳升≥30位 = 当天必须给个股★")
+        w("    ①跳升≥50位 + 当天涨幅<3% = 最高优先级，立刻出手")
+        w("    ②不许说『明天验证』——启动日就是最佳买点，第2天就贵了")
+        w("    ③从该板块挑：今天涨幅最小 + 主力净流入 + 60日低位的个股")
+        w("    ④涨幅大不是理由：涨幅大=已涨完；跳升大=资金刚进来")
+    safe_run("启动日雷达", _do)
 
 
 def scan_stock_picker():
@@ -3002,6 +3079,11 @@ def scan_ledger():
         w("     扣手续费/印花税/滑点后基本无利润，不许当成功。")
         w("  ⚠️ A类事件仓超期未走 = 违反铁律，立即处理")
         w("  ⚠️ B类周期仓在期内跌5-8% = 噪音，不许砍（铁律F）")
+    w("  ⚠️ ★铁律R（V5.6）：达+10%即可分批兑现，不必死守全周期★")
+    w("     持有周期是【最长期限】，不是【必须期限】")
+    w("     +10% → 减半锁利，剩余仓位设移动止盈(从最高点回落5%)")
+    w("     +20% → 再减半，剩余当免费仓")
+    w("     用户原话：『潜伏一两个月就没意思了』")
     safe_run("推荐台账", _do)
 
 
@@ -3163,7 +3245,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.6 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3208,7 +3290,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.5完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.6完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
