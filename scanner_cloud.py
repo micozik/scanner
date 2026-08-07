@@ -29,16 +29,16 @@ WATCH_FILE = "我的清单.txt"
 # ★重点盯盘（代码, 名称, 标签, 成本价, 止损价, 所属板块名）
 # ★重点盯盘（代码, 名称, 标签, 成本, 止损, 板块, 驱动链, 持仓市值万元）
 WATCH_STOCKS = [
-    ("159796", "电池ETF汇", "持仓", 0.840, 0.790, "电池", "锂电/钠电链", 4.87),
-    ("000938", "紫光股份", "持仓", 34.681, 29.48, "计算机设备", "AI算力链", 3.32),
-    ("002714", "牧原股份", "持仓", 39.613, 36.50, "养殖业", "农业(独立)", 3.07),
-    ("159934", "黄金ETF易", "持仓", 8.938, 8.20, "贵金属", "贵金属链", 1.26),
-    ("603220", "中贝通信", "持仓", 18.396, 16.19, "通信服务", "AI算力链", 1.17),
-    ("301269", "华大九天", "持仓", 91.999, 84.00, "软件开发", "AI算力链", 0.93),
+    ("000938", "紫光股份", "持仓", 34.681, 29.48, "计算机设备", "AI算力链", 3.38),
+    ("159796", "电池ETF汇", "持仓", 0.820, 0.760, "电池", "锂电/钠电链", 2.40),
+    ("603220", "中贝通信", "持仓", 18.396, 16.19, "通信服务", "AI算力链", 1.18),
+    ("159934", "黄金ETF易", "持仓", 8.938, 8.20, "贵金属", "贵金属链", 1.29),
+    ("516080", "创新药ETF", "持仓", 0.710, 0.640, "医疗服务", "医药链", 2.00),
+    ("002714", "牧原股份", "持仓", 39.613, 36.50, "养殖业", "农业(独立)", 3.10),
     ("000066", "中国长城", "重点观察", 0, 0, "计算机设备", "AI算力链", 0),
     ("300308", "中际旭创", "观察·机构抄底", 0, 0, "通信设备", "AI算力链", 0),
 ]
-TOTAL_ASSET = 18.17   # 总资产（万元），买卖后AI更新此数
+TOTAL_ASSET = 18.26   # 总资产（万元），买卖后AI更新此数
 IND_MAP_FILE = "reports/industry_map.json"
 COLD_HIST_FILE = "reports/cold_low_history.json"
 AMBUSH_HIST_FILE = "reports/ambush_history.json"
@@ -47,21 +47,22 @@ HEAT_HIST_FILE = "reports/heat_history.json"
 # ★AI推荐台账（每次推荐后由AI更新此表）
 # 格式：(日期, 代码, 名称, 成本价, 类型A事件/B周期, 预期周期, 逻辑破的定义)
 RECOMMENDATIONS = [
+    ("2026-08-07", "516080", "创新药ETF", 0.710, "B", "8周(中报+AI制药)",
+     "①创新药中报业绩不及预期 ②医保控费加码 ③CRO订单下滑"),
     ("2026-08-05", "159934", "黄金ETF易", 8.938, "B", "8-12周(央行购金周期)",
      "①美联储转鹰大幅加息 ②金价跌破4000 ③央行购金潮停止"),
     ("2026-08-04", "603220", "中贝通信", 18.396, "B", "12周(AI算力资本开支)",
      "①北美云厂capex指引下调 ②算力租赁需求萎缩 ③通信设备连3天资金流出"),
     ("2026-07-31", "000938", "紫光股份", 34.681, "B", "12周(算力资本开支)",
      "①北美四大云厂capex指引下调 ②算力网4万亿落空 ③新华三订单下修"),
-    ("2026-07-27", "159796", "电池ETF汇", 0.840, "B", "至9/1消费税",
+    ("2026-07-27", "159796", "电池ETF汇", 0.820, "B", "至9/1消费税",
      "①消费税取消/延期 ②钠电订单证伪 ③碳酸锂重新单边下跌"),
-    ("2026-07-27", "301269", "华大九天", 91.999, "B", "8周(国产EDA替代)",
-     "EDA国产化政策转向 或 软件板块持续失血"),
     ("2026-07-10", "002714", "牧原股份", 39.613, "B", "猪周期",
-     "①能繁母猪存栏连续2个月回升 ②生猪均价跌破成本线且持续 ③政策转向压制猪价"),
+     "①能繁母猪存栏连续2个月回升 ②生猪均价跌破成本线 ③政策转向压制猪价"),
     # 已平仓
-    # 08-03 电力ETF广 @1.080→1.068 −1.1% ❌【初判已错】主动纠错，非止损
-    # 07-15 招商轮船 @15.215→15.68 +3.1% ✅但卖飞18%（A/B归错）
+    # 08-07 华大九天 @91.999→94.29 +2.5% ✅【初判已错】主动纠错，赚着走
+    # 08-03 电力ETF广 @1.080→1.068 −1.1% ❌【初判已错】
+    # 07-15 招商轮船 @15.215→15.68 +3.1% ✅但卖飞18%
 ]
 
 SPOT_DF = None
@@ -1782,6 +1783,7 @@ def scan_news():
     scan_deduction(uniq, TODAY_HEAT_TOP3)
     scan_all_sector_cross(uniq)
     scan_deep_meaning(uniq, TODAY_AMBUSH)
+    scan_stock_picker()
     scan_announcements()
     scan_unexplained()
 
@@ -2195,6 +2197,142 @@ ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "�
                  "预增", "扭亏", "业绩", "投资", "定增", "回购", "增持",
                  "资质", "许可", "获批", "量产", "投产", "涨价", "扩产",
                  "英伟达", "华为", "特斯拉", "苹果", "台积电", "算力"]
+
+
+def scan_stock_picker():
+    """个股级选股器：板块顺风 + 个股还没涨 + 主力真进（V5.3核心）"""
+    w("\n" + "=" * 60)
+    w("🎯🎯【个股级选股器】板块顺风 + 个股还没涨 + 主力真进 🎯🎯")
+    w("=" * 60)
+    w("  逻辑：ETF是一篮子平均数，永远赚不到10%")
+    w("       要10%只能靠个股：找『板块在涨、它还没涨、但钱在进』的")
+
+    def _do():
+        spot = get_spot()
+        if spot is None:
+            w("  [报空] 快照缺失")
+            return
+        c_code = pick_col(spot, ["代码", "code"])
+        c_name = pick_col(spot, ["名称", "name"])
+        c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
+        c_amt = pick_col(spot, ["成交额", "amount"])
+        if not all([c_code, c_name, c_pct, c_amt]):
+            w("  [报空] 快照缺字段")
+            return
+
+        fmap, fsrc = {}, None
+        for nm_, fn in [("同花顺", lambda: ak.stock_fund_flow_individual(symbol="即时")),
+                        ("东财", lambda: ak.stock_individual_fund_flow_rank(indicator="今日"))]:
+            try:
+                f = with_retry(fn, tries=1, wait=3, timeout=50)
+                fc = pick_col(f, ["代码", "股票代码"])
+                fv = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额",
+                                  "主力净流入", "净额", "流入资金"])
+                if not fc or not fv:
+                    continue
+                for _, r in f.iterrows():
+                    try:
+                        k = str(r[fc])[-6:].zfill(6)
+                        v = pd.to_numeric(r[fv], errors="coerce")
+                        if pd.notna(v):
+                            fmap[k] = float(v)
+                    except Exception:
+                        continue
+                fsrc = nm_
+                break
+            except Exception:
+                continue
+        if not fmap:
+            w("  ⚠️ 个股资金流双源失败 → 降级为纯技术筛选")
+
+        sect_chg = {}
+        try:
+            d = with_retry(lambda: ak.stock_fund_flow_industry(symbol="即时"),
+                           tries=1, timeout=40)
+            n_ = pick_col(d, ["行业", "名称"])
+            p_ = pick_col(d, ["涨跌幅", "行业指数涨跌"])
+            for _, r in d.iterrows():
+                v = pd.to_numeric(r[p_], errors="coerce")
+                if pd.notna(v):
+                    sect_chg[str(r[n_])] = float(v)
+        except Exception:
+            pass
+        ind_map, _a = _load_ind_cache()
+
+        df = spot.copy()
+        df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
+        df[c_amt] = pd.to_numeric(df[c_amt], errors="coerce")
+        df = df.dropna(subset=[c_pct, c_amt])
+        df = df[~df[c_name].astype(str).str.contains("退|N |ST", na=False)]
+        df["_c6"] = df[c_code].astype(str).str.extract(r"(\d{6})")[0]
+        df = df.dropna(subset=["_c6"])
+        df = df[(df[c_pct] >= -2.0) & (df[c_pct] <= 3.0)]
+        df = df[(df[c_amt] >= 5e7) & (df[c_amt] <= 3e9)]
+
+        cand = []
+        for _, r in df.iterrows():
+            code6 = r["_c6"]
+            flow = fmap.get(code6)
+            if fmap and (flow is None or flow <= 0):
+                continue
+            ind = ind_map.get(code6, "")
+            schg = sect_chg.get(ind) if ind else None
+            if schg is not None and schg < 0.5:
+                continue
+            cand.append((code6, str(r[c_name]), float(r[c_pct]),
+                         float(r[c_amt]), flow, ind, schg))
+        cand.sort(key=lambda x: -(x[4] or 0))
+        cand = cand[:60]
+
+        picks = []
+        for code6, nm, pct, amt, flow, ind, schg in cand:
+            d60 = vr = None
+            try:
+                k, kc = _hist_close(code6, ("sh" if code6.startswith("6") else "sz") + code6)
+                if k is not None and kc is not None:
+                    now_p = pd.to_numeric(k.iloc[-1][kc], errors="coerce")
+                    p60 = pd.to_numeric(k.iloc[-45][kc], errors="coerce")
+                    if p60:
+                        d60 = (now_p - p60) / p60 * 100
+                    kv = pick_col(k, ["volume", "成交量"])
+                    if kv:
+                        v5 = pd.to_numeric(k[kv].tail(5), errors="coerce").mean()
+                        v60 = pd.to_numeric(k[kv].tail(45), errors="coerce").mean()
+                        if v60:
+                            vr = v5 / v60
+            except Exception:
+                pass
+            sc = 0.0
+            if schg is not None:
+                sc += min(schg, 6)
+            sc += 3 if pct < 1 else (1 if pct < 2 else 0)
+            if d60 is not None and d60 < -10:
+                sc += 2
+            if vr is not None and vr < 0.9:
+                sc += 2
+            if flow:
+                sc += min(abs(flow) / 1e8 if abs(flow) > 1e6 else abs(flow) / 1e4, 4)
+            picks.append((sc, nm, code6, pct, flow, ind, schg, d60, vr))
+            time.sleep(0.15)
+
+        if not picks:
+            w("  今日无符合条件的个股")
+            return
+        picks.sort(key=lambda x: -x[0])
+        w(f"  （源：{fsrc or '无资金'}｜行业表{len(ind_map)}只｜候选{len(picks)}只）")
+        w("\n  ★★【板块在涨 · 它还没涨 · 主力在进】前12：")
+        for i, (sc, nm, cd, pct, fl, ind, schg, d60, vr) in enumerate(picks[:12], 1):
+            ft = ""
+            if fl:
+                ft = f" 主力+{fl/1e8:.2f}亿" if abs(fl) > 1e6 else f" 主力+{fl/1e4:.0f}万"
+            st = f" [{ind}{schg:+.1f}%]" if ind and schg is not None else (f" [{ind}]" if ind else "")
+            dt = f" 60日{d60:+.0f}%" if d60 is not None else ""
+            vt = f" 缩量{vr:.2f}" if vr is not None else ""
+            w(f"    {i:2d}. {nm}({cd}) {pct:+.2f}%{ft}{st}{dt}{vt} 得分{sc:.1f}")
+        w("\n  ⚠️ 铁律P（V5.3）：★有个股就不许只给ETF★")
+        w("    ETF是一篮子平均数，注定跑不出10%")
+        w("    仍需过①-B真实驱动 + ⑨逻辑破定义才能推荐")
+    safe_run("个股级选股器", _do)
 
 
 def scan_announcements():
@@ -2973,7 +3111,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3018,7 +3156,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.3完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
