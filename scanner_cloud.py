@@ -43,6 +43,7 @@ WATCH_STOCKS = [
 TOTAL_ASSET = 18.30   # 总资产（万元），买卖后AI更新此数
 IND_MAP_FILE = "reports/industry_map.json"
 COLD_HIST_FILE = "reports/cold_low_history.json"
+PEAK_FILE = "reports/position_peak.json"    # 每只持仓的历史最高价
 AMBUSH_HIST_FILE = "reports/ambush_history.json"
 HEAT_HIST_FILE = "reports/heat_history.json"
 
@@ -1790,6 +1791,7 @@ def scan_news():
     scan_deduction(uniq, TODAY_HEAT_TOP3)
     scan_all_sector_cross(uniq)
     scan_deep_meaning(uniq, TODAY_AMBUSH)
+    scan_take_profit()
     scan_launch_radar()
     scan_stock_picker()
     scan_announcements()
@@ -2205,6 +2207,90 @@ ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "�
                  "预增", "扭亏", "业绩", "投资", "定增", "回购", "增持",
                  "资质", "许可", "获批", "量产", "投产", "涨价", "扩产",
                  "英伟达", "华为", "特斯拉", "苹果", "台积电", "算力"]
+
+
+def scan_take_profit():
+    """止盈体系：赚到的钱要落袋（V5.7核心）"""
+    w("\n" + "=" * 60)
+    w("💎💎【止盈体系】赚到的钱要落袋 · 治『从+10.3%回落到+7.25%』 💎💎")
+    w("=" * 60)
+    w("  ★铁律R：+10%减半锁利；剩余移动止盈(从最高点回落5%)")
+    w("  ★铁律S(V5.7)：任何持仓从【历史最高盈亏】回落≥5个百分点 = 强制减半")
+    w("    不管有没有到10%，回撤5个点就是市场在说：这波结束了")
+
+    def _do():
+        peaks = {}
+        try:
+            if os.path.exists(PEAK_FILE):
+                with open(PEAK_FILE, "r", encoding="utf-8") as f:
+                    peaks = json.load(f)
+        except Exception:
+            peaks = {}
+        spot = get_spot()
+        etf = None
+        c_code = pick_col(spot, ["代码", "code"]) if spot is not None else None
+        c_price = pick_col(spot, ["最新价", "trade"]) if spot is not None else None
+        changed = False
+        for code6, name, tag, cost, stop, sect, chain, mv in WATCH_STOCKS:
+            if tag != "持仓" or not cost or cost <= 0:
+                continue
+            price = None
+            try:
+                if spot is not None and c_code:
+                    r = spot[spot[c_code].astype(str).str.contains(code6, na=False)]
+                    if len(r) > 0:
+                        price = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
+                if price is None or pd.isna(price):
+                    if etf is None:
+                        etf = get_etf_spot()
+                    if etf is not None:
+                        ec = pick_col(etf, ["代码", "symbol"])
+                        ep = pick_col(etf, ["最新价", "trade"])
+                        r = etf[etf[ec].astype(str).str.contains(code6, na=False)]
+                        if len(r) > 0:
+                            price = pd.to_numeric(r.iloc[0][ep], errors="coerce")
+            except Exception:
+                pass
+            if price is None or pd.isna(price):
+                w(f"  ◆ {name}({code6})：取价失败")
+                continue
+            pnl = (float(price) - cost) / cost * 100
+            rec = peaks.get(code6, {})
+            peak = rec.get("peak_pnl", pnl)
+            if pnl > peak:
+                peak = pnl
+                changed = True
+            peaks[code6] = {"name": name, "peak_pnl": round(peak, 2)}
+            drop = peak - pnl
+            line = f"  ◆ {name}({code6})：现{pnl:+.2f}% | 历史最高{peak:+.2f}%"
+            if drop > 0.05:
+                line += f" | 回撤{drop:.2f}点"
+            if peak >= 20 and drop >= 5:
+                line += "  🔴【R+S】曾达+20%且回撤5点 → 减至1/4，剩余免费仓"
+            elif peak >= 10 and drop >= 5:
+                line += "  🔴【触发止盈】曾达+10%且回撤5点 → 立刻减半锁利"
+            elif pnl >= 10:
+                line += "  💎【达标】+10% → 减半锁利，剩余移动止盈"
+            elif drop >= 5:
+                line += "  ⚠️【回撤警告】从高点回落5点 → 减1/3"
+            elif pnl >= 7:
+                line += "  ⏳ 接近+10%，到了就减半，别重演中贝通信"
+            w(line)
+        if changed:
+            try:
+                os.makedirs("reports", exist_ok=True)
+                with open(PEAK_FILE, "w", encoding="utf-8") as f:
+                    json.dump(peaks, f, ensure_ascii=False)
+            except Exception:
+                pass
+        w("\n  ⚠️ 止盈三档（写死，不许临场改）：")
+        w("    +10% → 减半锁利")
+        w("    +20% → 再减半（剩1/4当免费仓）")
+        w("    从历史最高回落5个百分点 → 无条件减半，不管到没到10%")
+        w("  ★铁律F与S不矛盾：")
+        w("    F防止我用【短线跌幅】砍长线仓（还没赚过就砍）")
+        w("    S防止我看着【已赚到的利润】飞走不动手")
+    safe_run("止盈体系", _do)
 
 
 def scan_launch_radar():
@@ -3179,6 +3265,9 @@ def scan_decision_card():
     w("")
     w("  ⑧ ★★与现有持仓是不是同一条驱动链？★★")
     w("     同一条链的仓位合计不许超过总仓位40%")
+    w("     ★单笔上限(V5.7)：九项全过+机构埋伏背书 → 可到总资产20%")
+    w("       九项过七八项 → 11%｜勉强过 → 6%")
+    w("       ⚠️分散不是目的，赚钱才是。1万仓位赚10%只有1000块")
     w("     → ______________________")
     w("")
     w("  ⑨ ★★仓位类型 + 持有周期 + 逻辑破的定义（买入时就写死）★★")
@@ -3245,7 +3334,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.6 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3290,7 +3379,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.6完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.7完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
