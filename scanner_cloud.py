@@ -2221,13 +2221,20 @@ def scan_stock_picker():
             return
 
         fmap, fsrc = {}, None
-        for nm_, fn in [("同花顺", lambda: ak.stock_fund_flow_individual(symbol="即时")),
-                        ("东财", lambda: ak.stock_individual_fund_flow_rank(indicator="今日"))]:
+        for nm_, fn in [
+            ("同花顺即时", lambda: ak.stock_fund_flow_individual(symbol="即时")),
+            ("同花顺3日", lambda: ak.stock_fund_flow_individual(symbol="3日排行")),
+            ("东财今日", lambda: ak.stock_individual_fund_flow_rank(indicator="今日")),
+            ("东财5日", lambda: ak.stock_individual_fund_flow_rank(indicator="5日")),
+        ]:
             try:
-                f = with_retry(fn, tries=1, wait=3, timeout=50)
+                f = with_retry(fn, tries=1, wait=2, timeout=45)
+                if f is None or len(f) == 0:
+                    continue
                 fc = pick_col(f, ["代码", "股票代码"])
-                fv = pick_col(f, ["今日主力净流入-净额", "主力净流入-净额",
-                                  "主力净流入", "净额", "流入资金"])
+                fv = pick_col(f, ["今日主力净流入-净额", "5日主力净流入-净额",
+                                  "主力净流入-净额", "主力净流入", "净额",
+                                  "流入资金", "净流入"])
                 if not fc or not fv:
                     continue
                 for _, r in f.iterrows():
@@ -2238,8 +2245,9 @@ def scan_stock_picker():
                             fmap[k] = float(v)
                     except Exception:
                         continue
-                fsrc = nm_
-                break
+                if fmap:
+                    fsrc = nm_
+                    break
             except Exception:
                 continue
         if not fmap:
@@ -2277,12 +2285,17 @@ def scan_stock_picker():
                 continue
             ind = ind_map.get(code6, "")
             schg = sect_chg.get(ind) if ind else None
+            # 板块必须顺风；行业未知时不一票否决（对照表只有513只）
             if schg is not None and schg < 0.5:
                 continue
             cand.append((code6, str(r[c_name]), float(r[c_pct]),
                          float(r[c_amt]), flow, ind, schg))
-        cand.sort(key=lambda x: -(x[4] or 0))
-        cand = cand[:60]
+        if fmap:
+            cand.sort(key=lambda x: -(x[4] or 0))          # 有资金→按主力净额
+        else:
+            cand.sort(key=lambda x: -x[3])                  # ★无资金→按成交额，
+            w("  ⚠️ 资金流全源失败 → 改用【成交额+涨跌量比】筛选")
+        cand = cand[:50]
 
         picks = []
         for code6, nm, pct, amt, flow, ind, schg in cand:
@@ -2302,6 +2315,22 @@ def scan_stock_picker():
                             vr = v5 / v60
             except Exception:
                 pass
+            # ★涨跌量比（暗流吸筹）——冷低早已验证8天/71样本
+            udr = None
+            try:
+                if k is not None and kc is not None:
+                    kv2 = pick_col(k, ["volume", "成交量"])
+                    if kv2:
+                        kk = k.tail(30).copy()
+                        kk["_c"] = pd.to_numeric(kk[kc], errors="coerce")
+                        kk["_v"] = pd.to_numeric(kk[kv2], errors="coerce")
+                        kk["_chg"] = kk["_c"].pct_change()
+                        up = kk[kk["_chg"] > 0]["_v"].mean()
+                        dn = kk[kk["_chg"] < 0]["_v"].mean()
+                        if dn and dn > 0:
+                            udr = up / dn
+            except Exception:
+                pass
             sc = 0.0
             if schg is not None:
                 sc += min(schg, 6)
@@ -2312,7 +2341,11 @@ def scan_stock_picker():
                 sc += 2
             if flow:
                 sc += min(abs(flow) / 1e8 if abs(flow) > 1e6 else abs(flow) / 1e4, 4)
-            picks.append((sc, nm, code6, pct, flow, ind, schg, d60, vr))
+            elif udr is not None and udr > 1.1:
+                sc += min((udr - 1.0) * 10, 4)      # 无资金时用暗流替代
+            if udr is not None and udr < 1.0:
+                sc -= 2                              # 跌日放量=派发，扣分
+            picks.append((sc, nm, code6, pct, flow, ind, schg, d60, vr, udr))
             time.sleep(0.15)
 
         if not picks:
@@ -2321,10 +2354,12 @@ def scan_stock_picker():
         picks.sort(key=lambda x: -x[0])
         w(f"  （源：{fsrc or '无资金'}｜行业表{len(ind_map)}只｜候选{len(picks)}只）")
         w("\n  ★★【板块在涨 · 它还没涨 · 主力在进】前12：")
-        for i, (sc, nm, cd, pct, fl, ind, schg, d60, vr) in enumerate(picks[:12], 1):
+        for i, (sc, nm, cd, pct, fl, ind, schg, d60, vr, udr) in enumerate(picks[:12], 1):
             ft = ""
             if fl:
                 ft = f" 主力+{fl/1e8:.2f}亿" if abs(fl) > 1e6 else f" 主力+{fl/1e4:.0f}万"
+            elif udr is not None:
+                ft = f" 量比{udr:.2f}"
             st = f" [{ind}{schg:+.1f}%]" if ind and schg is not None else (f" [{ind}]" if ind else "")
             dt = f" 60日{d60:+.0f}%" if d60 is not None else ""
             vt = f" 缩量{vr:.2f}" if vr is not None else ""
@@ -3111,7 +3146,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.4 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3156,7 +3191,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.4完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
