@@ -205,7 +205,9 @@ def scan_hot_money():
 # ========== 三、机构专用席位 ==========
 
 def scan_jg():
+    """返回 [(名称, 涨跌幅, 机构净买亿, 代码), ...] 供强制下单指令使用"""
     w("\n【三、机构专用席位】（机构才是真钱，游资是快钱）")
+    out = []
     df, use_date = None, None
     for d in _try_dates(7):
         try:
@@ -233,13 +235,25 @@ def scan_jg():
             p = f" {r[c_pct]}%" if c_pct else ""
             n = f" 机构净买{r[c_net]/1e8:.2f}亿" if c_net and pd.notna(r[c_net]) else ""
             flag = ""
+            vv = None
             if c_pct:
-                v = pd.to_numeric(r[c_pct], errors="coerce")
-                if pd.notna(v) and v < 0:
+                vv = pd.to_numeric(r[c_pct], errors="coerce")
+                if pd.notna(vv) and vv < 0:
                     flag = " ✅机构在跌时买入=重要埋伏信号"
+                elif pd.notna(vv) and vv < 3:
+                    flag = " ★微涨却被机构重金买入=真建仓"
             w(f"    {nm}{p}{n}{flag}")
+            try:
+                amt_y = float(r[c_net]) / 1e8 if c_net and pd.notna(r[c_net]) else None
+                cdd = str(r[pick_col(df, ["代码"])])[-6:] if pick_col(df, ["代码"]) else ""
+                out.append((str(nm), float(vv) if vv is not None and pd.notna(vv) else None,
+                            amt_y, cdd))
+            except Exception:
+                pass
+        return out
     except Exception as e:
         w(f"  [报空] 机构席位：{type(e).__name__}")
+    return out
 
 
 
@@ -266,24 +280,40 @@ def gen_order(ambush, jg_rows=None):
     w("🔫🔫【强制下单指令】机构在跌的票砸钱 = 直接给买点，不许说观察 🔫🔫")
     w("=" * 60)
     w("  ★铁律H：识别到机构埋伏=必须当场给可执行标的★")
+    w("  ★触发条件(V2.1扩容)：①跌着被买≥1亿 ②微涨<3%但机构净买≥1亿")
+    w("    机构在涨停股买1亿 vs 在微涨股买3亿 → 后者才是真建仓")
     w("  ★历史转化率0%：7/28中际旭创(后+19.6%)、7/30长电科技、8/3德明利")
     w("    三次识别全对，三次都只说『观察』→ 全部错过")
 
     orders = []
+    seen_code = set()
+    # ①埋伏池（跌着被买）
     for item in (ambush or []):
         try:
             nm, cd, pct, net = item[0], item[1], item[2], item[3]
-        except Exception:
-            continue
-        amt = None
-        try:
             amt = float(net) if net is not None else None
         except Exception:
-            pass
-        # 门槛：净买≥1亿 且 当天下跌
+            continue
         if amt is None or amt < 1.0 or (pct is not None and pct >= 0):
             continue
-        orders.append((amt, nm, cd, pct))
+        orders.append((amt, nm, cd, pct, "跌着被买"))
+        seen_code.add(cd)
+
+    # ★②机构专用席位：涨幅<3% 且 机构净买≥1亿（V2.1新增）
+    # 教训：8/7多氟多+1.25%机构净买3.26亿(全场最大)，旧版只筛"跌的票"漏掉了
+    for r in (jg_rows or []):
+        try:
+            nm, pct, amt = r[0], r[1], r[2]
+        except Exception:
+            continue
+        if amt is None or amt < 1.0:
+            continue
+        if pct is None or pct >= 3.0:
+            continue
+        cd = r[3] if len(r) > 3 else ""
+        if cd and cd in seen_code:
+            continue
+        orders.append((amt, nm, cd, pct, "微涨被机构重金买入"))
 
     if not orders:
         w("\n  今日无【机构/游资在跌的票上净买≥1亿】的标的")
@@ -292,14 +322,14 @@ def gen_order(ambush, jg_rows=None):
     orders.sort(key=lambda x: -x[0])
 
     w(f"\n  ★★今日触发下单条件 {len(orders)} 只 —— 逐个给指令★★\n")
-    for i, (amt, nm, cd, pct) in enumerate(orders[:5], 1):
+    for i, (amt, nm, cd, pct, why) in enumerate(orders[:5], 1):
         etf = None
         for k, v in HIGH_PRICE_ETF.items():
             if k in nm:
                 etf = v
                 break
         w(f"  ══════ 指令{i}：{nm}({cd}) ══════")
-        w(f"    信号：今日{pct:+.2f}% 被净买 {amt:.2f}亿（跌着被买=埋伏型）")
+        w(f"    信号：今日{pct:+.2f}% 被净买 {amt:.2f}亿（{why}=埋伏型）")
         if etf:
             w(f"    ⚠️ 股价高，一手可能>总资产10% → ★改买ETF：{etf}★")
             w("       （铁律H②：个股太贵就给ETF，不许说买不起）")
@@ -330,7 +360,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V2.0 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V2.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     if bj.weekday() >= 5:
         w("周末无龙虎榜数据")
@@ -339,8 +369,8 @@ def main():
 
     ambush, chase = scan_lhb()
     scan_hot_money()
-    scan_jg()
-    gen_order(ambush)
+    jg = scan_jg()
+    gen_order(ambush, jg)
 
     w("\n" + "=" * 60)
     w("★★★【明日作战提示】★★★")
