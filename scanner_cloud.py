@@ -2213,7 +2213,11 @@ DEDUCTION_CHAINS = [
 ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "增资",
                  "预增", "扭亏", "业绩", "投资", "定增", "回购", "增持",
                  "资质", "许可", "获批", "量产", "投产", "涨价", "扩产",
-                 "英伟达", "华为", "特斯拉", "苹果", "台积电", "算力"]
+                 "英伟达", "华为", "特斯拉", "苹果", "台积电", "算力",
+                 "涨停", "异动", "股价", "澄清", "说明", "问询", "关注函",
+                 "中标公告", "重大合同", "框架协议", "战略合作", "股权",
+                 "利润", "营收", "增长", "扭亏", "预告", "快报", "分红",
+                 "员工持股", "激励", "并购", "参股", "控股", "举牌"]
 
 
 def get_stock_flow():
@@ -2631,14 +2635,18 @@ def scan_announcements():
         d2 = (now_beijing() - datetime.timedelta(days=1)).strftime("%Y%m%d")
         # ★V6.2：先用 hasattr 探测函数是否存在，避免 AttributeError
         cands = [
+            ("巨潮-沪深京公告", "stock_zh_a_disclosure_report_cninfo",
+             {"symbol": "", "market": "沪深京", "keyword": "",
+              "category": "", "start_date": d, "end_date": d}),
+            ("巨潮-昨日公告", "stock_zh_a_disclosure_report_cninfo",
+             {"symbol": "", "market": "沪深京", "keyword": "",
+              "category": "", "start_date": d2, "end_date": d2}),
+            ("东财-公告大全", "stock_notice_report_em", {"symbol": "全部", "date": d}),
             ("股市日历-公司动态", "stock_gsrl_gsdt_em", {"date": d}),
             ("股市日历-昨日", "stock_gsrl_gsdt_em", {"date": d2}),
-            ("东财-公告大全", "stock_notice_report_em", {"symbol": "全部", "date": d}),
+            ("财联社-电报", "stock_info_global_cls", {"symbol": "全部"}),
             ("东财-资讯快讯", "stock_info_global_em", {}),
             ("同花顺-全球财经", "stock_info_global_ths", {}),
-            ("财联社-电报", "stock_info_global_cls", {"symbol": "全部"}),
-            ("新浪-股市直播", "stock_info_global_sina", {}),
-            ("富途-快讯", "stock_info_global_futu", {}),
         ]
         avail = [c for c in cands if hasattr(ak, c[1])]
         if not avail:
@@ -2741,9 +2749,15 @@ def scan_all_sector_cross(uniq_news):
              ["行业", "名称", "板块"], ["涨跌幅", "行业指数涨跌", "涨跌"]),
             ("概念", lambda: ak.stock_fund_flow_concept(symbol="即时"),
              ["行业", "概念名称", "名称", "板块"], ["涨跌幅", "行业指数涨跌", "涨跌"]),
+            ("概念备", lambda: ak.stock_board_concept_name_em(),
+             ["板块名称", "概念名称", "名称"], ["涨跌幅"]),
+            ("概念备2", lambda: ak.stock_board_concept_name_ths(),
+             ["概念名称", "名称", "板块"], ["涨跌幅", "涨幅"]),
         ]:
+            if tag.startswith("概念") and any(r[0] == "概念" for r in rows):
+                continue          # 概念已成功则跳过备源
             try:
-                df = with_retry(fn, tries=1, wait=2, timeout=40)
+                df = with_retry(fn, tries=2, wait=3, timeout=70)
                 if df is None or len(df) == 0:
                     w(f"  [跳过] {tag}源空")
                     continue
@@ -2755,7 +2769,8 @@ def scan_all_sector_cross(uniq_news):
                 for _, r in df.iterrows():
                     try:
                         v = pd.to_numeric(r[pc], errors="coerce") if pc else None
-                        rows.append((tag, str(r[nc]), v))
+                        rows.append(("概念" if tag.startswith("概念") else tag,
+                                     str(r[nc]), v))
                     except Exception:
                         continue
             except Exception as e:
@@ -3456,7 +3471,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V6.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V6.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3501,7 +3516,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V6.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V6.3完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
