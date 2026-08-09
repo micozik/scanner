@@ -1680,10 +1680,32 @@ def _is_foreign(text):
     return False
 
 
+# ★★V7.1 极性反转短语（与 scanner_usa 同步）：
+# 整体含义与其中单字相反。『利空出尽』含"利空"被判利空，
+# 8/9实测把AI算力链(用户25%仓位)错标为偏空。
+POLARITY_TRAPS = {
+    "利空出尽": 1, "利空已充分": 1, "超跌反弹": 1, "跌幅收窄": 1,
+    "跌势放缓": 1, "止跌回升": 1, "空头回补": 1, "好于预期": 1,
+    "优于预期": 1, "降幅收窄": 1, "底部确认": 1, "底部蓄势": 1,
+    "利好出尽": -1, "利好兑现": -1, "涨势见顶": -1, "涨幅收窄": -1,
+    "不及预期": -1, "低于预期": -1, "冲高回落": -1,
+}
+
+
 def _news_polarity(text):
-    """判断一条新闻的多空方向：+1利多 / -1利空 / 0中性"""
-    b = sum(1 for w_ in BULL_WORDS if w_ in text)
-    r = sum(1 for w_ in BEAR_WORDS if w_ in text)
+    """判断一条新闻的多空方向：+1利多 / -1利空 / 0中性
+    ★V7.1：先处理反转短语，再数单字"""
+    txt = str(text)
+    b = r = 0
+    for ph, pol in POLARITY_TRAPS.items():
+        if ph in txt:
+            if pol > 0:
+                b += 2
+            else:
+                r += 2
+            txt = txt.replace(ph, "")
+    b += sum(1 for w_ in BULL_WORDS if w_ in txt)
+    r += sum(1 for w_ in BEAR_WORDS if w_ in txt)
     if b > r:
         return 1
     if r > b:
@@ -3675,7 +3697,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V7.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V7.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3729,7 +3751,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V7.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V7.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
