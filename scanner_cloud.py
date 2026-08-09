@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-A股作战扫描器 · 云端版 V2.9（2026-07-29 盯盘名单清理：移出已清仓4只，加入MLCC候选+机构抄底观察）
+A股作战扫描器 · 云端版 V7.0（2026-08-09 结构性修复）
+V7.0 六项修复：
+  1. 止盈体系从 scan_news 内剪出 → main() 独立 safe_run（新闻源全挂不再吞掉止盈）
+  2. 沪硅产业/博迁新材 补成本+止损（cost=0 会被止盈与台账 continue 跳过）
+  3. 台账加 CLOSED 已平仓表 → 已实现盈亏进战绩（原来只统计浮盈）
+  4. 选股器加 PICKER_HIST 回测（3日/5日命中率）→ 规则记分卡多一行
+  5. ①-B 驱动链闸门写进打分（原来铁律L只是 print，不参与评分 = 错误4/5的根）
+  6. 资金流单位在源头统一为「元」；"60日"更名为真实的"45日"；行业缓存改增量不覆盖
 V1.7新增：
   1. 概念板块历史库（独立文件），概念榜三源轮试，修复"概念缺字段"
   2. 次日环境预判（风险分0-8，把描述变成指令）
@@ -29,24 +36,26 @@ WATCH_FILE = "我的清单.txt"
 # ★重点盯盘（代码, 名称, 标签, 成本价, 止损价, 所属板块名）
 # ★重点盯盘（代码, 名称, 标签, 成本, 止损, 板块, 驱动链, 持仓市值万元）
 WATCH_STOCKS = [
-    ("000938", "紫光股份", "持仓", 34.681, 29.48, "计算机设备", "AI算力链", 3.38),
-    ("159796", "电池ETF汇", "持仓", 0.820, 0.760, "电池", "锂电/钠电链", 2.40),
+    ("000938", "紫光股份", "持仓", 34.681, 29.48, "计算机设备", "AI算力链", 3.42),
+    ("159796", "电池ETF汇", "持仓", 0.820, 0.760, "电池", "锂电/钠电链", 2.43),
     ("603220", "中贝通信", "持仓", 18.396, 16.19, "通信服务", "AI算力链", 1.18),
-    ("159934", "黄金ETF易", "持仓", 8.938, 8.20, "贵金属", "贵金属链", 1.29),
-    ("516080", "创新药ETF", "持仓", 0.710, 0.640, "医疗服务", "医药链", 2.00),
-    ("002714", "牧原股份", "持仓", 39.613, 36.50, "养殖业", "农业(独立)", 3.10),
-    ("688126", "沪硅产业", "持仓", 0, 0, "半导体", "半导体材料链", 2.00),
-    ("605376", "博迁新材", "持仓", 0, 0, "金属新材料", "MLCC涨价链", 2.00),
+    ("159934", "黄金ETF易", "持仓", 8.938, 8.20, "贵金属", "贵金属链", 1.30),
+    ("516080", "创新药ETF", "持仓", 0.710, 0.640, "医疗服务", "医药链", 2.05),
+    ("002714", "牧原股份", "持仓", 39.613, 36.50, "养殖业", "农业(独立)", 3.08),
+    ("688126", "沪硅产业", "持仓", 26.228, 22.90, "半导体", "半导体材料链", 2.27),
+    ("605376", "博迁新材", "持仓", 165.223, 144.00, "金属新材料", "MLCC涨价链", 1.64),
     ("000066", "中国长城", "重点观察", 0, 0, "计算机设备", "AI算力链", 0),
     ("002407", "多氟多", "候选·机构3.26亿", 0, 0, "化学制品", "电池+半导体材料", 0),
     ("300124", "汇川技术", "候选·机器人", 0, 0, "自动化设备", "机器人链", 0),
 ]
-TOTAL_ASSET = 18.30   # 总资产（万元），买卖后AI更新此数
+TOTAL_ASSET = 18.38   # 总资产（万元），买卖后AI更新此数（2026-08-09 截图对账：183,802.38）
+PRINCIPAL = 20.00     # ★本金（万元）。真实收益率 = (TOTAL_ASSET-PRINCIPAL)/PRINCIPAL
 IND_MAP_FILE = "reports/industry_map.json"
 COLD_HIST_FILE = "reports/cold_low_history.json"
 PEAK_FILE = "reports/position_peak.json"    # 每只持仓的历史最高价
 AMBUSH_HIST_FILE = "reports/ambush_history.json"
 HEAT_HIST_FILE = "reports/heat_history.json"
+PICKER_HIST_FILE = "reports/picker_history.json"   # ★V7.0 选股器自检库
 
 # ★AI推荐台账（每次推荐后由AI更新此表）
 # 格式：(日期, 代码, 名称, 成本价, 类型A事件/B周期, 预期周期, 逻辑破的定义)
@@ -68,11 +77,23 @@ RECOMMENDATIONS = [
      "①消费税取消/延期 ②钠电订单证伪 ③碳酸锂重新单边下跌"),
     ("2026-07-10", "002714", "牧原股份", 39.613, "B", "猪周期",
      "①能繁母猪存栏连续2个月回升 ②生猪均价跌破成本线 ③政策转向压制猪价"),
-    # 已平仓
-    # 08-07 华大九天 @91.999→94.29 +2.5% ✅初判已错主动纠错
-    # 08-03 电力ETF广 @1.080→1.068 −1.1% ❌初判已错
-    # 07-15 招商轮船 @15.215→15.68 +3.1% ✅但卖飞18%
 ]
+
+# ★★V7.0 已平仓台账（原来是注释，导致已实现亏损永远不进战绩）★★
+# 格式：(卖出日, 代码, 名称, 买入价, 卖出价, 股数, 备注)
+# ⚠️ 股数填0 = 只算百分比不算金额。请按同花顺成交记录补全。
+CLOSED = [
+    ("2026-08-07", "301269", "华大九天", 91.999, 94.29, 0, "✅初判已错主动纠错 +2.5%"),
+    ("2026-08-03", "159611", "电力ETF广", 1.080, 1.068, 0, "❌初判已错 −1.1%"),
+    ("2026-07-15", "601872", "招商轮船", 15.215, 15.68, 0, "✅+3.1% 但卖飞到+18%"),
+    ("2026-07-29", "159516", "半导体设备ETF", 1.180, 1.044, 0, "❌−11.5% 卖在最低点"),
+    # ⚠️ 下列为备份文档提到但缺成交价的已平仓，请补：
+    # 深圳华强 / 中科曙光 / 电网设备ETF / 卧龙电驱 / 东方财富 / 赛微电子
+]
+
+# ★已实现盈亏合计（元）。截图对账倒推 ≈ −21,683
+# 由 TOTAL_ASSET - PRINCIPAL - 当前浮盈 得到，先写死，补全CLOSED后可自动算
+REALIZED_PNL_YUAN = -21683
 
 SPOT_DF = None
 SPOT_SRC = None
@@ -853,7 +874,10 @@ def _load_ind_cache():
                 d = json.load(f)
             ts = d.get("built", "")
             age = (now_beijing() - datetime.datetime.strptime(ts, "%Y-%m-%d")).days if ts else 99
-            if age <= 7 and d.get("map"):
+            # ★V7.0：不只看天数，还看覆盖量。<3000只说明上次是半成品，要补
+            if age <= 7 and len(d.get("map") or {}) >= 3000:
+                return d["map"], age
+            if d.get("map"):
                 return d["map"], age
     except Exception:
         pass
@@ -867,6 +891,15 @@ def _build_ind_cache():
     BUDGET = 300          # 总时长上限（秒）
     w("  [建缓存] 行业对照表重建中（上限5分钟，每周一次）...")
     m = {}
+    # ★V7.0：先载入旧表做底，新抓到的覆盖上去 → 不再每周从零开始只剩465只
+    try:
+        if os.path.exists(IND_MAP_FILE):
+            with open(IND_MAP_FILE, "r", encoding="utf-8") as _f:
+                m = dict(json.load(_f).get("map", {}))
+            if m:
+                w(f"  [建缓存] 继承旧表{len(m)}只，本次做增量补充")
+    except Exception:
+        m = {}
     try:
         names = None
         for fn in [lambda: ak.stock_board_industry_summary_ths(),
@@ -1798,11 +1831,8 @@ def scan_news():
     scan_deduction(uniq, TODAY_HEAT_TOP3)
     scan_all_sector_cross(uniq)
     scan_deep_meaning(uniq, TODAY_AMBUSH)
-    scan_take_profit()
-    scan_launch_radar()
-    scan_stock_picker()
-    scan_announcements()
-    scan_unexplained()
+    # ★V7.0：止盈/雷达/选股器/公告/异动 已移出本函数 → main() 独立调用
+    # 原因：新闻源全挂时本函数会 return，把止盈体系一起吞掉（+10.3%→+7.25%的成因）
 
 
 
@@ -1980,6 +2010,7 @@ def scan_rule_scorecard():
         ("铁律B·埋伏池", "次日/5日胜率", AMBUSH_HIST_FILE),
         ("热力图·净利多前3", "次日板块涨跌", HEAT_HIST_FILE),
         ("冷低早·六关", "5日胜率", COLD_HIST_FILE),
+        ("★选股器前12", "3日命中率(>3%)", PICKER_HIST_FILE),
     ]:
         d = _bt_load(f)
         n = len(d)
@@ -2256,6 +2287,9 @@ def get_stock_flow():
                 except Exception:
                     continue
             if len(m) > 100:
+                # ★V7.0 单位统一为「元」：同花顺系列返回「万元」，东财返回「元」
+                if "同花顺" in nm:
+                    m = {k: v * 1e4 for k, v in m.items()}
                 return m, nm
         except Exception:
             continue
@@ -2479,6 +2513,142 @@ def scan_launch_radar():
     safe_run("启动日雷达", _do)
 
 
+# ========== ★★V7.0 ①-B驱动链对照表（铁律L的代码化） ==========
+# 只有落在这张表里的行业，"板块顺风"才算数。
+# 判定标准：这个板块今天涨的【原因】，和这条链的驱动是同一个。
+# 新增一条链之前先自问：如果这个驱动不存在，这个板块还会不会涨？
+CHAIN_MAP = {
+    "AI算力链": ["计算机设备", "通信设备", "通信服务", "光学光电子", "IT服务", "软件开发"],
+    "存储涨价链": ["半导体", "元件", "电子化学品"],
+    "半导体材料链": ["半导体", "电子化学品", "金属新材料"],
+    "MLCC涨价链": ["元件", "金属新材料", "电子元件"],
+    "锂电/钠电链": ["电池", "能源金属", "有色金属", "化学制品"],
+    "贵金属链": ["贵金属", "小金属"],
+    "医药链": ["医疗服务", "生物制品", "化学制药", "医疗器械"],
+    "农业(独立)": ["养殖业", "农产品加工", "饲料"],
+    "机器人链": ["自动化设备", "通用设备", "专用设备"],
+    "电力/核电链": ["电力行业", "电网设备", "电源设备"],
+}
+
+
+def _chain_of(ind):
+    """行业名 → 所属驱动链名；不在任何链上返回 None（铁律L）"""
+    if not ind:
+        return None
+    for chain, inds in CHAIN_MAP.items():
+        for x in inds:
+            if x and (x in ind or ind in x):
+                return chain
+    return None
+
+
+# ========== ★★V7.0 选股器自检：每天存前12，3日/5日回看 ==========
+
+def _picker_archive(rows, spot):
+    """把今天选股器前12名存档，供 backtest_picker 回看命中率"""
+    try:
+        c_code = pick_col(spot, ["代码", "code"]) if spot is not None else None
+        c_price = pick_col(spot, ["最新价", "trade"]) if spot is not None else None
+        today = now_beijing().strftime("%Y-%m-%d")
+        d = _bt_load(PICKER_HIST_FILE)
+        rec = []
+        for nm, cd, sc, ch in rows:
+            px = None
+            try:
+                if spot is not None and c_code:
+                    r = spot[spot[c_code].astype(str).str.contains(cd, na=False)]
+                    if len(r) > 0:
+                        px = float(pd.to_numeric(r.iloc[0][c_price], errors="coerce"))
+            except Exception:
+                pass
+            if px and px == px:
+                rec.append({"code": cd, "name": nm, "price": px,
+                            "score": round(float(sc), 1), "chain": ch or ""})
+        if rec:
+            d[today] = rec
+            _bt_save(PICKER_HIST_FILE, d)
+            w(f"  📌 已存档今日前{len(rec)}只 → 3日后自动回看命中率")
+    except Exception as e:
+        w(f"  [存档失败] {type(e).__name__}")
+
+
+def backtest_picker():
+    """★选股器回测：涨幅>3%算命中。这是唯一能证明选股器有没有用的东西"""
+    w("\n" + "=" * 60)
+    w("🔬【选股器回测】我推的到底准不准 · 机器说了算")
+    w("=" * 60)
+    d = _bt_load(PICKER_HIST_FILE)
+    if not d:
+        w("  尚无存档，今天是第1天。累计5天后开始出胜率。")
+        w("  ⚠️ 铁律：连续验证命中率<45% → 立即停用选股器，不许再拿它推荐")
+        return
+    spot = get_spot()
+    if spot is None:
+        w("  [报空] 快照缺失，无法回看")
+        return
+    c_code = pick_col(spot, ["代码", "code"])
+    c_price = pick_col(spot, ["最新价", "trade"])
+    today = now_beijing()
+
+    def _px(cd):
+        try:
+            r = spot[spot[c_code].astype(str).str.contains(cd, na=False)]
+            if len(r) > 0:
+                v = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
+                return float(v) if pd.notna(v) else None
+        except Exception:
+            pass
+        return None
+
+    tot_hit = tot_n = 0
+    chain_hit = chain_n = nochain_hit = nochain_n = 0
+    for day in sorted(d.keys(), reverse=True)[:10]:
+        try:
+            gap = (today - datetime.datetime.strptime(day, "%Y-%m-%d")).days
+        except Exception:
+            continue
+        if gap < 3:
+            continue
+        rows = d[day]
+        hit = n = 0
+        detail = []
+        for it in rows:
+            p0 = it.get("price")
+            p1 = _px(it.get("code", ""))
+            if not p0 or not p1:
+                continue
+            chg = (p1 - p0) / p0 * 100
+            n += 1
+            ok = chg > 3
+            if ok:
+                hit += 1
+            if it.get("chain"):
+                chain_n += 1
+                chain_hit += 1 if ok else 0
+            else:
+                nochain_n += 1
+                nochain_hit += 1 if ok else 0
+            detail.append(f"{it.get('name')}{chg:+.1f}%")
+        if n:
+            tot_hit += hit
+            tot_n += n
+            w(f"  {day}（{gap}天前）：{hit}/{n} 命中 = {hit/n*100:.0f}%")
+            w(f"     {' | '.join(detail[:12])}")
+    if tot_n:
+        w(f"\n  ★★选股器累计命中率：{tot_hit}/{tot_n} = {tot_hit/tot_n*100:.1f}%（>3%算命中）")
+        if chain_n:
+            w(f"  ①-B在链上：{chain_hit}/{chain_n} = {chain_hit/chain_n*100:.0f}%")
+        if nochain_n:
+            w(f"  ①-B不在链：{nochain_hit}/{nochain_n} = {nochain_hit/nochain_n*100:.0f}%")
+        w("  → 若『在链』明显高于『不在链』，说明铁律L是对的，可加大链权重")
+        w("  → 若两者差不多，说明CHAIN_MAP划分无效，需重划或废掉这条规则")
+        if tot_n >= 24 and tot_hit / tot_n < 0.45:
+            w("  🔴🔴 命中率<45% → 按铁律【立即停用选股器】，不许再拿它推荐")
+    else:
+        w("  样本不足（需≥3天前的存档），继续积累")
+    w("=" * 60)
+
+
 def scan_stock_picker():
     """个股级选股器：板块顺风 + 个股还没涨 + 主力真进（V5.3核心）"""
     w("\n" + "=" * 60)
@@ -2538,7 +2708,7 @@ def scan_stock_picker():
                 continue
             ind = ind_map.get(code6, "")
             schg = sect_chg.get(ind) if ind else None
-            # 板块必须顺风；行业未知时不一票否决（对照表只有513只）
+            # 板块必须顺风；行业未知时不一票否决（对照表覆盖不全）
             if schg is not None and schg < 0.5:
                 continue
             cand.append((code6, str(r[c_name]), float(r[c_pct]),
@@ -2559,7 +2729,7 @@ def scan_stock_picker():
                     now_p = pd.to_numeric(k.iloc[-1][kc], errors="coerce")
                     p60 = pd.to_numeric(k.iloc[-45][kc], errors="coerce")
                     if p60:
-                        d60 = (now_p - p60) / p60 * 100
+                        d60 = (now_p - p60) / p60 * 100   # ★V7.0 实为45个交易日，显示已正名
                     kv = pick_col(k, ["volume", "成交量"])
                     if kv:
                         v5 = pd.to_numeric(k[kv].tail(5), errors="coerce").mean()
@@ -2585,8 +2755,13 @@ def scan_stock_picker():
             except Exception:
                 pass
             sc = 0.0
-            if schg is not None:
+            # ★★V7.0 铁律L落地：板块涨幅只在【已知驱动链】上才计分★★
+            # 治错误4(卓胜微)/错误5(券商)：板块在涨 ≠ 涨的原因跟它有关
+            in_chain = _chain_of(ind)
+            if schg is not None and in_chain:
                 sc += min(schg, 6)
+            elif schg is not None:
+                sc += min(schg, 6) * 0.2   # 不在链上：板块顺风只给两成，逼它靠资金和位置说话
             sc += 3 if pct < 1 else (1 if pct < 2 else 0)
             if d60 is not None and d60 < -10:
                 sc += 2
@@ -2598,7 +2773,7 @@ def scan_stock_picker():
                 sc += min((udr - 1.0) * 10, 4)      # 无资金时用暗流替代
             if udr is not None and udr < 1.0:
                 sc -= 2                              # 跌日放量=派发，扣分
-            picks.append((sc, nm, code6, pct, flow, ind, schg, d60, vr, udr))
+            picks.append((sc, nm, code6, pct, flow, ind, schg, d60, vr, udr, in_chain))
             time.sleep(0.15)
 
         if not picks:
@@ -2607,19 +2782,25 @@ def scan_stock_picker():
         picks.sort(key=lambda x: -x[0])
         w(f"  （源：{fsrc or '无资金'}｜行业表{len(ind_map)}只｜候选{len(picks)}只）")
         w("\n  ★★【板块在涨 · 它还没涨 · 主力在进】前12：")
-        for i, (sc, nm, cd, pct, fl, ind, schg, d60, vr, udr) in enumerate(picks[:12], 1):
+        for i, (sc, nm, cd, pct, fl, ind, schg, d60, vr, udr, ch) in enumerate(picks[:12], 1):
             ft = ""
             if fl:
                 ft = f" 主力+{fl/1e8:.2f}亿" if abs(fl) > 1e6 else f" 主力+{fl/1e4:.0f}万"
             elif udr is not None:
                 ft = f" 量比{udr:.2f}"
             st = f" [{ind}{schg:+.1f}%]" if ind and schg is not None else (f" [{ind}]" if ind else "")
-            dt = f" 60日{d60:+.0f}%" if d60 is not None else ""
+            dt = f" 45日{d60:+.0f}%" if d60 is not None else ""
             vt = f" 缩量{vr:.2f}" if vr is not None else ""
+            ct = f"  ①-B链:{ch}" if ch else "  ①-B链:❓不在已知驱动链(板块顺风只计20%)"
             w(f"    {i:2d}. {nm}({cd}) {pct:+.2f}%{ft}{st}{dt}{vt} 得分{sc:.1f}")
+            w(f"        {ct}")
         w("\n  ⚠️ 铁律P（V5.3）：★有个股就不许只给ETF★")
         w("    ETF是一篮子平均数，注定跑不出10%")
         w("    仍需过①-B真实驱动 + ⑨逻辑破定义才能推荐")
+        w("  ⚠️ 铁律L（V7.0已写进打分）：①-B链显示❓的，板块涨幅只给20%权重")
+        w("     卓胜微/券商两次翻车都是『板块在涨但涨的原因跟它无关』")
+        # ★V7.0 存档，供 backtest_picker 回看
+        _picker_archive([(nm, cd, sc, ch) for sc, nm, cd, *_r, ch in picks[:12]], spot)
     safe_run("个股级选股器", _do)
 
 
@@ -3294,7 +3475,30 @@ def scan_ledger():
                 extra = f" 周期仓第{days}天/{period}"
             w(f"  {flag} {d} {name}({code}) @{cost}→{price} {pnl:+.2f}% [{typ}类]{extra}")
             w(f"       逻辑破的定义：{broken}")
-        w(f"\n  ★战绩：{win}胜(≥10%) {lose}负")
+        # ★★V7.0：已平仓必须进战绩，否则只统计浮盈 = 幸存者偏差★★
+        w("\n  ── 已平仓（原来是注释，看不见）──")
+        cw = cl = 0
+        for cd_, code_, nm_, buy_, sell_, qty_, note_ in CLOSED:
+            if not buy_ or buy_ <= 0:
+                w(f"  ⚠️ {nm_}({code_}) 缺买入价，无法对账")
+                continue
+            r_ = (sell_ - buy_) / buy_ * 100
+            amt_ = (sell_ - buy_) * qty_ if qty_ else 0
+            if r_ >= 10:
+                cw += 1
+                f_ = "✅赚钱"
+            elif r_ > 0:
+                f_ = "⏳未达10%(不算赚)"
+            else:
+                cl += 1
+                f_ = "❌"
+            at_ = f" {amt_:+.0f}元" if qty_ else " (股数未填)"
+            w(f"  {f_} {cd_} {nm_}({code_}) @{buy_}→{sell_} {r_:+.2f}%{at_} {note_}")
+        w(f"\n  ★★总战绩：持仓{win}胜(≥10%) {lose}负 ｜ 已平仓{cw}胜 {cl}负")
+        w(f"  ★★已实现盈亏：{REALIZED_PNL_YUAN:+,}元")
+        w(f"  ★★总资产{TOTAL_ASSET:.2f}万 / 本金{PRINCIPAL:.2f}万 = "
+          f"{(TOTAL_ASSET-PRINCIPAL)/PRINCIPAL*100:+.2f}%  ← 这才是真实成绩")
+        w("  ⚠️ 只看持仓浮盈会得出『+3,558』的假象，实际本金已亏8%")
         w("  ⚠️ 胜利标准=盈利≥10%。低于10%只算『在途』，")
         w("     扣手续费/印花税/滑点后基本无利润，不许当成功。")
         w("  ⚠️ A类事件仓超期未走 = 违反铁律，立即处理")
@@ -3471,7 +3675,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V6.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V7.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3496,9 +3700,18 @@ def main():
             scan_north()
         scan_news()
 
+    # ★★V7.0：这5个模块不再依赖新闻源成败，独立运行★★
+    safe_run("止盈体系", scan_take_profit)
+    if not weekend:
+        safe_run("启动日雷达", scan_launch_radar)
+        safe_run("个股级选股器", scan_stock_picker)
+        safe_run("公告扫描", scan_announcements)
+        safe_run("异动无解释", scan_unexplained)
+
     if not weekend:
         safe_run("埋伏池回测", lambda: backtest_ambush(TODAY_AMBUSH))
         safe_run("热力图回测", lambda: backtest_heat(TODAY_HEAT_TOP3))
+        safe_run("选股器回测", backtest_picker)
     safe_run("仓位建议", lambda: scan_position_advice(LAST_RISK_SCORE))
     scan_rule_scorecard()
     safe_run("买入后复核", scan_entry_review)
@@ -3516,7 +3729,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V6.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V7.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
