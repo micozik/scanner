@@ -479,7 +479,7 @@ def _sect_txt(sect_map, sect):
 def scan_focus_stocks():
     w("\n★★★【重点盯盘个股·独立跟踪】★★★（每天全维度盯，不看截图）")
 
-    def _flow_map():
+    def _flow_map_old():
         """个股主力净流入映射：东财→同花顺"""
         for name, fn in [
             ("东财", lambda: ak.stock_individual_fund_flow_rank(indicator="今日")),
@@ -513,7 +513,7 @@ def scan_focus_stocks():
         c_amt = pick_col(spot, ["成交额", "amount"])
         c_vol = pick_col(spot, ["成交量", "volume"])
 
-        fmap, fsrc = _flow_map()
+        fmap, fsrc = get_stock_flow()
         if fsrc:
             w(f"  （资金源：{fsrc}）")
 
@@ -2209,6 +2209,90 @@ ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "�
                  "英伟达", "华为", "特斯拉", "苹果", "台积电", "算力"]
 
 
+def get_stock_flow():
+    """★个股主力资金流·六源轮试 + 涨停池/龙虎榜兜底（V5.8）
+    返回 (dict{code6: 净额元}, 源名)"""
+    src_list = [
+        ("同花顺即时", lambda: ak.stock_fund_flow_individual(symbol="即时"),
+         ["代码", "股票代码"], ["净额", "流入资金", "主力净流入"]),
+        ("同花顺3日", lambda: ak.stock_fund_flow_individual(symbol="3日排行"),
+         ["代码", "股票代码"], ["净额", "流入资金", "主力净流入"]),
+        ("同花顺5日", lambda: ak.stock_fund_flow_individual(symbol="5日排行"),
+         ["代码", "股票代码"], ["净额", "流入资金", "主力净流入"]),
+        ("东财今日", lambda: ak.stock_individual_fund_flow_rank(indicator="今日"),
+         ["代码", "股票代码"], ["今日主力净流入-净额", "主力净流入-净额"]),
+        ("东财5日", lambda: ak.stock_individual_fund_flow_rank(indicator="5日"),
+         ["代码", "股票代码"], ["5日主力净流入-净额", "主力净流入-净额"]),
+        ("东财10日", lambda: ak.stock_individual_fund_flow_rank(indicator="10日"),
+         ["代码", "股票代码"], ["10日主力净流入-净额", "主力净流入-净额"]),
+    ]
+    for nm, fn, kcols, vcols in src_list:
+        try:
+            f = with_retry(fn, tries=1, wait=2, timeout=45)
+            if f is None or len(f) == 0:
+                continue
+            kc = pick_col(f, kcols)
+            vc = pick_col(f, vcols)
+            if not kc or not vc:
+                continue
+            m = {}
+            for _, r in f.iterrows():
+                try:
+                    k = str(r[kc])[-6:].zfill(6)
+                    v = pd.to_numeric(r[vc], errors="coerce")
+                    if pd.notna(v):
+                        m[k] = float(v)
+                except Exception:
+                    continue
+            if len(m) > 100:
+                return m, nm
+        except Exception:
+            continue
+
+    # ★兜底1：涨停池封板资金（能反映真实买盘强度）
+    m = {}
+    try:
+        zt = with_retry(lambda: ak.stock_zt_pool_em(
+            date=now_beijing().strftime("%Y%m%d")), tries=1, timeout=45)
+        if zt is not None and len(zt) > 0:
+            zc = pick_col(zt, ["代码"])
+            zs = pick_col(zt, ["封板资金"])
+            if zc and zs:
+                for _, r in zt.iterrows():
+                    try:
+                        v = pd.to_numeric(r[zs], errors="coerce")
+                        if pd.notna(v):
+                            m[str(r[zc])[-6:].zfill(6)] = float(v)
+                    except Exception:
+                        continue
+    except Exception:
+        pass
+
+    # ★兜底2：龙虎榜净买额（机构/游资真金白银）
+    try:
+        d = now_beijing().strftime("%Y%m%d")
+        lhb = with_retry(lambda: ak.stock_lhb_detail_em(start_date=d, end_date=d),
+                         tries=1, timeout=45)
+        if lhb is not None and len(lhb) > 0:
+            lc = pick_col(lhb, ["代码", "股票代码"])
+            ln = pick_col(lhb, ["龙虎榜净买额", "净买额", "净额"])
+            if lc and ln:
+                for _, r in lhb.iterrows():
+                    try:
+                        v = pd.to_numeric(r[ln], errors="coerce")
+                        if pd.notna(v):
+                            k = str(r[lc])[-6:].zfill(6)
+                            m[k] = max(m.get(k, 0), float(v))
+                    except Exception:
+                        continue
+    except Exception:
+        pass
+
+    if m:
+        return m, "兜底(涨停封板+龙虎榜)"
+    return {}, None
+
+
 def scan_take_profit():
     """止盈体系：赚到的钱要落袋（V5.7核心）"""
     w("\n" + "=" * 60)
@@ -2390,38 +2474,11 @@ def scan_stock_picker():
             w("  [报空] 快照缺字段")
             return
 
-        fmap, fsrc = {}, None
-        for nm_, fn in [
-            ("同花顺即时", lambda: ak.stock_fund_flow_individual(symbol="即时")),
-            ("同花顺3日", lambda: ak.stock_fund_flow_individual(symbol="3日排行")),
-            ("东财今日", lambda: ak.stock_individual_fund_flow_rank(indicator="今日")),
-            ("东财5日", lambda: ak.stock_individual_fund_flow_rank(indicator="5日")),
-        ]:
-            try:
-                f = with_retry(fn, tries=1, wait=2, timeout=45)
-                if f is None or len(f) == 0:
-                    continue
-                fc = pick_col(f, ["代码", "股票代码"])
-                fv = pick_col(f, ["今日主力净流入-净额", "5日主力净流入-净额",
-                                  "主力净流入-净额", "主力净流入", "净额",
-                                  "流入资金", "净流入"])
-                if not fc or not fv:
-                    continue
-                for _, r in f.iterrows():
-                    try:
-                        k = str(r[fc])[-6:].zfill(6)
-                        v = pd.to_numeric(r[fv], errors="coerce")
-                        if pd.notna(v):
-                            fmap[k] = float(v)
-                    except Exception:
-                        continue
-                if fmap:
-                    fsrc = nm_
-                    break
-            except Exception:
-                continue
+        fmap, fsrc = get_stock_flow()
         if not fmap:
-            w("  ⚠️ 个股资金流双源失败 → 降级为纯技术筛选")
+            w("  ⚠️ 资金流全部6源+2兜底均失败 → 降级为纯技术筛选")
+        else:
+            w(f"  ✅ 资金流源：{fsrc}（{len(fmap)}只有数据）")
 
         sect_chg = {}
         try:
@@ -3334,7 +3391,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.8 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3379,7 +3436,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.7完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.8完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
