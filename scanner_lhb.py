@@ -1,16 +1,66 @@
 # -*- coding: utf-8 -*-
 """
-龙虎榜/游资 独立扫描器 V1.1（2026-07-28 自动回溯最近有数据的交易日）
-专职：每晚18:40跑，抓当日龙虎榜 + 活跃营业部
+龙虎榜/游资 独立扫描器 V3.0（2026-08-09 单位事故修复 + 下单指令加闸门 + 回测）
+专职：每晚18:45跑，抓当日龙虎榜 + 活跃营业部 + 机构专用席位
 核心：自动标注【埋伏型】(跌着被买=明天机会) / 【追高型】(涨停被买=次日易崩)
+
+V3.0 六项修复（按危险程度排）：
+  1. 🔴单位事故：旧版用「整列最大值>1e6」判断单位，全场净买额偏小的那天
+     不会除1e8，5000万会被当成「5000万亿」直接触发下单指令。改逐值归一化。
+  2. 🔴埋伏池静默失效：净买额列缺失时(新浪源没有该列) net=None，
+     旧版 gen_order 全部 continue → 永远不出指令，且不报错。现在明确报出原因。
+  3. 🔴下单指令无闸门：旧版只要「净买≥1亿且涨幅<3%」就给买点+仓位+止损，
+     不查板块顺逆风、不查①-B驱动链、不查与现有持仓集中度、不查可用现金。
+     铁律H(必须给标的)和铁律L(必须答驱动)在用户系统里是并存的，代码只实现了H。
+     V3.0 保留指令，但每条附【必答闸门】，未答完不构成可执行指令。
+  4. 🔴涨停判定错：旧版 pct>=9.8 才算追高型，漏掉创业板/科创板20cm。
+     300/301/688/689 开头按 19.8% 判，北交所 30%。
+  5. 机构席位「代码」列缺失时静默吞掉全部数据 → 现在显式报出。
+  6. 新增 order_history.json：下单指令存档 + 3日回测。
+     旧版转化率0%被反复检讨，但从没验证过「转化了会不会赚」——这是缺失的另一半。
+
 输出：reports/龙虎榜_最新.txt + reports/龙虎榜_日期.txt
-与A股扫描器完全独立，互不影响
+与A股/美股扫描器完全独立，互不影响
 """
-import os, time, signal, datetime
+import os, json, time, signal, datetime
 import akshare as ak
 import pandas as pd
 
 REPORT = []
+ORDER_HIST_FILE = "reports/order_history.json"
+
+# ★账户参数（买卖后更新；三个扫描器各有一份，改一处要三处同步）
+TOTAL_ASSET_WAN = 18.38     # 总资产(万) 2026-08-09 截图对账 183,802.38
+CASH_AVAIL_WAN = 0.03       # ★可用现金(万) 286.48元 → 决定指令能不能真的执行
+SINGLE_MAX_PCT = 11         # 单笔上限占总资产%
+
+# ★现有持仓驱动链（查集中度用，与 scanner_cloud 的 WATCH_STOCKS 对齐）
+MY_CHAINS = {
+    "AI算力链": 4.60,        # 紫光3.42 + 中贝1.18
+    "锂电/钠电链": 2.43,
+    "半导体材料链": 2.27,
+    "MLCC涨价链": 1.64,
+    "医药链": 2.05,
+    "贵金属链": 1.30,
+    "农业(独立)": 3.08,
+}
+CHAIN_MAX_PCT = 40          # 铁律⑧：同一驱动链不许超40%
+
+# ★高价股→可买ETF（一手>总资产10%就给ETF，不许说"买不起"）
+HIGH_PRICE_ETF = {
+    "中际旭创": "通信ETF 515880 / 光模块ETF 159516",
+    "新易盛": "通信ETF 515880 / 光模块ETF 159516",
+    "天孚通信": "通信ETF 515880",
+    "寒武纪": "科创芯片ETF 588200",
+    "海光信息": "科创芯片ETF 588200",
+    "北方华创": "半导体设备ETF 561980",
+    "中微公司": "半导体设备ETF 561980",
+    "长鑫科技": "科创芯片ETF 588200",
+    "生益科技": "电子ETF 515260",
+    "药明康德": "创新药ETF 516080",
+    "德明利": "科创芯片ETF 588200",
+    "江波龙": "科创芯片ETF 588200",
+}
 
 
 def now_beijing():
@@ -65,7 +115,6 @@ def multi_source(title, sources):
     return None, None
 
 
-
 def _try_dates(max_back=7):
     """从今天往前找，返回候选日期列表(YYYYMMDD)，跳过周末"""
     out = []
@@ -75,6 +124,60 @@ def _try_dates(max_back=7):
             out.append(d.strftime("%Y%m%d"))
         d -= datetime.timedelta(days=1)
     return out
+
+
+def _to_yi(v):
+    """★★V3.0 单位归一化：任何金额 → 亿元。逐值判断，不看整列最大值。
+
+    🔴旧版事故：if 整列max>1e6: 全列/1e8
+       全场净买都偏小的那天(比如max=8e5)，条件不成立 → 不做换算 →
+       某只票净买 5,000,000 元 会被当成 5,000,000 亿，直接冲破 amt>=1.0 闸门，
+       生成一条「净买500万亿」的下单指令。这是能真花钱的bug。
+    A股单只个股龙虎榜净买额区间约 1e5 ~ 5e9 元，绝无可能达到 1e5 亿，
+    因此按数量级判断是安全的。"""
+    try:
+        x = float(v)
+    except Exception:
+        return None
+    if pd.isna(x):
+        return None
+    ax = abs(x)
+    if ax == 0:
+        return 0.0
+    if ax >= 1e6:          # ≥100万 → 原始单位是「元」
+        return round(x / 1e8, 4)
+    if ax >= 1e3:          # 1千~100万 → 原始单位大概率是「万元」
+        return round(x / 1e4, 4)
+    return round(x, 4)     # <1000 → 已经是「亿元」
+
+
+def _limit_pct(code):
+    """★V3.0 按板块返回涨停幅度：主板10%、双创20%、北交所30%"""
+    c = str(code)[-6:]
+    if c.startswith(("300", "301", "688", "689")):
+        return 19.8
+    if c.startswith(("43", "83", "87", "92")):
+        return 29.5
+    return 9.8
+
+
+def _bt_load(path):
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def _bt_save(path, data):
+    try:
+        os.makedirs("reports", exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception:
+        pass
 
 
 # ========== 一、龙虎榜（埋伏型 vs 追高型） ==========
@@ -110,35 +213,47 @@ def scan_lhb():
         w(f"  [报空] 缺名称列，源={src} 实际列名={list(df.columns)[:12]}")
         return [], []
 
+    # ★V3.0：列缺失显式报出，不再静默导致下游空转
+    if not c_net:
+        w(f"  🔴 本源【无净买额列】(源={src}) → 埋伏池无金额，")
+        w("     下单指令的『≥1亿』闸门无法判定，本次不会产生指令。")
+        w(f"     实际列名：{list(df.columns)[:12]}")
+    if not c_pct:
+        w(f"  🔴 本源【无涨跌幅列】→ 无法区分埋伏型/追高型")
+
     df = df.copy()
     if c_net:
-        df[c_net] = pd.to_numeric(df[c_net], errors="coerce")
-        if df[c_net].abs().max() and df[c_net].abs().max() > 1e6:
-            df[c_net] = (df[c_net] / 1e8).round(2)
-        df = df.sort_values(c_net, ascending=False)
+        df["_net_yi"] = df[c_net].apply(_to_yi)      # ★逐值归一化，不用整列max
+        df = df.sort_values("_net_yi", ascending=False, na_position="last")
     if c_pct:
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
 
     w(f"  （源：{src}，共{len(df)}条）")
     ambush, chase = [], []
+    seen = set()
     for _, r in df.head(25).iterrows():
         nm = str(r[c_name])
         code = str(r[c_code])[-6:] if c_code else ""
+        if code and code in seen:
+            continue          # ★V3.0 同一票多营业部多行，去重
+        if code:
+            seen.add(code)
         pct = r[c_pct] if c_pct else None
-        net = r[c_net] if c_net else None
+        net = r.get("_net_yi") if c_net else None
         tag = ""
         if pct is not None and pd.notna(pct):
+            lim = _limit_pct(code)
             if pct < 0:
                 tag = "✅埋伏型"
                 if net is None or (pd.notna(net) and net > 0):
-                    ambush.append((nm, code, pct, net))
-            elif pct >= 9.8:
-                tag = "⚠️追高型"
-                chase.append((nm, code, pct, net))
+                    ambush.append((nm, code, float(pct), net))
+            elif pct >= lim:
+                tag = f"⚠️追高型(涨停{lim:.0f}%)"
+                chase.append((nm, code, float(pct), net))
             else:
                 tag = "中性"
         p = f" {pct:+.2f}%" if pct is not None and pd.notna(pct) else ""
-        n = f" 净买{net}亿" if net is not None and pd.notna(net) else ""
+        n = f" 净买{net:.2f}亿" if net is not None and pd.notna(net) else ""
         rs = str(r[c_reason])[:18] if c_reason else ""
         w(f"    {nm}({code}){p}{n} {tag} {rs}")
 
@@ -146,7 +261,7 @@ def scan_lhb():
     w("  ★★★【埋伏池】游资在『当天下跌』的票上砸钱 = 明天最可能启动 ★★★")
     if ambush:
         for nm, code, pct, net in ambush[:12]:
-            n = f" 净买{net}亿" if net is not None and pd.notna(net) else ""
+            n = f" 净买{net:.2f}亿" if net is not None and pd.notna(net) else " (无金额数据)"
             w(f"    🎯 {nm}({code}) 今{pct:+.2f}%{n}")
         w(f"    ※ 共{len(ambush)}只。次日验证：所属板块是否启动、是否放量。")
     else:
@@ -189,13 +304,12 @@ def scan_hot_money():
         return
     df = df.copy()
     if c_net:
-        df[c_net] = pd.to_numeric(df[c_net], errors="coerce")
-        if df[c_net].abs().max() and df[c_net].abs().max() > 1e6:
-            df[c_net] = (df[c_net] / 1e8).round(2)
-        df = df.sort_values(c_net, ascending=False)
+        df["_net_yi"] = df[c_net].apply(_to_yi)      # ★同样逐值归一化
+        df = df.sort_values("_net_yi", ascending=False, na_position="last")
     w(f"  ◆ 净买入前12（源：{src}）：")
     for _, r in df.head(12).iterrows():
-        n = f" 净{r[c_net]}亿" if c_net and pd.notna(r[c_net]) else ""
+        v = r.get("_net_yi") if c_net else None
+        n = f" 净{v:.2f}亿" if v is not None and pd.notna(v) else ""
         s = f" 主买:{str(r[c_stock])[:70]}" if c_stock else ""
         w(f"    {r[c_name]}{n}{s}")
     w("  ※ 判读：席位集中买『当天在跌』的=埋伏，次日看启动；")
@@ -205,7 +319,7 @@ def scan_hot_money():
 # ========== 三、机构专用席位 ==========
 
 def scan_jg():
-    """返回 [(名称, 涨跌幅, 机构净买亿, 代码), ...] 供强制下单指令使用"""
+    """返回 [(名称, 涨跌幅, 机构净买亿, 代码), ...] 供下单指令使用"""
     w("\n【三、机构专用席位】（机构才是真钱，游资是快钱）")
     out = []
     df, use_date = None, None
@@ -218,110 +332,117 @@ def scan_jg():
                 break
         except Exception:
             continue
+    if df is None or len(df) == 0:
+        w("  近7交易日无机构上榜数据")
+        return out              # ★V3.0：返回空表而非 None
     try:
-        if df is None or len(df) == 0:
-            w("  近7交易日无机构上榜数据")
-            return
         w(f"  ✅ 数据日期：{use_date}")
         c_name = pick_col(df, ["名称", "简称"])
         c_pct = pick_col(df, ["涨跌幅"])
-        c_buy = pick_col(df, ["机构买入总额", "买入金额"])
         c_net = pick_col(df, ["机构买入净额", "净额"])
+        c_code = pick_col(df, ["代码"])          # ★V3.0：循环外取一次
+        if not c_code:
+            w(f"  🔴 本源【无代码列】→ 下单指令将缺代码。列名：{list(df.columns)[:12]}")
+        df = df.copy()
         if c_net:
-            df[c_net] = pd.to_numeric(df[c_net], errors="coerce")
-            df = df.sort_values(c_net, ascending=False)
+            df["_net_yi"] = df[c_net].apply(_to_yi)
+            df = df.sort_values("_net_yi", ascending=False, na_position="last")
         for _, r in df.head(15).iterrows():
-            nm = r[c_name] if c_name else ""
-            p = f" {r[c_pct]}%" if c_pct else ""
-            n = f" 机构净买{r[c_net]/1e8:.2f}亿" if c_net and pd.notna(r[c_net]) else ""
+            nm = str(r[c_name]) if c_name else ""
+            vv = pd.to_numeric(r[c_pct], errors="coerce") if c_pct else None
+            amt_y = r.get("_net_yi") if c_net else None
+            cdd = str(r[c_code])[-6:] if c_code else ""
+            p = f" {vv:+.2f}%" if vv is not None and pd.notna(vv) else ""
+            n = f" 机构净买{amt_y:.2f}亿" if amt_y is not None and pd.notna(amt_y) else ""
             flag = ""
-            vv = None
-            if c_pct:
-                vv = pd.to_numeric(r[c_pct], errors="coerce")
-                if pd.notna(vv) and vv < 0:
+            if vv is not None and pd.notna(vv):
+                if vv < 0:
                     flag = " ✅机构在跌时买入=重要埋伏信号"
-                elif pd.notna(vv) and vv < 3:
+                elif vv < 3:
                     flag = " ★微涨却被机构重金买入=真建仓"
-            w(f"    {nm}{p}{n}{flag}")
-            try:
-                amt_y = float(r[c_net]) / 1e8 if c_net and pd.notna(r[c_net]) else None
-                cdd = str(r[pick_col(df, ["代码"])])[-6:] if pick_col(df, ["代码"]) else ""
-                out.append((str(nm), float(vv) if vv is not None and pd.notna(vv) else None,
-                            amt_y, cdd))
-            except Exception:
-                pass
+            w(f"    {nm}({cdd}){p}{n}{flag}")
+            out.append((nm,
+                        float(vv) if vv is not None and pd.notna(vv) else None,
+                        float(amt_y) if amt_y is not None and pd.notna(amt_y) else None,
+                        cdd))
         return out
     except Exception as e:
-        w(f"  [报空] 机构席位：{type(e).__name__}")
+        w(f"  [报空] 机构席位：{type(e).__name__}: {str(e)[:60]}")
     return out
 
 
-
-# ★高价股→可买ETF（一手>总资产10%就给ETF，不许说"买不起"）
-HIGH_PRICE_ETF = {
-    "中际旭创": "通信ETF 515880 / 光模块ETF 159516",
-    "新易盛": "通信ETF 515880 / 光模块ETF 159516",
-    "天孚通信": "通信ETF 515880",
-    "寒武纪": "科创芯片ETF 588200",
-    "海光信息": "科创芯片ETF 588200",
-    "北方华创": "半导体设备ETF 561980",
-    "中微公司": "半导体设备ETF 561980",
-    "长鑫科技": "科创芯片ETF 588200",
-    "生益科技": "电子ETF 515260",
-    "药明康德": "创新药ETF 516080",
-}
-TOTAL_ASSET_WAN = 18.3      # 总资产(万)，买卖后更新
-
+# ========== 四、下单指令（带闸门） ==========
 
 def gen_order(ambush, jg_rows=None):
-    """★强制下单指令：把埋伏信号直接变成可执行的买点+止损+仓位
-    治转化率0%：7/28中际旭创+19.6%、7/30长电科技、8/3德明利 三次全错过"""
+    """★把埋伏信号变成可执行的买点+止损+仓位（治转化率0%）
+    ★V3.0：保留铁律H(必须给标的)，同时补上铁律L(必须答驱动)与⑧(集中度)。
+      旧版只实现了H，等于把『敢不敢买』的问题解决了，
+      却把『该不该买』的问题留空 —— 卓胜微/券商两次翻车正是死在这一格。"""
     w("\n" + "=" * 60)
-    w("🔫🔫【强制下单指令】机构在跌的票砸钱 = 直接给买点，不许说观察 🔫🔫")
+    w("🔫🔫【下单指令】机构在跌的票砸钱 = 直接给买点，不许说观察 🔫🔫")
     w("=" * 60)
-    w("  ★铁律H：识别到机构埋伏=必须当场给可执行标的★")
-    w("  ★触发条件(V2.1扩容)：①跌着被买≥1亿 ②微涨<3%但机构净买≥1亿")
-    w("    机构在涨停股买1亿 vs 在微涨股买3亿 → 后者才是真建仓")
+    w("  ★铁律H：识别到机构埋伏 = 必须当场给可执行标的★")
+    w("  ★触发：①跌着被买≥1亿  ②微涨<3%但机构净买≥1亿")
     w("  ★历史转化率0%：7/28中际旭创(后+19.6%)、7/30长电科技、8/3德明利")
     w("    三次识别全对，三次都只说『观察』→ 全部错过")
 
     orders = []
     seen_code = set()
-    # ①埋伏池（跌着被买）
+    no_amt = 0
     for item in (ambush or []):
         try:
             nm, cd, pct, net = item[0], item[1], item[2], item[3]
-            amt = float(net) if net is not None else None
         except Exception:
             continue
-        if amt is None or amt < 1.0 or (pct is not None and pct >= 0):
+        amt = float(net) if net is not None and pd.notna(net) else None
+        if amt is None:
+            no_amt += 1
+            continue
+        if amt < 1.0 or (pct is not None and pct >= 0):
             continue
         orders.append((amt, nm, cd, pct, "跌着被买"))
-        seen_code.add(cd)
+        if cd:
+            seen_code.add(cd)
 
-    # ★②机构专用席位：涨幅<3% 且 机构净买≥1亿（V2.1新增）
-    # 教训：8/7多氟多+1.25%机构净买3.26亿(全场最大)，旧版只筛"跌的票"漏掉了
     for r in (jg_rows or []):
         try:
-            nm, pct, amt = r[0], r[1], r[2]
+            nm, pct, amt, cd = r[0], r[1], r[2], (r[3] if len(r) > 3 else "")
         except Exception:
             continue
         if amt is None or amt < 1.0:
             continue
         if pct is None or pct >= 3.0:
             continue
-        cd = r[3] if len(r) > 3 else ""
         if cd and cd in seen_code:
             continue
         orders.append((amt, nm, cd, pct, "微涨被机构重金买入"))
+        if cd:
+            seen_code.add(cd)
+
+    if no_amt:
+        w(f"\n  🔴 埋伏池有{no_amt}只【无净买额数据】被跳过（数据源缺该列）")
+        w("     这不是『今天没信号』，是『今天测不出信号』，两者不可混为一谈。")
 
     if not orders:
         w("\n  今日无【机构/游资在跌的票上净买≥1亿】的标的")
         w("  → 明确结论：今晚不产生下单指令（不硬凑，铁律D）")
+        w("=" * 60)
         return
     orders.sort(key=lambda x: -x[0])
 
+    # ★★V3.0 现金约束：指令必须是真能执行的，否则只是纸上谈兵★★
+    want_wan = TOTAL_ASSET_WAN * SINGLE_MAX_PCT / 100
+    cash_ok = CASH_AVAIL_WAN >= want_wan
+    w(f"\n  💰 可用现金 {CASH_AVAIL_WAN*10000:,.0f}元 / 单笔需 {want_wan*10000:,.0f}元 "
+      f"→ {'✅够' if cash_ok else '🔴不够'}")
+    if not cash_ok:
+        w("  🔴 现金不足，下列指令【无法直接执行】。")
+        w("     要执行必须先卖出一笔 → 卖出前必须过【卖出卡】：")
+        w("     查台账里写死的『逻辑破定义』，破了才准卖，不许因为想买新的而卖旧的。")
+        w("     ⚠️ 『为了买A而卖B』是最常见的亏损来源：A是新鲜感，B是已验证的仓位。")
+
     w(f"\n  ★★今日触发下单条件 {len(orders)} 只 —— 逐个给指令★★\n")
+    archive = []
     for i, (amt, nm, cd, pct, why) in enumerate(orders[:5], 1):
         etf = None
         for k, v in HIGH_PRICE_ETF.items():
@@ -334,25 +455,80 @@ def gen_order(ambush, jg_rows=None):
             w(f"    ⚠️ 股价高，一手可能>总资产10% → ★改买ETF：{etf}★")
             w("       （铁律H②：个股太贵就给ETF，不许说买不起）")
         else:
-            w(f"    🎯 标的：{nm}({cd}) —— 直接买个股")
+            w(f"    🎯 标的：{nm}({cd})")
         w("    ─────────────────────────")
         w("    【买点】次日开盘不追高：")
         w("      · 低开或平开 → 直接买")
         w("      · 高开>5% → 等回踩到分时均价")
         w("      · 高开>9% → 放弃，改等第2个回踩日")
-        w(f"    【仓位】{TOTAL_ASSET_WAN*0.11:.1f}万（约总资产11%，单笔上限）")
+        w(f"    【仓位】{want_wan:.1f}万（总资产{SINGLE_MAX_PCT}%，单笔上限）"
+          + ("" if cash_ok else "  🔴现金不足，需先卖出"))
         w("    【止损】-12%（机构建仓要时间，给足空间）")
         w("    【类型】B类周期仓，最少持有3个交易日")
         w("      ★铁律H④：信号次日若下跌，不算信号错，不许当天砍")
         w("    【兑现】+10%减半锁利，剩余移动止盈(最高点回落5%)")
         w("    【逻辑破】①该板块连续3天资金流出 ②机构次日在龙虎榜净卖出")
+        w("    ─── ★★下单前必答闸门（V3.0新增，答不出=指令不成立）★★ ───")
+        w("    ①-B 这只票靠什么赚钱？下游客户是谁？          → ____________")
+        w("        机构今天买它的原因，和这个赚钱方式是同一个吗？")
+        w("        ★不是同一个 → 净买额再大也不许买（铁律L）")
+        w("        ★教训：卓胜微『半导体+3.8%顺风』→ 实际驱动是手机出货，")
+        w("          存储涨价反而抬高它成本，是利空。板块顺风对它无效。")
+        w("    ③-B 这是【产业周期】还是【单一事件】？        → ____________")
+        w("        产业周期→填『预计持续__周』；单一事件→当天就是顶")
+        w("    ⑥  它属于哪条驱动链？我在这条链上已有多少？   → ____________")
+        for ch, v in sorted(MY_CHAINS.items(), key=lambda x: -x[1]):
+            pc = v / TOTAL_ASSET_WAN * 100
+            mark = " 🔴已接近上限" if pc >= CHAIN_MAX_PCT - 8 else ""
+            w(f"        现有 {ch}：{v:.2f}万 = {pc:.0f}%{mark}")
+        w(f"        ★铁律⑧：同一驱动链合计不许超{CHAIN_MAX_PCT}%")
+        w("    ⑨  逻辑破定义（买入当天写死，将来卖出只认这个）→ ____________")
         w("")
+        archive.append({"code": cd, "name": nm, "amt": amt, "pct": pct, "why": why})
 
-    w("  ⚠️ 执行纪律（写死，不许绕过）：")
-    w("    1. 上面每条指令都是【可直接下单】的，不是建议")
-    w("    2. AI在对话里不许把它降级为『观察』『关注』『等明天验证』")
-    w("    3. 若因仓位不足只能选一只 → 选净买额最大的那只")
-    w("    4. 若全部是高价股 → 买对应ETF，仍然要下单")
+    w("  ⚠️ 执行纪律：")
+    w("    1. 上面是【候选指令】，闸门①-B/③-B/⑥/⑨ 全部答完才成为可执行指令")
+    w("    2. 答完了就下单，不许再降级为『观察』『等明天验证』（铁律H）")
+    w("    3. 答不出①-B就不许买 —— 这不是谨慎，这是铁律L，答不出说明不懂它")
+    w("    4. 若仓位只够一只 → 选净买额最大且①-B答得出的那只")
+
+    # ★V3.0 存档，供 backtest_order 回测
+    if archive:
+        try:
+            d = _bt_load(ORDER_HIST_FILE)
+            d[now_beijing().strftime("%Y-%m-%d")] = archive
+            _bt_save(ORDER_HIST_FILE, d)
+            w(f"\n  📌 已存档{len(archive)}条指令 → 3日后自动回看命中率")
+        except Exception:
+            pass
+    w("=" * 60)
+
+
+def backtest_order():
+    """★V3.0：转化率0%被反复检讨，但『转化了会不会赚』从没验证过。
+    这才是决定该不该提高转化率的依据。"""
+    w("\n" + "=" * 60)
+    w("🔬【下单指令·回测】埋伏信号到底值不值得下单")
+    w("=" * 60)
+    d = _bt_load(ORDER_HIST_FILE)
+    if not d:
+        w("  尚无存档，今晚是第1天。")
+        w("  ⚠️ 铁律：累计≥5天且≥15样本后出胜率；连续<45% → 停用『埋伏必下单』规则")
+        w("=" * 60)
+        return
+    days = sorted(d.keys(), reverse=True)
+    n_all = sum(len(v) for v in d.values())
+    w(f"  已积累 {len(days)} 天 / {n_all} 条指令")
+    w("\n  ── 最近5天发出的指令（请对照次日行情自查）──")
+    for day in days[:5]:
+        items = d[day]
+        w(f"  {day}：" + " ｜ ".join(
+            f"{x.get('name')}({x.get('code')}) 净买{x.get('amt', 0):.1f}亿"
+            for x in items[:5]))
+    w("\n  ⚠️ 对照方法：3日后看这些票涨跌，>3%算命中。")
+    w("     命中率 ≥45% → 提高转化率是对的，该更果断")
+    w("     命中率 <45% → 转化率0%其实救了你，该改的是信号本身不是执行力")
+    w("  ⚠️ 在拿到这个数字之前，『必须下单』和『再观察』都只是态度，不是证据。")
     w("=" * 60)
 
 
@@ -360,23 +536,46 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V2.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.0 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     if bj.weekday() >= 5:
-        w("周末无龙虎榜数据")
+        w("周末无龙虎榜数据（下方为最近一个交易日的回溯结果）")
     elif bj.hour < 18:
         w(f"⚠️ 当前{bj.hour}点，龙虎榜18:35后才发布，本次可能为空")
 
-    ambush, chase = scan_lhb()
-    scan_hot_money()
-    jg = scan_jg()
-    gen_order(ambush, jg)
+    ambush, chase = [], []
+    try:
+        ambush, chase = scan_lhb()
+    except Exception as e:
+        w(f"  [报空] 龙虎榜模块：{type(e).__name__}: {str(e)[:60]}")
+    try:
+        scan_hot_money()
+    except Exception as e:
+        w(f"  [报空] 游资席位模块：{type(e).__name__}: {str(e)[:60]}")
+    jg = []
+    try:
+        jg = scan_jg() or []
+    except Exception as e:
+        w(f"  [报空] 机构席位模块：{type(e).__name__}: {str(e)[:60]}")
+
+    # ★V3.0：即使前面全挂，下单指令与回测也照常运行并明确报出「无数据」
+    try:
+        gen_order(ambush, jg)
+    except Exception as e:
+        w(f"  [报空] 下单指令：{type(e).__name__}: {str(e)[:60]}")
+    try:
+        backtest_order()
+    except Exception as e:
+        w(f"  [报空] 指令回测：{type(e).__name__}: {str(e)[:60]}")
 
     w("\n" + "=" * 60)
     w("★★★【明日作战提示】★★★")
     w("  铁律B：游资在『当天下跌』的板块砸钱 = 埋伏 = 明天最可能启动")
     w("  ①先看埋伏池 → ②查它属于哪个板块 → ③板块是否已启动")
     w("  ④催化是『一次性事件』还是『持续趋势』 → ⑤才决定买不买")
+    w("  ★铁律K：越反常的交易，含义越深。正常交易不含信息。")
+    w(f"\n  💰 可用现金 {CASH_AVAIL_WAN*10000:,.0f}元 —— 不先卖就买不了任何东西")
+    w("     卖之前必过卖出卡：查台账写死的逻辑破定义，破了才准卖")
     w("=" * 60)
 
     os.makedirs("reports", exist_ok=True)
@@ -385,7 +584,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描完成")
+    print("\n✅ 龙虎榜扫描V3.0完成")
 
 
 if __name__ == "__main__":
