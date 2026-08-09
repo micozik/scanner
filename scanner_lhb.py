@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-龙虎榜/游资 独立扫描器 V3.0（2026-08-09 单位事故修复 + 下单指令加闸门 + 回测）
+龙虎榜/游资 独立扫描器 V3.1（2026-08-09 实盘验出：加合理性校验 + 新股过滤）
 专职：每晚18:45跑，抓当日龙虎榜 + 活跃营业部 + 机构专用席位
 核心：自动标注【埋伏型】(跌着被买=明天机会) / 【追高型】(涨停被买=次日易崩)
+
+V3.1 新增（V3.0跑出来之后发现的真问题）：
+  0. 🔴🔴合理性校验：8/7实测 益坤电气(北交所小票) 机构净买「54.54亿」排全场第一，
+     但同日龙虎榜明细净买最大的中国稀土只有6.32亿，且用户台账记录当日
+     全场最大是多氟多3.26亿 —— 三重矛盾，该数为脏数据/单位错乱。
+     旧版把它排在下单指令第1位。数值荒谬时，怎么换算都是错的，
+     必须有独立于换算的【常识上限】。超限→标🔴可疑→逐出下单指令。
+  0b.新股过滤：展芯股份+396.89%(上市首日无涨跌幅限制)被误判为「追高型(涨停20%)」。
+     上榜原因含「无价格涨跌幅限制」或涨幅>50% → 按新股处理，不参与埋伏/追高判定。
 
 V3.0 六项修复（按危险程度排）：
   1. 🔴单位事故：旧版用「整列最大值>1e6」判断单位，全场净买额偏小的那天
@@ -31,7 +40,7 @@ ORDER_HIST_FILE = "reports/order_history.json"
 
 # ★账户参数（买卖后更新；三个扫描器各有一份，改一处要三处同步）
 TOTAL_ASSET_WAN = 18.38     # 总资产(万) 2026-08-09 截图对账 183,802.38
-CASH_AVAIL_WAN = 0.03       # ★可用现金(万) 286.48元 → 决定指令能不能真的执行
+CASH_AVAIL_WAN = 0.0286     # ★可用现金(万) 286.48元 → 决定指令能不能真的执行
 SINGLE_MAX_PCT = 11         # 单笔上限占总资产%
 
 # ★现有持仓驱动链（查集中度用，与 scanner_cloud 的 WATCH_STOCKS 对齐）
@@ -45,6 +54,12 @@ MY_CHAINS = {
     "农业(独立)": 3.08,
 }
 CHAIN_MAX_PCT = 40          # 铁律⑧：同一驱动链不许超40%
+
+# ★★V3.1 合理性上限（亿元）。超过即判为脏数据，不参与下单指令。
+# 依据：A股单只个股单日龙虎榜净买额历史极值约20亿量级；
+#      单个营业部单日净买额极值约20亿量级。超出即为单位错乱或源数据错误。
+SANE_MAX_STOCK_YI = 20.0
+SANE_MAX_SEAT_YI = 20.0
 
 # ★高价股→可买ETF（一手>总资产10%就给ETF，不许说"买不起"）
 HIGH_PRICE_ETF = {
@@ -151,6 +166,28 @@ def _to_yi(v):
     return round(x, 4)     # <1000 → 已经是「亿元」
 
 
+def _suspect(v, cap, what=""):
+    """★V3.1 合理性校验：返回 (是否可疑, 提示文本)
+    换算正确 ≠ 数值正确。源数据本身错乱时，唯一的防线是常识上限。"""
+    if v is None or pd.isna(v):
+        return False, ""
+    if abs(float(v)) > cap:
+        return True, f" 🔴可疑(>{cap:.0f}亿，超出{what}常识上限，已逐出下单指令)"
+    return False, ""
+
+
+def _is_newstock(pct, reason=""):
+    """★V3.1 新股/无涨跌幅限制识别：不参与埋伏型/追高型判定"""
+    if reason and ("无价格涨跌幅限制" in str(reason) or "无涨跌幅" in str(reason)):
+        return True
+    try:
+        if pct is not None and pd.notna(pct) and abs(float(pct)) > 50:
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def _limit_pct(code):
     """★V3.0 按板块返回涨停幅度：主板10%、双创20%、北交所30%"""
     c = str(code)[-6:]
@@ -240,12 +277,16 @@ def scan_lhb():
             seen.add(code)
         pct = r[c_pct] if c_pct else None
         net = r.get("_net_yi") if c_net else None
+        rs = str(r[c_reason])[:24] if c_reason else ""
+        bad, badtxt = _suspect(net, SANE_MAX_STOCK_YI, "个股单日净买")
         tag = ""
-        if pct is not None and pd.notna(pct):
+        if _is_newstock(pct, rs):
+            tag = "🆕新股/无涨跌幅限制(不判埋伏追高)"
+        elif pct is not None and pd.notna(pct):
             lim = _limit_pct(code)
             if pct < 0:
                 tag = "✅埋伏型"
-                if net is None or (pd.notna(net) and net > 0):
+                if not bad and (net is None or (pd.notna(net) and net > 0)):
                     ambush.append((nm, code, float(pct), net))
             elif pct >= lim:
                 tag = f"⚠️追高型(涨停{lim:.0f}%)"
@@ -254,8 +295,7 @@ def scan_lhb():
                 tag = "中性"
         p = f" {pct:+.2f}%" if pct is not None and pd.notna(pct) else ""
         n = f" 净买{net:.2f}亿" if net is not None and pd.notna(net) else ""
-        rs = str(r[c_reason])[:18] if c_reason else ""
-        w(f"    {nm}({code}){p}{n} {tag} {rs}")
+        w(f"    {nm}({code}){p}{n}{badtxt} {tag} {rs}")
 
     w("")
     w("  ★★★【埋伏池】游资在『当天下跌』的票上砸钱 = 明天最可能启动 ★★★")
@@ -307,11 +347,17 @@ def scan_hot_money():
         df["_net_yi"] = df[c_net].apply(_to_yi)      # ★同样逐值归一化
         df = df.sort_values("_net_yi", ascending=False, na_position="last")
     w(f"  ◆ 净买入前12（源：{src}）：")
+    n_bad = 0
     for _, r in df.head(12).iterrows():
         v = r.get("_net_yi") if c_net else None
+        bad, badtxt = _suspect(v, SANE_MAX_SEAT_YI, "单营业部单日净买")
+        if bad:
+            n_bad += 1
         n = f" 净{v:.2f}亿" if v is not None and pd.notna(v) else ""
         s = f" 主买:{str(r[c_stock])[:70]}" if c_stock else ""
-        w(f"    {r[c_name]}{n}{s}")
+        w(f"    {r[c_name]}{n}{badtxt}{s}")
+    if n_bad:
+        w(f"  🔴 本次有{n_bad}条超出常识上限 → 该源今日金额字段不可信，只看『主买了谁』，不看金额")
     w("  ※ 判读：席位集中买『当天在跌』的=埋伏，次日看启动；")
     w("    集中买『当天涨停』的=追高接力，次日易崩。")
 
@@ -354,13 +400,16 @@ def scan_jg():
             cdd = str(r[c_code])[-6:] if c_code else ""
             p = f" {vv:+.2f}%" if vv is not None and pd.notna(vv) else ""
             n = f" 机构净买{amt_y:.2f}亿" if amt_y is not None and pd.notna(amt_y) else ""
+            bad, badtxt = _suspect(amt_y, SANE_MAX_STOCK_YI, "个股单日机构净买")
             flag = ""
-            if vv is not None and pd.notna(vv):
+            if not bad and vv is not None and pd.notna(vv):
                 if vv < 0:
                     flag = " ✅机构在跌时买入=重要埋伏信号"
                 elif vv < 3:
                     flag = " ★微涨却被机构重金买入=真建仓"
-            w(f"    {nm}({cdd}){p}{n}{flag}")
+            w(f"    {nm}({cdd}){p}{n}{badtxt}{flag}")
+            if bad:
+                continue          # ★V3.1 可疑值不进下单指令
             out.append((nm,
                         float(vv) if vv is not None and pd.notna(vv) else None,
                         float(amt_y) if amt_y is not None and pd.notna(amt_y) else None,
@@ -385,6 +434,8 @@ def gen_order(ambush, jg_rows=None):
     w("  ★触发：①跌着被买≥1亿  ②微涨<3%但机构净买≥1亿")
     w("  ★历史转化率0%：7/28中际旭创(后+19.6%)、7/30长电科技、8/3德明利")
     w("    三次识别全对，三次都只说『观察』→ 全部错过")
+
+    w("  ★V3.1：超出常识上限的金额已在上游逐出（8/7益坤电气54.54亿即此类）")
 
     orders = []
     seen_code = set()
