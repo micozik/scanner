@@ -1620,7 +1620,13 @@ BEAR_WORDS = ["暴跌", "大跌", "下跌", "跌破", "跌超", "下滑", "下�
               "取消", "推迟", "延期", "叫停", "禁止", "制裁", "封锁", "调查",
               "处罚", "罚款", "爆仓", "强平", "去杠杆", "抛售", "净流出", "减持",
               "溢价风险", "过剩", "降价", "压价", "集采", "降本", "缩水", "warning",
-              "加息", "紧缩", "衰退", "风险", "利空", "承压", "疲软", "低迷"]
+              "加息", "紧缩", "衰退", "风险", "利空", "承压", "疲软", "低迷",
+              # ★V6.1 贸易限制类（对A股是利空，此前被误判为利多）
+              "覆盖清单", "实体清单", "出口管制", "301调查", "232调查",
+              "反倾销", "反补贴", "双反", "加征关税", "限制进口", "禁止进口",
+              "列入清单", "制裁名单", "技术封锁", "断供", "撤销资质",
+              "取消资质", "调查", "处罚", "约谈", "停牌", "退市", "减持计划",
+              "股东减持", "解禁", "商誉减值", "计提减值"]
 
 
 FOREIGN_WORDS = ["匈牙利", "希腊", "西班牙", "葡萄牙", "意大利", "法国", "德国",
@@ -2623,20 +2629,29 @@ def scan_announcements():
     def _do():
         df = None
         d2 = (now_beijing() - datetime.timedelta(days=1)).strftime("%Y%m%d")
-        for tag, fn in [
-            ("东财公告-全部", lambda: ak.stock_notice_report_em(symbol="全部", date=d)),
-            ("东财公告-昨日", lambda: ak.stock_notice_report_em(symbol="全部", date=d2)),
-            ("东财-重大事项", lambda: ak.stock_notice_report_em(symbol="重大事项", date=d)),
-            ("同花顺-最新公告", lambda: ak.stock_notice_report_em(symbol="资产重组", date=d)),
-            ("巨潮-互动易", lambda: ak.stock_zh_a_disclosure_report_cninfo(
-                symbol="全部", market="沪深京", start_date=d, end_date=d)),
-        ]:
+        # ★V6.2：先用 hasattr 探测函数是否存在，避免 AttributeError
+        cands = [
+            ("股市日历-公司动态", "stock_gsrl_gsdt_em", {"date": d}),
+            ("股市日历-昨日", "stock_gsrl_gsdt_em", {"date": d2}),
+            ("东财-公告大全", "stock_notice_report_em", {"symbol": "全部", "date": d}),
+            ("东财-资讯快讯", "stock_info_global_em", {}),
+            ("同花顺-全球财经", "stock_info_global_ths", {}),
+            ("财联社-电报", "stock_info_global_cls", {"symbol": "全部"}),
+            ("新浪-股市直播", "stock_info_global_sina", {}),
+            ("富途-快讯", "stock_info_global_futu", {}),
+        ]
+        avail = [c for c in cands if hasattr(ak, c[1])]
+        if not avail:
+            w(f"  ⚠️ akshare无任何可用公告函数（已探测{len(cands)}个）")
+        for tag, fname, kw in avail:
             try:
-                r = with_retry(fn, tries=1, wait=2, timeout=40)
+                fn = getattr(ak, fname)
+                r = with_retry(lambda: fn(**kw), tries=1, wait=2, timeout=40)
                 if r is not None and len(r) > 0:
                     df = r
                     w(f"  ✅ 公告源：{tag}（{len(r)}条）")
                     break
+                w(f"  [跳过] {tag}：返回空")
             except Exception as e:
                 w(f"  [跳过] {tag}：{type(e).__name__}")
         if df is None:
@@ -2644,7 +2659,7 @@ def scan_announcements():
             return
         c_name = pick_col(df, ["名称", "股票简称", "简称"])
         c_code = pick_col(df, ["代码", "股票代码"])
-        c_title = pick_col(df, ["公告标题", "标题"])
+        c_title = pick_col(df, ["公告标题", "标题", "内容", "摘要", "简称"])
         if not c_title:
             w(f"  [报空] 缺标题列 {list(df.columns)[:6]}")
             return
@@ -3441,7 +3456,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V6.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V6.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3486,7 +3501,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V6.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V6.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
