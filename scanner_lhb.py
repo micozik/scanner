@@ -587,7 +587,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.0 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     if bj.weekday() >= 5:
         w("周末无龙虎榜数据（下方为最近一个交易日的回溯结果）")
@@ -635,7 +635,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.0完成")
+    print("\n✅ 龙虎榜扫描V3.1完成")
 
 
 if __name__ == "__main__":
