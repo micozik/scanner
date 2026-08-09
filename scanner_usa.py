@@ -1,32 +1,62 @@
 # -*- coding: utf-8 -*-
 """
-美股夜盘扫描器 · 独立版 V2.0（2026-08-02 对齐A股V3.5：催化热力图/多空/地域过滤/映射A股）
-V1.1新增：
-  1. 伯克希尔 BRK.A / BRK.B 加入重点个股
-  2. 新闻雷达新增【聪明钱专区】：巴菲特/伯克希尔、伯里、木头姐、段永平、
-     达里奥、阿克曼、索罗斯、13F 等大佬动向自动置顶
+美股夜盘扫描器 · 独立版 V3.0（2026-08-09 结构性修复 + 持仓穿透）
+V3.0 四项改动：
+  1. scan_us_heat 从 scan_news 内剪出 → main() 独立运行
+     （原来新闻源全挂就 return，把映射表一起吞掉，和A股止盈同一个病）
+  2. ★新增【持仓夜盘影响】：用美股【真实涨跌幅】直接点名你的A股持仓
+     （原来只有"存储→A股存储链"这种抽象映射，最后一步靠人脑，
+       而招商轮船/卓胜微两次翻车正是错在这一步）
+  3. ★新增 us_map_history.json + 次日回测 → 净利多前3到底准不准，机器说了算
+  4. 删除不存在的 SKHY；指数/个股加数据日期新鲜度标注；BRK 双写法容错
 输出：reports/美股_最新.txt + reports/美股_日期.txt
 与A股扫描器完全独立，互不影响
 """
 
-import os, time, signal, datetime
+import os, json, time, signal, datetime
 import akshare as ak
 import pandas as pd
 
 REPORT = []
+US_MAP_HIST_FILE = "reports/us_map_history.json"
 
 US_TICKERS = [
     ("英伟达", "NVDA"), ("台积电", "TSM"), ("美光", "MU"), ("AMD", "AMD"),
-    ("博通", "AVGO"), ("SK海力士", "SKHY"), ("特斯拉", "TSLA"), ("苹果", "AAPL"),
+    ("博通", "AVGO"), ("特斯拉", "TSLA"), ("苹果", "AAPL"),
     ("阿斯麦", "ASML"), ("英特尔", "INTC"), ("阿里巴巴", "BABA"), ("Meta", "META"),
     ("微软", "MSFT"), ("谷歌", "GOOGL"), ("亚马逊", "AMZN"), ("希捷", "STX"),
     ("西部数据", "WDC"), ("闪迪", "SNDK"), ("应用材料", "AMAT"), ("拉姆研究", "LRCX"),
+    ("康宁", "GLW"), ("Coherent", "COHR"), ("礼来", "LLY"), ("纽蒙特", "NEM"),
     ("伯克希尔B", "BRK.B"), ("伯克希尔A", "BRK.A"),
+    # ★V3.0 删除 SKHY：SK海力士只在韩国上市(000660.KS)，美股无ADR，永远报空白等30秒
 ]
 
 US_INDEX = [
     ("道琼斯", ".DJI"), ("纳斯达克", ".IXIC"), ("标普500", ".INX"),
     ("费城半导体", ".SOX"),
+]
+
+# ★★V3.0 核心新增：A股持仓 → 美股先行标的
+# 与 scanner_cloud.py 的 WATCH_STOCKS 驱动链一一对应，买卖后两边一起改。
+# 格式：(A股代码, 名称, 驱动链, 成本, 止损, [(美股ticker, 权重), ...])
+# 权重：这只美股对该A股的解释力。1.0=直接对标，0.5=同链但间接。
+MY_HOLDINGS = [
+    ("000938", "紫光股份", "AI算力链", 34.681, 29.48,
+     [("NVDA", 1.0), ("AVGO", 0.8), ("AMD", 0.5), ("MSFT", 0.5)]),
+    ("603220", "中贝通信", "AI算力链", 18.396, 16.19,
+     [("NVDA", 0.8), ("AVGO", 0.6), ("COHR", 0.6), ("GLW", 0.5)]),
+    ("688126", "沪硅产业", "半导体材料链", 26.228, 22.90,
+     [("MU", 0.8), ("AMAT", 1.0), ("LRCX", 1.0), ("ASML", 0.8), ("TSM", 0.6)]),
+    ("605376", "博迁新材", "MLCC涨价链", 165.223, 144.00,
+     [("AAPL", 0.6), ("TSLA", 0.4)]),
+    ("159796", "电池ETF汇", "锂电/钠电链", 0.820, 0.760,
+     [("TSLA", 1.0)]),
+    ("159934", "黄金ETF易", "贵金属链", 8.938, 8.20,
+     [("NEM", 1.0)]),
+    ("516080", "创新药ETF", "医药链", 0.710, 0.640,
+     [("LLY", 0.8)]),
+    ("002714", "牧原股份", "农业(独立)", 39.613, 36.50,
+     []),   # 猪周期与美股无关，空表示"今夜美股不影响它"
 ]
 
 # 聪明钱关键词（大佬动向自动置顶）
@@ -40,6 +70,10 @@ SMART_MONEY = [
     "索罗斯", "格林布拉特", "德鲁肯米勒", "查诺斯",
     "灰度", "贝莱德", "先锋领航", "景林", "高瓴",
 ]
+
+# 全局：本次抓到的美股个股行情 {ticker: (涨跌幅, 收盘价, 数据日期)}
+US_QUOTE = {}
+TODAY_MAP_TOP3 = []
 
 
 def now_beijing():
@@ -91,6 +125,38 @@ def safe_run(title, func):
     time.sleep(2)
 
 
+def _stale_tag(dstr):
+    """★V3.0 数据新鲜度：周一早上拿到的是周五收盘，必须标出来
+    错题㉑：周五收盘=周一方向已定，但别把陈旧数据当成今天的"""
+    try:
+        d = datetime.datetime.strptime(str(dstr)[:10], "%Y-%m-%d")
+        gap = (now_beijing().date() - d.date()).days
+        if gap <= 1:
+            return ""
+        return f" ⚠️距今{gap}天(非最新)"
+    except Exception:
+        return ""
+
+
+def _bt_load(path):
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def _bt_save(path, data):
+    try:
+        os.makedirs("reports", exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
 # ========== 一、美股指数 ==========
 
 def scan_index():
@@ -113,7 +179,7 @@ def scan_index():
                     if prev:
                         pct = f" {(close-prev)/prev*100:+.2f}%"
                 d = str(last[c_date])[:10] if c_date else ""
-                w(f"    {name}：{close}{pct}  [{d}]")
+                w(f"    {name}：{close}{pct}  [{d}]{_stale_tag(d)}")
             except Exception as e:
                 w(f"    {name}：[报空] {type(e).__name__}")
             time.sleep(1)
@@ -126,32 +192,38 @@ def scan_stocks():
     w("\n【二、重点个股】（芯片/算力/存储/中概 + 伯克希尔）")
 
     def _one(tk):
-        for fname in ["stock_us_hist", "stock_us_daily"]:
-            try:
-                fn = getattr(ak, fname, None)
-                if fn is None:
+        # ★V3.0：BRK.A/BRK.B 各源写法不一，双写法容错
+        variants = [tk]
+        if "." in tk:
+            variants.append(tk.replace(".", "-"))
+        for cand in variants:
+            for fname in ["stock_us_hist", "stock_us_daily"]:
+                try:
+                    fn = getattr(ak, fname, None)
+                    if fn is None:
+                        continue
+                    if fname == "stock_us_daily":
+                        df = with_retry(lambda c=cand, f=fn: f(symbol=c, adjust=""),
+                                        tries=1, timeout=30)
+                    else:
+                        end = now_beijing().strftime("%Y%m%d")
+                        start = (now_beijing() - datetime.timedelta(days=12)).strftime("%Y%m%d")
+                        df = with_retry(
+                            lambda c=cand, f=fn: f(symbol=c, period="daily", start_date=start,
+                                                   end_date=end, adjust=""), tries=1, timeout=30)
+                    if df is None or len(df) < 2:
+                        continue
+                    c_close = pick_col(df, ["收盘", "close"])
+                    c_date = pick_col(df, ["日期", "date"])
+                    c_vol = pick_col(df, ["成交量", "volume"])
+                    close = pd.to_numeric(df.iloc[-1][c_close], errors="coerce")
+                    prev = pd.to_numeric(df.iloc[-2][c_close], errors="coerce")
+                    pct = (close - prev) / prev * 100 if prev else None
+                    d = str(df.iloc[-1][c_date])[:10] if c_date else ""
+                    vol = f" 量{df.iloc[-1][c_vol]}" if c_vol else ""
+                    return close, pct, d, vol, fname
+                except Exception:
                     continue
-                if fname == "stock_us_daily":
-                    df = with_retry(lambda: fn(symbol=tk, adjust=""), tries=1, timeout=30)
-                else:
-                    end = now_beijing().strftime("%Y%m%d")
-                    start = (now_beijing() - datetime.timedelta(days=12)).strftime("%Y%m%d")
-                    df = with_retry(
-                        lambda: fn(symbol=tk, period="daily", start_date=start,
-                                   end_date=end, adjust=""), tries=1, timeout=30)
-                if df is None or len(df) < 2:
-                    continue
-                c_close = pick_col(df, ["收盘", "close"])
-                c_date = pick_col(df, ["日期", "date"])
-                c_vol = pick_col(df, ["成交量", "volume"])
-                close = pd.to_numeric(df.iloc[-1][c_close], errors="coerce")
-                prev = pd.to_numeric(df.iloc[-2][c_close], errors="coerce")
-                pct = (close - prev) / prev * 100 if prev else None
-                d = str(df.iloc[-1][c_date])[:10] if c_date else ""
-                vol = f" 量{df.iloc[-1][c_vol]}" if c_vol else ""
-                return close, pct, d, vol, fname
-            except Exception:
-                continue
         return None, None, None, None, None
 
     def _do():
@@ -160,7 +232,10 @@ def scan_stocks():
             close, pct, d, vol, src = _one(tk)
             if close is not None:
                 pstr = f"{pct:+.2f}%" if pct is not None else ""
-                w(f"    {cn}({tk}) {close} {pstr}{vol}  [{d}]")
+                w(f"    {cn}({tk}) {close} {pstr}{vol}  [{d}]{_stale_tag(d)}")
+                # ★V3.0 存进全局，供【持仓夜盘影响】用真实涨跌幅
+                if pct is not None:
+                    US_QUOTE[tk] = (float(pct), float(close), d)
                 ok += 1
             else:
                 w(f"    {cn}({tk}) [报空]")
@@ -171,8 +246,74 @@ def scan_stocks():
     safe_run("美股个股", _do)
 
 
-# ========== 三、美股新闻 + 聪明钱专区 ==========
+# ========== ★★V3.0 核心新增：持仓夜盘影响 ==========
 
+def scan_holdings_impact():
+    """把『美股涨了→A股哪个板块→我哪只票』这条链搬进代码。
+    ★用【真实涨跌幅】不用【新闻情绪】：新闻极性是猜的，个股涨跌是事实。
+    ★这是招商轮船(运油≠卖油)、卓胜微(手机≠存储)两次翻车的正面防线。"""
+    w("\n" + "=" * 60)
+    w("🎯🎯【持仓夜盘影响】今夜美股，直接点名你的票 🎯🎯")
+    w("=" * 60)
+    if not US_QUOTE:
+        w("  ⚠️ 个股行情全失败 → 无法计算，本节跳过（不影响其它模块）")
+        w("=" * 60)
+        return
+
+    w(f"  （基于{len(US_QUOTE)}只美股真实涨跌幅，非新闻情绪）\n")
+    rows = []
+    for code, name, chain, cost, stop, refs in MY_HOLDINGS:
+        if not refs:
+            w(f"  ◆ {name}({code}) ← {chain}")
+            w(f"     今夜美股无对应标的，方向由A股自身驱动决定")
+            w("")
+            continue
+        num = den = 0.0
+        detail = []
+        for tk, wt in refs:
+            q = US_QUOTE.get(tk)
+            if not q:
+                continue
+            pct = q[0]
+            num += pct * wt
+            den += wt
+            nm = next((c for c, t in US_TICKERS if t == tk), tk)
+            detail.append(f"{nm} {pct:+.2f}%")
+        if den == 0:
+            w(f"  ◆ {name}({code}) ← {chain}")
+            w(f"     对应美股全部取价失败")
+            w("")
+            continue
+        net = num / den
+        if net >= 2:
+            flag, act = "🔥🔥 强偏多", "明日可考虑加仓，但仍需过决策卡①-B"
+        elif net >= 0.5:
+            flag, act = "🔥 偏多", "持有，顺风"
+        elif net <= -3:
+            flag, act = "🔴🔴 强偏空", f"⚠️ 明日开盘留意，止损{stop}"
+        elif net <= -1:
+            flag, act = "❄️ 偏空", f"关注，止损{stop}"
+        else:
+            flag, act = "⚖️ 中性", "无明确方向"
+        w(f"  ◆ {name}({code}) ← {chain}   {flag}  加权净{net:+.2f}%")
+        w(f"     {' | '.join(detail)}")
+        w(f"     → {act}")
+        w("")
+        rows.append((net, name, chain))
+
+    if rows:
+        rows.sort()
+        w("  ── 排序 ──")
+        w(f"  最偏空：{rows[0][1]}（{rows[0][0]:+.2f}%）")
+        w(f"  最偏多：{rows[-1][1]}（{rows[-1][0]:+.2f}%）")
+    w("\n  ⚠️ 铁律K：如果某只票【美股对标大跌但它明天高开】，")
+    w("     这不是好消息也不是坏消息，是【反常】= 必须查清原因再动")
+    w("  ⚠️ 铁律①-B：加权净值只说明『同链共振』，不等于驱动相同。")
+    w("     买卖前仍须回答：它靠什么赚钱？今夜涨的那个原因跟它是同一个吗？")
+    w("=" * 60)
+
+
+# ========== 三、美股新闻 + 聪明钱专区 ==========
 
 # ★美股→A股 板块映射（美股是A股的先行指标）
 US_SECTOR_MAP = {
@@ -180,7 +321,7 @@ US_SECTOR_MAP = {
         "SanDisk", "西部数据", "希捷", "铠侠", "DRAM", "NAND", "HBM", "存储"],
     "半导体设备→A股北方华创/中微": ["应用材料", "拉姆", "Lam", "阿斯麦", "ASML",
         "KLA", "科天", "半导体设备", "光刻", "刻蚀"],
-    "AI算力→A股紫光/中科曙光": ["英伟达", "NVIDIA", "AMD", "博通", "Broadcom",
+    "AI算力→A股紫光/中贝通信": ["英伟达", "NVIDIA", "AMD", "博通", "Broadcom",
         "数据中心", "capex", "资本开支", "云计算", "AWS", "Azure", "算力"],
     "光模块CPO→A股中际旭创/新易盛": ["光模块", "CPO", "硅光", "Coherent",
         "Lumentum", "康宁", "800G", "1.6T"],
@@ -191,6 +332,7 @@ US_SECTOR_MAP = {
     "医药→A股创新药": ["辉瑞", "礼来", "默沙东", "FDA", "临床", "减肥药"],
     "金融→A股银行/保险": ["美联储", "加息", "降息", "美债", "收益率", "银行"],
     "能源→A股油气": ["原油", "WTI", "布伦特", "OPEC", "埃克森", "雪佛龙"],
+    "贵金属→A股黄金": ["黄金", "金价", "纽蒙特", "巴里克", "央行购金", "白银"],
 }
 
 US_BULL = ["涨", "上调", "创新高", "超预期", "大增", "暴增", "增长", "回购",
@@ -208,10 +350,17 @@ def _pol(t):
 
 
 def scan_us_heat(uniq):
-    """美股催化热力图 → 直接映射到A股对应板块"""
+    """美股催化热力图 → 直接映射到A股对应板块
+    ★V3.0：已从 scan_news 内剪出，由 main() 独立调用"""
+    global TODAY_MAP_TOP3
     w("\n" + "=" * 60)
     w("🔥【美股催化热力图 → A股映射】美股是A股的先行指标")
     w("=" * 60)
+    if not uniq:
+        w("  ⚠️ 无新闻数据（新闻源全挂）→ 本节跳过")
+        w("  ★但【持仓夜盘影响】用的是真实行情，不受影响，看上面那节")
+        w("=" * 60)
+        return
     hits = {}
     for sect, kws in US_SECTOR_MAP.items():
         bu, be, seen = [], [], set()
@@ -229,6 +378,7 @@ def scan_us_heat(uniq):
             hits[sect] = (bu, be)
     if not hits:
         w("  本次无命中")
+        w("=" * 60)
         return
     ranked = sorted(hits.items(), key=lambda x: len(x[1][0]) - len(x[1][1]), reverse=True)
     w("\n  ★净利多排行（美股利多→次日A股对应板块大概率跟涨）：")
@@ -253,6 +403,47 @@ def scan_us_heat(uniq):
                 w(f"        ↓[{tm}] ({k}) {t[:58]}")
     w("\n  ⚠️ 判读：美股某板块净利多高 → 次日A股对应板块优先看")
     w("     但仍需过A股决策卡①②④⑤（板块第几天/资金/位置/游资）")
+    w("  ⚠️ 提醒：本排行的准确率见下方【映射回测】，没验证过的规则不许当依据")
+
+    # ★V3.0 存档，供次日回测
+    TODAY_MAP_TOP3 = [(s, len(b) - len(e)) for s, (b, e) in ranked[:3]]
+    try:
+        d = _bt_load(US_MAP_HIST_FILE)
+        d[now_beijing().strftime("%Y-%m-%d")] = {
+            "top3": [{"sect": s, "net": n} for s, n in TODAY_MAP_TOP3],
+            "bottom": [{"sect": s, "net": len(b) - len(e)}
+                       for s, (b, e) in ranked[-2:]],
+        }
+        _bt_save(US_MAP_HIST_FILE, d)
+        w(f"  📌 已存档今夜前3 → 次日A股收盘后自动回看")
+    except Exception:
+        pass
+    w("=" * 60)
+
+
+def backtest_us_map():
+    """★V3.0 映射回测：昨夜说的『次日A股跟涨』，到底跟了没有
+    A股板块涨跌需 A股扫描器提供，这里先做【天数与样本积累】+ 人工对照清单"""
+    w("\n" + "=" * 60)
+    w("🔬【美股→A股映射·回测】这条规则准不准，机器说了算")
+    w("=" * 60)
+    d = _bt_load(US_MAP_HIST_FILE)
+    if not d:
+        w("  尚无存档，今夜是第1天。")
+        w("  ⚠️ 铁律：累计≥5天且≥15样本后出胜率；连续<45% → 立即停用此映射")
+        w("=" * 60)
+        return
+    days = sorted(d.keys(), reverse=True)
+    w(f"  已积累 {len(days)} 天 / {sum(len(v.get('top3', [])) for v in d.values())} 个样本")
+    w("\n  ── 最近5夜的前3预测（次日请对照A股板块榜自查）──")
+    for day in days[:5]:
+        t3 = d[day].get("top3", [])
+        if t3:
+            w(f"  {day}：" + " ｜ ".join(f"{x['sect'].split('→')[0]}(净{x['net']:+d})"
+                                        for x in t3))
+    w("\n  ⚠️ 对照方法：次日A股盘后扫描器的【板块全景榜】，")
+    w("     看这3个板块在不在当日涨幅前20。在=命中。")
+    w("  ⚠️ 满5天后把命中结果写进 scanner_cloud 的规则记分卡，一起管理")
     w("=" * 60)
 
 
@@ -290,7 +481,7 @@ def scan_news():
 
     if not allnews:
         w("  [报空] 所有新闻源均失败")
-        return
+        return []          # ★V3.0：返回空表而非裸 return，后续模块照常跑
 
     seen, uniq = set(), []
     for tm, t in allnews:
@@ -321,7 +512,7 @@ def scan_news():
     for tm, t in uniq[:60]:
         w(f"    [{tm}] {t[:70]}")
 
-    scan_us_heat(uniq)
+    return uniq            # ★V3.0：交给 main() 分发，不再自己调用热力图
 
 
 # ========== 主程序 ==========
@@ -331,21 +522,37 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V2.0 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V3.0 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
+    w("★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑")
+    w("★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的")
 
     scan_index()
     scan_stocks()
-    scan_news()
+
+    # ★★V3.0：持仓穿透用【真实行情】，排在新闻之前，新闻挂了也照跑★★
+    safe_run("持仓夜盘影响", scan_holdings_impact)
+
+    uniq = []
+    try:
+        uniq = scan_news() or []
+    except Exception as e:
+        w(f"  [报空] 新闻模块：{type(e).__name__}")
+
+    # ★★V3.0：热力图与回测独立运行，不再被新闻源成败绑架★★
+    safe_run("美股催化热力图", lambda: scan_us_heat(uniq))
+    safe_run("映射回测", backtest_us_map)
 
     w("\n" + "=" * 60)
     w("★★★【明日A股开盘参考】★★★")
     w("  数据在上，具体操作由AI结合你的持仓在对话中给出。")
-    w("  核心看点：①费城半导体SOX → A股半导体/芯片")
-    w("           ②英伟达/美光/存储链 → A股算力/存储/CPO/PCB")
-    w("           ③美联储/CPI → 成长股整体估值")
-    w("           ④油价/黄金 → A股资源链")
-    w("           ⑤💰聪明钱专区 → 巴菲特等大佬持仓/表态（13F披露日重点看）")
+    w("  核心看点：①🎯持仓夜盘影响（V3.0新增，直接点名你的票）")
+    w("           ②费城半导体SOX → A股半导体/芯片")
+    w("           ③英伟达/美光/存储链 → A股算力/存储/CPO/PCB")
+    w("           ④美联储/CPI → 成长股整体估值")
+    w("           ⑤油价/黄金 → A股资源链")
+    w("           ⑥💰聪明钱专区 → 巴菲特等大佬持仓/表态（13F披露日重点看）")
+    w("\n  ⚠️ 买卖后，MY_HOLDINGS 与 scanner_cloud 的 WATCH_STOCKS 必须同步改")
     w("=" * 60)
 
     os.makedirs("reports", exist_ok=True)
@@ -354,7 +561,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描V2.0完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V3.0完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
