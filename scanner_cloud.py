@@ -2392,33 +2392,48 @@ def scan_launch_radar():
         for f, kind in [(HIST_FILE, "行业"), (CONCEPT_FILE, "概念")]:
             try:
                 if not os.path.exists(f):
+                    w(f"  [跳过] {kind}历史库不存在")
                     continue
                 with open(f, "r", encoding="utf-8") as fp:
                     hist = json.load(fp)
-            except Exception:
+            except Exception as e:
+                w(f"  [跳过] {kind}库读取失败 {type(e).__name__}")
                 continue
-            if not isinstance(hist, dict):
+            if not isinstance(hist, dict) or len(hist) < 2:
+                w(f"  [跳过] {kind}库仅{len(hist) if isinstance(hist,dict) else 0}天，需≥2天")
                 continue
             days = sorted(hist.keys())
-            if len(days) < 2:
-                continue
 
             def _rank(obj):
+                """结构自适应：支持 list[str] / list[dict] / dict{name:rank}"""
                 out = {}
-                lst = obj if isinstance(obj, list) else (
-                    obj.get("list") or obj.get("data") or [])
-                for i, x in enumerate(lst, 1):
-                    if isinstance(x, dict):
-                        nm = x.get("name") or x.get("板块") or x.get("名称")
-                        cg = x.get("chg") or x.get("涨跌幅")
-                    else:
-                        nm, cg = str(x), None
-                    if nm:
-                        out[str(nm)] = (i, cg)
+                if isinstance(obj, dict):
+                    # 可能是 {板块名: 排名} 或 {"list":[...]}
+                    inner = obj.get("list") or obj.get("data")
+                    if inner is None:
+                        for k, v in obj.items():
+                            try:
+                                out[str(k)] = (int(v), None)
+                            except Exception:
+                                pass
+                        return out
+                    obj = inner
+                if isinstance(obj, list):
+                    for i, x in enumerate(obj, 1):
+                        if isinstance(x, dict):
+                            nm = (x.get("name") or x.get("板块") or
+                                  x.get("名称") or x.get("行业"))
+                            cg = x.get("chg") or x.get("涨跌幅")
+                        else:
+                            nm, cg = str(x), None
+                        if nm:
+                            out[str(nm)] = (i, cg)
                 return out
 
-            pr = _rank(hist[days[-2]])
-            cu = _rank(hist[days[-1]])
+            pr, cu = _rank(hist[days[-2]]), _rank(hist[days[-1]])
+            if not pr or not cu:
+                w(f"  [跳过] {kind}库结构无法解析，样例={str(hist[days[-1]])[:80]}")
+                continue
             for nm, (i, cg) in cu.items():
                 if nm not in pr:
                     continue
@@ -2607,15 +2622,23 @@ def scan_announcements():
 
     def _do():
         df = None
-        for fn in [lambda: ak.stock_notice_report_em(symbol="全部", date=d),
-                   lambda: ak.stock_notice_report_em(symbol="重大事项", date=d)]:
+        d2 = (now_beijing() - datetime.timedelta(days=1)).strftime("%Y%m%d")
+        for tag, fn in [
+            ("东财公告-全部", lambda: ak.stock_notice_report_em(symbol="全部", date=d)),
+            ("东财公告-昨日", lambda: ak.stock_notice_report_em(symbol="全部", date=d2)),
+            ("东财-重大事项", lambda: ak.stock_notice_report_em(symbol="重大事项", date=d)),
+            ("同花顺-最新公告", lambda: ak.stock_notice_report_em(symbol="资产重组", date=d)),
+            ("巨潮-互动易", lambda: ak.stock_zh_a_disclosure_report_cninfo(
+                symbol="全部", market="沪深京", start_date=d, end_date=d)),
+        ]:
             try:
                 r = with_retry(fn, tries=1, wait=2, timeout=40)
                 if r is not None and len(r) > 0:
                     df = r
+                    w(f"  ✅ 公告源：{tag}（{len(r)}条）")
                     break
-            except Exception:
-                continue
+            except Exception as e:
+                w(f"  [跳过] {tag}：{type(e).__name__}")
         if df is None:
             w("  [报空] 公告源不可用")
             return
@@ -3367,6 +3390,9 @@ def scan_decision_card():
     w("  ⚠️ 铁律E：踏空也是亏，方向确认就给进攻方案")
     w("  ⚠️ 铁律F：★买入用什么逻辑，卖出就用什么标尺★")
     w("     用产业周期让他买，就不许用短线跌幅让他卖")
+    w("  ⚠️ 铁律T（V6.0·用户死命令）：★发现BUG当场修，不许说明天★")
+    w("     『我明天改』『下次一起改』『之后补上』= 全部违规")
+    w("     系统自检发现的每一个漏洞，必须在同一轮对话内给出修复文件")
     w("  ⚠️ 铁律O：★连涨天数不构成买卖理由★")
     w("     天数只有绑定驱动类型才有意义：")
     w("     产业周期(存储/AI算力/国产替代)连30天都不算高潮")
@@ -3415,7 +3441,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V6.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3460,7 +3486,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.9完成 {prefix}_最新.txt")
+    print(f"\n✅ V6.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
