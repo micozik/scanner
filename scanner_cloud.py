@@ -38,7 +38,8 @@ WATCH_STOCKS = [
     ("688126", "沪硅产业", "持仓", 0, 0, "半导体", "半导体材料链", 2.00),
     ("605376", "博迁新材", "持仓", 0, 0, "金属新材料", "MLCC涨价链", 2.00),
     ("000066", "中国长城", "重点观察", 0, 0, "计算机设备", "AI算力链", 0),
-    ("300308", "中际旭创", "观察·机构抄底", 0, 0, "通信设备", "AI算力链", 0),
+    ("002407", "多氟多", "候选·机构3.26亿", 0, 0, "化学制品", "电池+半导体材料", 0),
+    ("300124", "汇川技术", "候选·机器人", 0, 0, "自动化设备", "机器人链", 0),
 ]
 TOTAL_ASSET = 18.30   # 总资产（万元），买卖后AI更新此数
 IND_MAP_FILE = "reports/industry_map.json"
@@ -2729,7 +2730,31 @@ def scan_all_sector_cross(uniq_news):
 
         SKIP = {"其他", "综合", "综合Ⅱ", "证金持股", "融资融券", "沪股通",
                 "深股通", "标准普尔", "MSCI中国", "富时罗素", "预盈预增",
-                "转债标的", "破净股", "低价股", "高送转", "壳资源"}
+                "转债标的", "破净股", "低价股", "高送转", "壳资源",
+                "证券", "券商", "多元金融", "保险"}   # ★券商名高频出现在研报里
+
+        # ★噪声过滤器（V5.9）：这些命中不算板块催化
+        BROKER_NOISE = ["中信证券", "中信建投", "银河证券", "光大证券", "国泰海通",
+                        "华泰证券", "招商证券", "国金证券", "东吴证券", "浙商证券",
+                        "民生证券", "开源证券", "天风证券", "西部证券", "申万宏源",
+                        "广发证券", "海通证券", "中金公司", "国信证券", "方正证券",
+                        "发布研报", "研报称", "分析师", "评级", "目标价"]
+        WAR_NOISE = ["胡塞", "俄军", "乌军", "俄罗斯", "乌克兰", "以军", "以色列",
+                     "哈马斯", "真主党", "敖德萨", "基辅", "莫斯科", "袭击",
+                     "空袭", "炮击", "导弹击中", "无人机袭击"]
+
+        def _is_noise(t, sect_name):
+            # 研报噪声：整条新闻的核心是券商研报，而板块名恰好是券商名的一部分
+            if any(b in t for b in BROKER_NOISE):
+                if sect_name in ("证券", "券商", "多元金融"):
+                    return True
+                # 研报提到的板块仍算催化，但降权（不在此过滤）
+            # 外国军事噪声：与A股产业无关
+            if any(x in t for x in WAR_NOISE):
+                cn = ["中国", "A股", "国内", "我国", "出口", "对华", "国产", "订单"]
+                if not any(c in t for c in cn):
+                    return True
+            return False
         results = []
         for kind, name, chg in rows:
             nm = str(name).strip()
@@ -2745,7 +2770,7 @@ def scan_all_sector_cross(uniq_news):
                 if t[:24] in seen:
                     continue
                 try:
-                    if _is_foreign(t):
+                    if _is_foreign(t) or _is_noise(t, nm):
                         continue
                 except Exception:
                     pass
@@ -3014,10 +3039,6 @@ ENTRY_SNAPSHOT = {
                "sector": "电池", "sector_fund": "+68.14亿(全场第一)",
                "sector_day": "🆕第1天", "ambush": "⚠️埋伏池为空",
                "key": "9/1消费税倒计时"},
-    "301269": {"name": "华大九天", "date": "2026-07-27",
-               "sector": "软件开发", "sector_fund": "+57.9亿",
-               "sector_day": "🆕第1天", "ambush": "⚠️埋伏池为空",
-               "key": "国产EDA替代"},
     "002714": {"name": "牧原股份", "date": "2026-07-10",
                "sector": "养殖业", "sector_fund": "—",
                "sector_day": "—", "ambush": "—",
@@ -3198,6 +3219,9 @@ def scan_ledger():
             days = (today - datetime.datetime.strptime(d, "%Y-%m-%d")).days
             if price is None or pd.isna(price):
                 w(f"  {d} {name}({code}) @{cost} [{typ}类] → 取价失败")
+                continue
+            if not cost or cost <= 0:
+                w(f"  ⚠️ {name}({code}) 成本未填 → 现价{price}，请提供成交价后对账")
                 continue
             pnl = (price - cost) / cost * 100
             # ★胜利标准（V4.4）：≥10%才算赚钱，扣掉手续费/印花税/滑点后才有意义
@@ -3391,7 +3415,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V5.8 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V5.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3436,7 +3460,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V5.8完成 {prefix}_最新.txt")
+    print(f"\n✅ V5.9完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
