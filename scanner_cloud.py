@@ -1857,6 +1857,7 @@ SECTOR_KEYWORDS = {
 # 多空判定词（判断一条催化是利多还是利空）
 TODAY_HEAT_TOP3 = []
 TODAY_ANNOUNCE = {}
+TODAY_ANNOUNCE_RAW = []   # ★V8.3 [(名称,代码,公告标题)]
 
 BULL_WORDS = ["涨价", "上调", "提价", "缺货", "紧缺", "短缺", "供不应求", "满产",
               "扩产", "增产能", "新增产能", "订单", "中标", "签约", "获批", "并网",
@@ -2529,6 +2530,30 @@ DEDUCTION_CHAINS = [
 ]
 
 
+# ★★★V8.3【事件驱动雷达】关键词（2026-08-10 高争民爆教训）★★★
+# 高争民爆(002827) 7/28公告『拟变更控股股东』→ 7/29起9天8板、股价翻倍。
+# 我们六道闸全部漏掉，且不是bug是【盲区】：
+#   推演引擎10条链无"国资整合"｜热力图16板块无民爆｜冷低早要低位缩量
+#   选股器要涨幅<3%｜龙虎榜标它"追高型"｜异动清单只收"无公告"的
+# 根因：整个系统围绕【产业链驱动+资金流+位置】造的，
+#      而A股最猛的一类短线驱动是【事件】，我们一个模块都没有。
+# ★入场点是【公告当天】，不是第9板。公告是硬事件，有确定日期，
+#   不像新闻要靠语义猜——这是它比催化热力图可靠的地方。
+EVENT_L1 = [   # 一级：控制权/资产变动，历史上最强的短线驱动
+    "控股股东变更", "拟变更控股股东", "实际控制人变更", "实控人变更",
+    "无偿划转", "国有股权划转", "协议转让", "要约收购", "举牌",
+    "重大资产重组", "资产注入", "拟收购", "拟置入", "借壳", "吸收合并",
+    "重大资产购买", "发行股份购买资产", "更名", "证券简称变更",
+]
+EVENT_L2 = [   # 二级：业绩/订单突变
+    "业绩预增", "业绩大幅预增", "扭亏为盈", "净利润同比增长",
+    "中标", "重大合同", "重大订单", "框架协议", "战略合作协议",
+]
+EVENT_L3 = [   # 三级：风险信号，出现即降级（不是买点，是提示）
+    "股票交易异常波动", "严重异常波动", "重点监控", "停牌核查",
+    "风险提示", "不存在应披露而未披露", "问询函", "关注函", "立案",
+]
+
 ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "增资",
                  "预增", "扭亏", "业绩", "投资", "定增", "回购", "增持",
                  "资质", "许可", "获批", "量产", "投产", "涨价", "扩产",
@@ -2537,6 +2562,7 @@ ANNOUNCE_KEYS = ["收购", "重组", "中标", "订单", "签署", "合作", "�
                  "中标公告", "重大合同", "框架协议", "战略合作", "股权",
                  "利润", "营收", "增长", "扭亏", "预告", "快报", "分红",
                  "员工持股", "激励", "并购", "参股", "控股", "举牌"]
+ANNOUNCE_KEYS = ANNOUNCE_KEYS + EVENT_L1 + EVENT_L2 + EVENT_L3
 
 
 def get_stock_flow():
@@ -3098,6 +3124,141 @@ def scan_stock_picker():
     safe_run("个股级选股器", _do)
 
 
+def scan_event_radar():
+    """★★★V8.3【事件驱动雷达】★★★
+    专抓 控股股东变更/资产注入/无偿划转/重组/更名 这类【硬事件】。
+
+    ★为什么单独成模块，不并进公告雷达：
+      公告雷达是"看看今天有啥"，事件雷达是"这条能不能明天就买"。
+      判定要素完全不同——事件雷达只关心三件事：
+        ① 事件等级（控制权变动 > 业绩订单）
+        ② 今天涨了没有（★核心：公告当天没涨=最佳入场点）
+        ③ 有没有出风险提示（公司否认/交易所监控=催化已证伪）
+
+    ★高争民爆(002827)复盘：
+        7/28 公告『拟变更控股股东』当天没涨停 ← 这是入场点
+        7/29-8/10 9天8板，翻倍
+        8/07 公司公告『不存在资产注入计划』+ 深交所重点监控 ← 催化证伪
+      所以同一只票，7/28是🟢一级机会，8/07之后是🔴已证伪。
+      时间点决定一切，这正是事件驱动和产业驱动最大的区别。
+    """
+    w("\n" + "=" * 60)
+    w("💥💥【事件驱动雷达】控制权变动/资产注入/重组 —— A股最猛的短线驱动 💥💥")
+    w("=" * 60)
+    w("  ★入场点是【公告当天】，不是第N个板。公告是硬事件，有确定日期。")
+    w("  ★2026-08-10 教训：高争民爆7/28公告控股股东变更→9天8板翻倍，")
+    w("    我们六道闸全漏（推演/热力图/冷低早/选股器/龙虎榜/异动清单）")
+
+    ann = globals().get("TODAY_ANNOUNCE_RAW", []) or []
+    news = globals().get("TODAY_NEWS", []) or []
+    src = [("公告", nm, cd, t) for nm, cd, t in ann]
+    for tm, t in news:
+        src.append(("快讯", "", "", t))
+    if not src:
+        w("  [报空] 公告与新闻源均无数据")
+        w("=" * 60)
+        return
+
+    spot = get_spot()
+    c_code = c_name = c_pct = c_price = None
+    if spot is not None:
+        c_code = pick_col(spot, ["代码", "code"])
+        c_name = pick_col(spot, ["名称", "name"])
+        c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
+        c_price = pick_col(spot, ["最新价", "trade"])
+
+    def _quote(cd, nm):
+        """返回 (涨跌幅, 现价)；代码优先，其次名称"""
+        if spot is None:
+            return None, None
+        try:
+            r = None
+            if cd and c_code:
+                r = spot[spot[c_code].astype(str).str.contains(cd, na=False)]
+            if (r is None or len(r) == 0) and nm and c_name:
+                r = spot[spot[c_name].astype(str) == nm]
+            if r is not None and len(r) > 0:
+                p = pd.to_numeric(r.iloc[0][c_pct], errors="coerce")
+                v = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
+                return (float(p) if pd.notna(p) else None,
+                        float(v) if pd.notna(v) else None)
+        except Exception:
+            pass
+        return None, None
+
+    rows, seen = [], set()
+    for kind, nm, cd, t in src:
+        lv, hitk = 0, ""
+        for k in EVENT_L1:
+            if k in t:
+                lv, hitk = 1, k
+                break
+        if not lv:
+            for k in EVENT_L2:
+                if k in t:
+                    lv, hitk = 2, k
+                    break
+        if not lv:
+            continue
+        risk = [k for k in EVENT_L3 if k in t]
+        key = (nm or t[:14]) + hitk
+        if key in seen:
+            continue
+        seen.add(key)
+        pct, px = _quote(cd, nm)
+        rows.append((lv, nm, cd, t, hitk, risk, pct, px, kind))
+
+    if not rows:
+        w("\n  今日无【控制权变动/资产注入/重组/重大订单】级事件")
+        w("  → 明确结论：事件驱动方向今日无标的（不硬凑，铁律D）")
+        w("=" * 60)
+        return
+
+    # 排序：一级在前；同级内【今天没涨的】优先（这是核心）
+    def _rank(x):
+        lv, pct = x[0], x[6]
+        p = pct if pct is not None else 0.0
+        unmoved = 0 if p < 3 else (1 if p < 9.5 else 2)
+        return (lv, unmoved, -abs(p))
+    rows.sort(key=_rank)
+
+    n1 = sum(1 for r in rows if r[0] == 1)
+    w(f"\n  ★★命中 {len(rows)} 条（一级{n1}条 / 二级{len(rows)-n1}条）★★\n")
+    for i, (lv, nm, cd, t, hitk, risk, pct, px, kind) in enumerate(rows[:15], 1):
+        tag = "🟢一级·控制权/资产变动" if lv == 1 else "🔵二级·业绩订单"
+        ps = f"{pct:+.2f}%" if pct is not None else "取价失败"
+        # ★位置判定：这是事件驱动唯一重要的东西
+        if pct is None:
+            pos = "❔位置未知"
+        elif pct >= 9.5:
+            pos = "🔴已涨停 → 今天不是入场点，明天是接力不是埋伏"
+        elif pct >= 5:
+            pos = "⚠️已大涨 → 追的是第二棒"
+        elif pct >= 1:
+            pos = "🟡小涨 → 尚可，但已有人先知道"
+        elif pct >= -3:
+            pos = "🟢★★没涨★★ → 这就是7/28高争民爆的状态，最佳入场点"
+        else:
+            pos = "🟢★下跌中有事件★ → 铁律K反常，含义最深"
+        w(f"  ══ {i}. {nm or '（未识别公司）'}({cd}) {tag}")
+        w(f"     命中：「{hitk}」  今日 {ps}" + (f"  现价{px}" if px else ""))
+        w(f"     位置：{pos}")
+        w(f"     [{kind}] {t[:64]}")
+        if risk:
+            w(f"     🔴风险提示命中：{'、'.join(risk)}")
+            w("        → 催化可能已被公司否认/交易所监控，按卖出卡属【催化证伪】")
+        w("")
+
+    w("  ─── 事件驱动的三条纪律（与产业驱动完全不同）───")
+    w("  1. ★类型是A类事件仓★：涨了就走，不许当趋势拿")
+    w("     半导体设备ETF把A类当B类做，−11.5%卖在最低点")
+    w("  2. ★入场点是公告当天★：第N个板是博弈最后一棒，不是埋伏")
+    w("  3. ★出现『风险提示/重点监控/公司否认』= 催化证伪 = 立即出★")
+    w("     高争民爆8/7已公告『不存在资产注入计划』+深交所重点监控")
+    w("  ⚠️ 仓位：A类事件仓不许超总资产6%（B类才能到11%）")
+    w("=" * 60)
+
+
 def scan_announcements():
     """公司公告雷达：补快讯盲区（通宇通讯收购案的教训）"""
     w("\n" + "=" * 60)
@@ -3160,6 +3321,7 @@ def scan_announcements():
         for nm, cd, t in hits[:25]:
             w(f"    ▸ {nm}({cd}) {t[:52]}")
         globals()["TODAY_ANNOUNCE"] = {h[1]: h[2] for h in hits}
+        globals()["TODAY_ANNOUNCE_RAW"] = hits      # ★V8.3 供事件驱动雷达
     safe_run("公司公告雷达", _do)
 
 
@@ -3939,6 +4101,12 @@ def scan_decision_card():
     w("  ⚠️ 铁律E：踏空也是亏，方向确认就给进攻方案")
     w("  ⚠️ 铁律F：★买入用什么逻辑，卖出就用什么标尺★")
     w("     用产业周期让他买，就不许用短线跌幅让他卖")
+    w("  ⚠️ 铁律V（V8.3·用户死命令）：★发现问题立刻自己改，不许问、不许拖★")
+    w("     用户原话：『以后发现问题，不需要问我，自己立刻修改，为什么要偷懒？』")
+    w("  ⚠️ 铁律W（V8.3）：★事件驱动 ≠ 产业驱动，管法完全不同★")
+    w("     事件=A类，涨了就走，仓位≤6%，入场点是公告当天")
+    w("     产业=B类，能扛回调，仓位≤11%，5-8%是噪音")
+    w("     ★判错类型比选错票更致命（半导体设备ETF −11.5%）")
     w("  ⚠️ 铁律U（V7.2·用户死命令）：★美股隔夜每次必写，与A股新闻并列★")
     w("     『用户没问美股』『今天A股是主角』= 全部不成立")
     w("     必写：指数(费半SOX)/个股/聪明钱/宏观 + ★美股与A股方向对照★")
@@ -3986,6 +4154,9 @@ def scan_decision_card():
     w("  ⑧ AI推荐台账对账（A类超期？B类在期内？）")
     w("  ⑨ 要卖时必填【卖出决策卡】，④里填不出✅项=不许卖")
     w("  ⑪ ★【我的持仓·相关消息】V8.0：每只持仓的个股级新闻/公告，不许漏")
+    w("  ⑫ ★★【事件驱动雷达】V8.3：控制权变动/资产注入/重组★★")
+    w("     A股最猛的短线驱动。入场点=公告当天，不是第N板。")
+    w("     高争民爆7/28公告→9天8板翻倍，旧系统六道闸全漏")
     w("=" * 60)
 
 
@@ -4004,7 +4175,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4038,6 +4209,8 @@ def main():
         safe_run("个股级选股器", scan_stock_picker)
         safe_run("公告扫描", scan_announcements)
         safe_run("异动无解释", scan_unexplained)
+        # ★★V8.3 事件驱动雷达：必须在公告扫描之后（依赖 TODAY_ANNOUNCE_RAW）★★
+        safe_run("事件驱动雷达", scan_event_radar)
     # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
     safe_run("我的持仓相关消息", scan_my_news)
 
@@ -4062,7 +4235,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.3完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
