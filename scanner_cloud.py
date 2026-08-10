@@ -30,6 +30,10 @@ HIST_FILE = "reports/top_sectors.json"
 CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
 
+# ★★V8.0 全局缓存：供跨模块使用★★
+SECTOR_FLOW_MAP = {}   # {板块名: 主力净额(亿)} 由 scan_sector_flow 填充
+TODAY_NEWS = []        # [(时间, 标题)] 由 scan_news 填充，供【我的持仓相关消息】用
+
 # ★重点盯盘个股（独立抓取，不依赖截图）。格式：(代码, 名称, 标签)
 # ★重点盯盘（代码, 名称, 标签, 成本价, 止损价, 所属板块名）
 # 成本/止损填0=不算；板块名用于自动带出板块状态
@@ -263,6 +267,8 @@ def scan_skeleton_top():
     w("  ⑧ AI推荐台账对账（A类超期？B类在期内？）")
     w("  ⑨ 【系统自检】今天发现什么漏洞→怎么修（无则写无）")
     w("  ⑩ ★异动未解释清单★：涨停股说不出原因=盲区，必须主动搜索后回答")
+    w("  ⑪ ★★【我的持仓·相关消息】V8.0新增★★ 每只持仓的个股级新闻/公告")
+    w("     板块级消息在②，这一节只管【点名到个股】的")
     w("")
     w("  ⚠️ 缺任何一节 = 失职，用户可当场追责")
     w("  ⚠️ 越是『崩了/快看/紧急』的时候越容易漏第⑤节，越要先写它")
@@ -423,6 +429,156 @@ def scan_tomorrow_gate():
         else:
             w("  >>> 【明日健康】可按七关开仓")
     safe_run("次日预判", _do)
+
+
+def _sector_flow_of(name):
+    """★V8.0 板块名 → 主力净额(亿)。概念名做模糊匹配到行业名"""
+    if not name:
+        return None
+    if name in SECTOR_FLOW_MAP:
+        return SECTOR_FLOW_MAP[name]
+    n = str(name).rstrip("概念行业板块产业指数ⅡⅢ")
+    for k, v in SECTOR_FLOW_MAP.items():
+        if n and (n in k or k in n):
+            return v
+    return None
+
+
+# ========== ★★V8.0 持仓清单外置：改 txt 不动代码 ★★ ==========
+
+def _load_watchlist():
+    """从 我的清单.txt 读取持仓，覆盖 WATCH_STOCKS / RECOMMENDATIONS / TOTAL_ASSET
+
+    格式（用 | 分隔，前后空格无所谓）：
+      账户 | 本金 | 20.00
+      账户 | 总资产 | 18.48
+      账户 | 现金 | 0.81
+      持仓 | 代码 | 名称 | 成本 | 市值万 | 止损 | 板块 | 驱动链 | 买入日 | 类型 | 周期 | 逻辑破
+      观察 | 代码 | 名称 | 0 | 0 | 0 | 板块 | 驱动链
+    # 开头的行是注释，空行忽略
+
+    ★为什么用 | 而不是空格：逻辑破定义里带空格，空格分隔会截断。
+    ★文件不存在 = 沿用代码里写死的表（向后兼容，不会因为没建文件就崩）
+    """
+    if not os.path.exists(WATCH_FILE):
+        return False
+    try:
+        holds, recs = [], []
+        acct = {}
+        with open(WATCH_FILE, "r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                p = [x.strip() for x in line.split("|")]
+                if len(p) < 3:
+                    continue
+                kind = p[0]
+                if kind in ("账户", "account"):
+                    try:
+                        acct[p[1]] = float(p[2])
+                    except Exception:
+                        pass
+                    continue
+                if kind not in ("持仓", "观察", "候选"):
+                    continue
+                code = p[1]
+                name = p[2]
+                def _f(i, d=0.0):
+                    try:
+                        return float(p[i]) if len(p) > i and p[i] else d
+                    except Exception:
+                        return d
+                cost = _f(3)
+                mval = _f(4)
+                stop = _f(5)
+                sect = p[6] if len(p) > 6 else ""
+                chain = p[7] if len(p) > 7 else ""
+                tag = "持仓" if kind == "持仓" else (p[0] if len(p[0]) > 2 else "重点观察")
+                if kind == "候选":
+                    tag = "候选"
+                holds.append((code, name, tag, cost, stop, sect, chain, mval))
+                if kind == "持仓" and len(p) > 11:
+                    buyd = p[8] or "—"
+                    typ = p[9] or "B"
+                    period = p[10] or "—"
+                    broke = p[11] or "—"
+                    recs.append((buyd, code, name, cost, typ, period, broke))
+        if not holds:
+            return False
+        globals()["WATCH_STOCKS"] = holds
+        if recs:
+            recs.sort(key=lambda x: x[0], reverse=True)
+            globals()["RECOMMENDATIONS"] = recs
+        if acct.get("总资产"):
+            globals()["TOTAL_ASSET"] = acct["总资产"]
+        if acct.get("本金"):
+            globals()["PRINCIPAL"] = acct["本金"]
+        if acct.get("现金") is not None:
+            globals()["CASH_WAN"] = acct["现金"]
+        n_h = sum(1 for x in holds if x[2] == "持仓")
+        w(f"✅ 已从 {WATCH_FILE} 载入：持仓{n_h}只 / 共{len(holds)}只 / "
+          f"总资产{globals().get('TOTAL_ASSET')}万 / 现金{acct.get('现金', '—')}万")
+        w("   （代码里的 WATCH_STOCKS 已被覆盖，以后买卖只改 txt）")
+        return True
+    except Exception as e:
+        w(f"🔴 {WATCH_FILE} 解析失败：{type(e).__name__}: {str(e)[:80]}")
+        w("   → 本次沿用代码内写死的持仓表。请检查格式：每行用 | 分隔")
+        return False
+
+
+CASH_WAN = 0.0
+
+
+def scan_my_news():
+    """★★V8.0【我的持仓相关消息】★★
+    在全量新闻+公告里，按【持仓股票名】精确匹配。
+    治：661条新闻里我的票被提到了，但我按板块关键词扫，看不见个股级消息。"""
+    w("\n" + "=" * 60)
+    w("📰📰【我的持仓·相关消息】新闻+公告按股票名精确匹配 📰📰")
+    w("=" * 60)
+    names = [(c, n) for c, n, tag, *_r in WATCH_STOCKS if tag == "持仓"]
+    if not names:
+        w("  无持仓")
+        w("=" * 60)
+        return
+    ann = globals().get("TODAY_ANNOUNCE", {}) or {}
+    news = globals().get("TODAY_NEWS", []) or []
+    hit_any = False
+    for code, name in names:
+        keys = {name}
+        if len(name) >= 4 and ("ETF" in name.upper()):
+            keys.add(name.replace("ETF", "").strip()[:2])
+        nhits = []
+        seen = set()
+        for tm, t in news:
+            if t[:24] in seen:
+                continue
+            if any(k and k in t for k in keys) or code in str(t):
+                seen.add(t[:24])
+                try:
+                    pol = _news_polarity(t)
+                except Exception:
+                    pol = 0
+                mark = "✅利好" if pol > 0 else ("🔴利空" if pol < 0 else "⚖️中性")
+                nhits.append((tm, t, mark))
+        ahit = ann.get(name) or ann.get(code)
+        if not nhits and not ahit:
+            continue
+        hit_any = True
+        w(f"\n  ◆ {name}({code})")
+        if ahit:
+            w(f"    📢公告：{str(ahit)[:70]}")
+        for tm, t, mark in nhits[:6]:
+            w(f"    [{tm}] {mark} {t[:62]}")
+        if len(nhits) > 6:
+            w(f"    …另有{len(nhits)-6}条")
+    if not hit_any:
+        w("  今日全量新闻与公告中，未出现任何持仓股的个股级消息")
+        w("  （不代表没事发生：互动易/交易所问询/大宗交易不在这两个源里）")
+    w("\n  ⚠️ 匹配基于股票名，ETF按名称片段匹配，可能有漏。")
+    w("     板块级消息见【重点盯盘】的板块字段，这里只管【个股级】。")
+    w("=" * 60)
 
 
 # ========== 我的清单 ==========
@@ -1409,6 +1565,15 @@ def scan_sector_flow():
         if df[c_flow].abs().max() and df[c_flow].abs().max() > 1e6:
             df[c_flow] = (df[c_flow] / 1e8).round(2)
         df = df.sort_values(c_flow, ascending=False)
+        # ★★V8.0：存进全局，供【全板块交叉】把资金流纳入打分★★
+        # 8/10教训：半导体资金-132.49亿全场最大流出，全板块交叉却给它16分排第1，
+        #          因为旧打分只有『新闻净利多×2 + 位置分』，完全没有资金这一项。
+        try:
+            SECTOR_FLOW_MAP.clear()
+            for _, rr in df.iterrows():
+                SECTOR_FLOW_MAP[str(rr[c_name])] = float(rr[c_flow])
+        except Exception:
+            pass
         w(f"  ◆ 行业净流入前10（源：{src}）：")
         for _, r in df.head(10).iterrows():
             w(f"    {r[c_name]} | {r[c_pct]}% | +{r[c_flow]}亿")
@@ -1862,6 +2027,7 @@ def scan_news():
     except Exception:
         pass
 
+    globals()["TODAY_NEWS"] = uniq        # ★V8.0 供【我的持仓相关消息】
     w(f"  （合并去重：{'、'.join(ok)} → 共{len(uniq)}条）")
     w("\n  ★★★ 关键情报雷达 ★★★")
     any_hit = False
@@ -3084,16 +3250,34 @@ def scan_all_sector_cross(uniq_news):
             if chg is not None and pd.notna(chg):
                 c = float(chg)
                 pos = 3 if c < 0 else (2 if c < 1.5 else (1 if c < 4 else -1))
-            results.append((net * 2 + pos, kind, nm, chg, net,
-                            len(bull), len(bear), bull))
+            # ★★V8.0 资金分：钱在流出的板块，新闻再好也不该排第一★★
+            fl = _sector_flow_of(nm)
+            fsc, ftxt = 0, ""
+            if fl is not None:
+                if fl >= 20:
+                    fsc, ftxt = 6, f" 资金+{fl:.0f}亿🔥"
+                elif fl >= 5:
+                    fsc, ftxt = 4, f" 资金+{fl:.0f}亿✅"
+                elif fl > 0:
+                    fsc, ftxt = 2, f" 资金+{fl:.1f}亿"
+                elif fl > -20:
+                    fsc, ftxt = -2, f" 资金{fl:.1f}亿⚠️"
+                elif fl > -80:
+                    fsc, ftxt = -6, f" 资金{fl:.0f}亿🔴"
+                else:
+                    fsc, ftxt = -12, f" 资金{fl:.0f}亿🔴🔴失血"
+            results.append((net * 2 + pos + fsc, kind, nm, chg, net,
+                            len(bull), len(bear), bull, ftxt))
 
         if not results:
             w("  今日无板块命中≥2条新闻")
             return
         results.sort(key=lambda x: -x[0])
-        w("\n  ★★【有催化 且 位置好】前15（净利多×2 + 位置分）：")
+        w("\n  ★★【有催化 且 位置好 且 钱在进】前15（净利多×2 + 位置分 + 资金分）：")
         w("    位置分：跌着有催化=3 | 微涨<1.5%=2 | 涨1.5-4%=1 | 涨>4%=-1")
-        for i, (sc, kind, nm, chg, net, nb, nr, _) in enumerate(results[:15], 1):
+        w("    ★V8.0资金分：+20亿↑=+6 | +5亿↑=+4 | 正=+2 | 负=-2 | -20亿↓=-6 | -80亿↓=-12")
+        w("       8/10教训：半导体资金-132亿全场最大流出，旧模型仍给它16分排第1")
+        for i, (sc, kind, nm, chg, net, nb, nr, _, ftxt) in enumerate(results[:15], 1):
             ct = f"{chg:+.2f}%" if chg is not None and pd.notna(chg) else "?"
             flag = ""
             if chg is not None and pd.notna(chg):
@@ -3732,6 +3916,7 @@ def scan_decision_card():
     w("  ⑦ 持仓逐个指令（持有/减/清 + 理由）")
     w("  ⑧ AI推荐台账对账（A类超期？B类在期内？）")
     w("  ⑨ 要卖时必填【卖出决策卡】，④里填不出✅项=不许卖")
+    w("  ⑪ ★【我的持仓·相关消息】V8.0：每只持仓的个股级新闻/公告，不许漏")
     w("=" * 60)
 
 
@@ -3750,8 +3935,11 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V7.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
+
+    # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
+    safe_run("载入我的清单", _load_watchlist)
 
     scan_skeleton_top()
 
@@ -3782,6 +3970,8 @@ def main():
         safe_run("个股级选股器", scan_stock_picker)
         safe_run("公告扫描", scan_announcements)
         safe_run("异动无解释", scan_unexplained)
+    # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
+    safe_run("我的持仓相关消息", scan_my_news)
 
     if not weekend:
         safe_run("埋伏池回测", lambda: backtest_ambush(TODAY_AMBUSH))
@@ -3804,7 +3994,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V7.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
