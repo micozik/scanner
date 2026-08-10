@@ -53,6 +53,23 @@ PRINCIPAL = 20.00     # ★本金（万元）。真实收益率 = (TOTAL_ASSET-P
 IND_MAP_FILE = "reports/industry_map.json"
 COLD_HIST_FILE = "reports/cold_low_history.json"
 PEAK_FILE = "reports/position_peak.json"    # 每只持仓的历史最高价
+
+# ★★V7.2 已知历史最高盈亏种子（防止 peak 文件丢失导致铁律S永久失效）★★
+# 来源：2026-08-09 用户同花顺持仓截图（8/7收盘价）。
+# 8/10 实测发现系统显示"紫光 历史最高+6.66%"，但周五实为+9.57% ——
+# peak 文件在两次运行之间丢了，铁律S(回落5点强制减半)因此形同虚设，
+# 而这条规则的全部存在理由就是治"从+10.3%回落到+7.25%"。
+# 逻辑：peak = max(文件值, 本次盈亏, 种子值)，三者取最大，任何一路丢失都不影响。
+KNOWN_PEAKS = {
+    "000938": 9.57,   # 紫光股份 8/7
+    "603220": 7.20,   # 中贝通信 8/7
+    "159796": 6.32,   # 电池ETF汇 8/7
+    "159934": 3.89,   # 黄金ETF易 8/7
+    "516080": 2.50,   # 创新药ETF 8/7
+    "688126": 1.61,   # 沪硅产业 8/7
+    "605376": -0.76,  # 博迁新材 8/7
+    "002714": -2.88,  # 牧原股份 8/7
+}
 AMBUSH_HIST_FILE = "reports/ambush_history.json"
 HEAT_HIST_FILE = "reports/heat_history.json"
 PICKER_HIST_FILE = "reports/picker_history.json"   # ★V7.0 选股器自检库
@@ -223,6 +240,11 @@ def scan_skeleton_top():
     w("  ③ 大盘环境+风险分+结构分化（创业板/科创50）")
     w("  ④ 板块判断 + ★催化热力图前3★ + ★🔮产业链推演前3★（缺一即失职）")
     w("  ⑤ 全套新闻·八类 ← ★最常漏的一节，不许等用户提醒★")
+    w("     ★★⑤-B 美股隔夜（铁律U）★★ 与A股新闻【并列】，不是附属")
+    w("        指数(费半必写)/个股涨跌/聪明钱/宏观，四项缺一即失职")
+    w("        ⚠️2026-08-10 实际失职一次：抓了美股报告却一句没写，")
+    w("          导致漏掉『Coherent+13.44%而A股CPO-3.55%』这条反常，")
+    w("          也漏掉『美股存储在跌』这条支持清沪硅的论据")
     w("     名人/国内政策/海外政策/科技/大宗地缘/资金/消费/政策产业")
     w("  ⑥ 决策卡（买卖时逐项填，含③-B持续性 ⑧集中度 ⑨仓位类型）")
     w("  ⑦ 持仓逐个指令（持有/减/清 + 理由）")
@@ -2367,10 +2389,12 @@ def scan_take_profit():
     w("=" * 60)
     w("  ★铁律R：+10%减半锁利；剩余移动止盈(从最高点回落5%)")
     w("  ★铁律S(V5.7)：任何持仓从【历史最高盈亏】回落≥5个百分点 = 强制减半")
+    w("  ★V7.2：peak 三源取最大（历史文件/本次/已知种子），防止文件丢失让铁律S失效")
     w("    不管有没有到10%，回撤5个点就是市场在说：这波结束了")
 
     def _do():
         peaks = {}
+        _peak_exists = os.path.exists(PEAK_FILE)
         try:
             if os.path.exists(PEAK_FILE):
                 with open(PEAK_FILE, "r", encoding="utf-8") as f:
@@ -2407,9 +2431,9 @@ def scan_take_profit():
                 continue
             pnl = (float(price) - cost) / cost * 100
             rec = peaks.get(code6, {})
-            peak = rec.get("peak_pnl", pnl)
-            if pnl > peak:
-                peak = pnl
+            # ★V7.2：文件值 / 本次盈亏 / 已知种子 三者取最大
+            peak = max(rec.get("peak_pnl", pnl), pnl, KNOWN_PEAKS.get(code6, -999))
+            if abs(peak - rec.get("peak_pnl", -999)) > 0.001:
                 changed = True
             peaks[code6] = {"name": name, "peak_pnl": round(peak, 2)}
             drop = peak - pnl
@@ -2427,6 +2451,10 @@ def scan_take_profit():
             elif pnl >= 7:
                 line += "  ⏳ 接近+10%，到了就减半，别重演中贝通信"
             w(line)
+        if not _peak_exists:
+            w("  🔴 position_peak.json 本次不存在 → 说明它没能在两次运行间保留！")
+            w("     请确认 GitHub Actions 的 commit 步骤包含 reports/*.json")
+            w("     （已用 KNOWN_PEAKS 种子兜底，但新高点仍会丢，必须修 workflow）")
         if changed:
             try:
                 os.makedirs("reports", exist_ok=True)
@@ -3646,6 +3674,11 @@ def scan_decision_card():
     w("  ⚠️ 铁律E：踏空也是亏，方向确认就给进攻方案")
     w("  ⚠️ 铁律F：★买入用什么逻辑，卖出就用什么标尺★")
     w("     用产业周期让他买，就不许用短线跌幅让他卖")
+    w("  ⚠️ 铁律U（V7.2·用户死命令）：★美股隔夜每次必写，与A股新闻并列★")
+    w("     『用户没问美股』『今天A股是主角』= 全部不成立")
+    w("     必写：指数(费半SOX)/个股/聪明钱/宏观 + ★美股与A股方向对照★")
+    w("     方向相反 = 铁律K反常 = 当场解释，不许略过")
+    w("     ⚠️ 用户原话：『我不想要一个丢三落四的AI作为我帮手』")
     w("  ⚠️ 铁律T（V6.0·用户死命令）：★发现BUG当场修，不许说明天★")
     w("     『我明天改』『下次一起改』『之后补上』= 全部违规")
     w("     系统自检发现的每一个漏洞，必须在同一轮对话内给出修复文件")
@@ -3673,6 +3706,14 @@ def scan_decision_card():
     w("  ② ★重点盯盘（全部持仓 + 中国长城，逐只：板块/资金/技术/消息）")
     w("  ③ 大盘环境 + 风险分 + 结构分化（创业板/科创50跌幅）")
     w("  ④ 板块判断（先board再stock）")
+    w("  ⑤-B ★美股隔夜（铁律U·2026-08-10用户死命令）★")
+    w("      必写四项：①指数(费半SOX必写) ②重点个股涨跌")
+    w("               ③聪明钱专区 ④宏观(非农/加息概率/油价/地缘)")
+    w("      ★必须做三方对照，不许只罗列：")
+    w("        美股某板块涨 → A股对应板块今天涨还是跌？")
+    w("        方向相反 = 铁律K【反常】= 必须当场解释原因")
+    w("      ⚠️ 数据在 reports/美股_最新.txt，AI必须主动去读，")
+    w("         不许因为『用户没提美股』就跳过")
     w("  ⑤ 全套新闻·八类（名人/国内政策/海外政策/科技/大宗地缘/")
     w("     资金事件/消费养殖/政策产业专项）——不许等用户提醒")
     w("  ⑥ 决策卡（要买卖时逐项填，含③-B ⑧ ⑨）")
@@ -3697,7 +3738,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V7.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V7.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     scan_skeleton_top()
@@ -3751,7 +3792,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V7.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V7.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
