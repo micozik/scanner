@@ -1,8 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-龙虎榜/游资 独立扫描器 V3.1（2026-08-09 实盘验出：加合理性校验 + 新股过滤）
+龙虎榜/游资 独立扫描器 V3.2（2026-08-10 实盘验出：机构净买 vs 龙虎榜净买 交叉校验）
 专职：每晚18:45跑，抓当日龙虎榜 + 活跃营业部 + 机构专用席位
 核心：自动标注【埋伏型】(跌着被买=明天机会) / 【追高型】(涨停被买=次日易崩)
+
+V3.2 新增（8/10 用户截图当场验出的错误信号）：
+  ★★机构净买 ≠ 龙虎榜净买，只报前者会得出完全相反的结论★★
+     实例：多氟多(002407) 8/7
+        扫描器报「机构净买 3.26亿，全场最大」→ 排下单指令第1位
+        同花顺实际显示「08-07入选，龙虎榜净买入 −1475万元」
+     两个数都对：机构席位确实买了3.26亿，但游资卖得更多，
+     全榜合计是【净卖出】。只看机构那一栏 = 把出货看成建仓。
+     修法：scan_lhb 建立 {代码: 龙虎榜净买额} 映射，
+          scan_jg 逐只交叉校验，符号相反 → 🔴标冲突 → 逐出下单指令。
+  ⚠️ 同时收紧：机构净买信号只在【当日下跌】时才算埋伏（铁律I）。
+     多氟多8/7是涨1.25%收的，本就不满足"机构在跌的票上砸钱"。
 
 V3.1 新增（V3.0跑出来之后发现的真问题）：
   0. 🔴🔴合理性校验：8/7实测 益坤电气(北交所小票) 机构净买「54.54亿」排全场第一，
@@ -37,6 +49,10 @@ import pandas as pd
 
 REPORT = []
 ORDER_HIST_FILE = "reports/order_history.json"
+
+# ★★V3.2 全局：{代码: 龙虎榜净买额(亿)}，由 scan_lhb 填充，scan_jg 交叉校验用
+# key "_date" 存数据日期，用于确认两份数据是同一天
+LHB_NET_MAP = {}
 
 # ★账户参数（买卖后更新；三个扫描器各有一份，改一处要三处同步）
 TOTAL_ASSET_WAN = 18.38     # 总资产(万) 2026-08-09 截图对账 183,802.38
@@ -237,6 +253,8 @@ def scan_lhb():
         w("  [报空] 近7个交易日均无龙虎榜数据（接口异常）")
         return [], []
     w(f"  ✅ 命中数据日期：{use_date}")
+    LHB_NET_MAP.clear()
+    LHB_NET_MAP["_date"] = use_date
     if use_date != now_beijing().strftime("%Y%m%d"):
         w(f"  ⚠️ 注意：这是【{use_date}】的龙虎榜，不是今天的。")
         w("     今日龙虎榜18:35后发布，届时重跑可得最新。")
@@ -261,6 +279,20 @@ def scan_lhb():
     df = df.copy()
     if c_net:
         df["_net_yi"] = df[c_net].apply(_to_yi)      # ★逐值归一化，不用整列max
+        # ★★V3.2 建立 {代码: 龙虎榜净买额} 映射，供 scan_jg 交叉校验★★
+        # 同一票可能多行(不同上榜原因)，取绝对值最大的那条作为主口径
+        if c_code:
+            for _, rr in df.iterrows():
+                try:
+                    cc = str(rr[c_code])[-6:]
+                    vv2 = rr.get("_net_yi")
+                    if cc and vv2 is not None and pd.notna(vv2):
+                        old = LHB_NET_MAP.get(cc)
+                        if old is None or abs(float(vv2)) > abs(float(old)):
+                            LHB_NET_MAP[cc] = float(vv2)
+                except Exception:
+                    continue
+            w(f"  📌 已建立龙虎榜净买额映射 {len(LHB_NET_MAP)-1} 只 → 供机构席位交叉校验")
         df = df.sort_values("_net_yi", ascending=False, na_position="last")
     if c_pct:
         df[c_pct] = pd.to_numeric(df[c_pct], errors="coerce")
@@ -393,6 +425,15 @@ def scan_jg():
         if c_net:
             df["_net_yi"] = df[c_net].apply(_to_yi)
             df = df.sort_values("_net_yi", ascending=False, na_position="last")
+        map_date = LHB_NET_MAP.get("_date")
+        same_day = (map_date == use_date) and len(LHB_NET_MAP) > 1
+        if same_day:
+            w(f"  ✅ 已启用【龙虎榜净买额】交叉校验（同为{use_date}的数据）")
+        else:
+            w("  ⚠️ 无法交叉校验（龙虎榜明细缺失或日期不一致）")
+            w("     → 本次机构净买额只能单独看，8/7多氟多式的误判风险存在")
+
+        n_conflict = 0
         for _, r in df.head(15).iterrows():
             nm = str(r[c_name]) if c_name else ""
             vv = pd.to_numeric(r[c_pct], errors="coerce") if c_pct else None
@@ -401,19 +442,39 @@ def scan_jg():
             p = f" {vv:+.2f}%" if vv is not None and pd.notna(vv) else ""
             n = f" 机构净买{amt_y:.2f}亿" if amt_y is not None and pd.notna(amt_y) else ""
             bad, badtxt = _suspect(amt_y, SANE_MAX_STOCK_YI, "个股单日机构净买")
+
+            # ★★V3.2 交叉校验：机构净买为正，但全榜净买为负 = 机构在接，游资在出★★
+            conflict = False
+            xtxt = ""
+            lhb_net = LHB_NET_MAP.get(cdd) if same_day else None
+            if lhb_net is not None and amt_y is not None and pd.notna(amt_y):
+                xtxt = f" ｜龙虎榜全榜净买{lhb_net:+.2f}亿"
+                if amt_y > 0 and lhb_net < 0:
+                    conflict = True
+                    n_conflict += 1
+                    xtxt += " 🔴符号相反(机构在接·游资在出)→逐出下单指令"
+                elif amt_y > 0 and lhb_net > 0:
+                    xtxt += " ✅方向一致"
+
             flag = ""
-            if not bad and vv is not None and pd.notna(vv):
+            if not bad and not conflict and vv is not None and pd.notna(vv):
                 if vv < 0:
                     flag = " ✅机构在跌时买入=重要埋伏信号"
                 elif vv < 3:
-                    flag = " ★微涨却被机构重金买入=真建仓"
-            w(f"    {nm}({cdd}){p}{n}{badtxt}{flag}")
-            if bad:
-                continue          # ★V3.1 可疑值不进下单指令
+                    # ★V3.2 收紧：铁律I原文是"机构在【跌】的票上砸钱"，
+                    #   微涨被买只能算参考，不再直接称"真建仓"
+                    flag = " ⚠️微涨被机构买入=参考级(非埋伏，铁律I只认跌着被买)"
+            w(f"    {nm}({cdd}){p}{n}{xtxt}{badtxt}{flag}")
+            if bad or conflict:
+                continue          # ★可疑值/冲突值不进下单指令
             out.append((nm,
                         float(vv) if vv is not None and pd.notna(vv) else None,
                         float(amt_y) if amt_y is not None and pd.notna(amt_y) else None,
                         cdd))
+        if n_conflict:
+            w(f"\n  🔴 本次拦下 {n_conflict} 只【机构买但全榜净卖】的票")
+            w("     这类票看起来是机构建仓，实际是机构接盘游资出货。")
+            w("     8/7多氟多就是这一类：机构净买3.26亿，全榜净买−0.15亿。")
         return out
     except Exception as e:
         w(f"  [报空] 机构席位：{type(e).__name__}: {str(e)[:60]}")
@@ -436,6 +497,9 @@ def gen_order(ambush, jg_rows=None):
     w("    三次识别全对，三次都只说『观察』→ 全部错过")
 
     w("  ★V3.1：超出常识上限的金额已在上游逐出（8/7益坤电气54.54亿即此类）")
+    w("  ★V3.2：机构净买为正但【龙虎榜全榜净买为负】的，已逐出（8/7多氟多即此类）")
+    w("     ⚠️ 铁律I原文：只认『机构专用席位买【跌】的票』。")
+    w("        微涨被机构买 = 参考级，不构成埋伏信号。")
 
     orders = []
     seen_code = set()
@@ -587,7 +651,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.2 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     if bj.weekday() >= 5:
         w("周末无龙虎榜数据（下方为最近一个交易日的回溯结果）")
@@ -635,7 +699,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.1完成")
+    print("\n✅ 龙虎榜扫描V3.2完成")
 
 
 if __name__ == "__main__":
