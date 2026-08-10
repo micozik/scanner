@@ -692,7 +692,11 @@ def main():
     w("=" * 60)
     w(f"龙虎榜/游资 独立扫描器V3.3 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
-    safe_run("载入账户", _load_account)
+    # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
+    try:
+        _load_account()
+    except Exception as e:
+        w(f"  [报空] 载入账户：{type(e).__name__}: {str(e)[:60]}")
     if bj.weekday() >= 5:
         w("周末无龙虎榜数据（下方为最近一个交易日的回溯结果）")
     elif bj.hour < 18:
