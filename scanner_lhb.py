@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-龙虎榜/游资 独立扫描器 V3.2（2026-08-10 实盘验出：机构净买 vs 龙虎榜净买 交叉校验）
+龙虎榜/游资 独立扫描器 V3.3（2026-08-10 账户改读 我的清单.txt，不再写死）
 专职：每晚18:45跑，抓当日龙虎榜 + 活跃营业部 + 机构专用席位
 核心：自动标注【埋伏型】(跌着被买=明天机会) / 【追高型】(涨停被买=次日易崩)
 
@@ -54,21 +54,60 @@ ORDER_HIST_FILE = "reports/order_history.json"
 # key "_date" 存数据日期，用于确认两份数据是同一天
 LHB_NET_MAP = {}
 
-# ★账户参数（买卖后更新；三个扫描器各有一份，改一处要三处同步）
-TOTAL_ASSET_WAN = 18.38     # 总资产(万) 2026-08-09 截图对账 183,802.38
-CASH_AVAIL_WAN = 0.0286     # ★可用现金(万) 286.48元 → 决定指令能不能真的执行
+# ★★V3.3：账户与持仓改为从 我的清单.txt 读取，不再写死★★
+# 8/10实测：报告显示"可用现金286元"，实际已是8,133元——
+# scanner_cloud 接了清单，scanner_lhb 没接，两份数据打架。
+# 这就是"同一份持仓抄三份"的必然后果：改一处，另两处就变成假数据。
+WATCH_FILE = "我的清单.txt"
+TOTAL_ASSET_WAN = 18.48     # 缺省值；清单存在时被覆盖
+CASH_AVAIL_WAN = 0.81       # ★可用现金(万) → 决定指令能不能真的执行
 SINGLE_MAX_PCT = 11         # 单笔上限占总资产%
 
-# ★现有持仓驱动链（查集中度用，与 scanner_cloud 的 WATCH_STOCKS 对齐）
-MY_CHAINS = {
-    "AI算力链": 4.60,        # 紫光3.42 + 中贝1.18
-    "锂电/钠电链": 2.43,
-    "半导体材料链": 2.27,
-    "MLCC涨价链": 1.64,
-    "医药链": 2.05,
-    "贵金属链": 1.30,
-    "农业(独立)": 3.08,
-}
+# ★现有持仓驱动链（查集中度用）。缺省值仅作兜底，
+# 清单存在时由 _load_account() 从 我的清单.txt 重算。
+MY_CHAINS = {}
+
+
+def _load_account():
+    """★★V3.3 从 我的清单.txt 读取账户与驱动链集中度★★
+    格式与 scanner_cloud 完全一致（| 分隔），改一个文件三处生效。"""
+    global TOTAL_ASSET_WAN, CASH_AVAIL_WAN, MY_CHAINS
+    if not os.path.exists(WATCH_FILE):
+        w(f"  ⚠️ 未找到 {WATCH_FILE}，账户数字用代码内缺省值（可能已过期）")
+        return
+    try:
+        chains, acct = {}, {}
+        with open(WATCH_FILE, "r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                p = [x.strip() for x in line.split("|")]
+                if len(p) < 3:
+                    continue
+                if p[0] in ("账户", "account"):
+                    try:
+                        acct[p[1]] = float(p[2])
+                    except Exception:
+                        pass
+                elif p[0] == "持仓" and len(p) > 7:
+                    try:
+                        mv = float(p[4]) if p[4] else 0.0
+                    except Exception:
+                        mv = 0.0
+                    ch = p[7] or "未分类"
+                    if mv > 0:
+                        chains[ch] = chains.get(ch, 0.0) + mv
+        if acct.get("总资产"):
+            TOTAL_ASSET_WAN = acct["总资产"]
+        if acct.get("现金") is not None:
+            CASH_AVAIL_WAN = acct["现金"]
+        if chains:
+            MY_CHAINS = chains
+        w(f"  ✅ 已从 {WATCH_FILE} 载入：总资产{TOTAL_ASSET_WAN}万 / "
+          f"现金{CASH_AVAIL_WAN}万 / 驱动链{len(MY_CHAINS)}条")
+    except Exception as e:
+        w(f"  🔴 {WATCH_FILE} 解析失败：{type(e).__name__} → 用缺省值")
 CHAIN_MAX_PCT = 40          # 铁律⑧：同一驱动链不许超40%
 
 # ★★V3.1 合理性上限（亿元）。超过即判为脏数据，不参与下单指令。
@@ -651,8 +690,9 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.2 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.3 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
+    safe_run("载入账户", _load_account)
     if bj.weekday() >= 5:
         w("周末无龙虎榜数据（下方为最近一个交易日的回溯结果）")
     elif bj.hour < 18:
@@ -699,7 +739,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.2完成")
+    print("\n✅ 龙虎榜扫描V3.3完成")
 
 
 if __name__ == "__main__":
