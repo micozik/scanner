@@ -546,15 +546,28 @@ def scan_my_news():
     news = globals().get("TODAY_NEWS", []) or []
     hit_any = False
     for code, name in names:
+        # ★★V8.1 匹配收紧：ETF 不做名称片段模糊匹配★★
+        # 8/10翻车：「创新药ETF」取前两字「创新」→ 匹配到
+        #   "创新发展行动方案"、"外送电量创新高"、"二氧化钛反倾销"（含"创新"？否，含"延期"）
+        # 教训：两字片段在中文里几乎必然误命中。只认全名和代码。
         keys = {name}
-        if len(name) >= 4 and ("ETF" in name.upper()):
-            keys.add(name.replace("ETF", "").strip()[:2])
+        nm_core = name.replace("ETF", "").replace("易", "").replace("汇", "").strip()
+        # 片段允许2字起（"黄金"），但ETF类下方还有一道硬闸：
+        # 正文必须同时出现 ETF/基金/份额/代码，否则不算命中。
+        # 两道叠加：「创新」匹配到"创新发展行动方案"时，因无ETF字样被拦下。
+        if len(nm_core) >= 2:
+            keys.add(nm_core)
         nhits = []
         seen = set()
         for tm, t in news:
             if t[:24] in seen:
                 continue
-            if any(k and k in t for k in keys) or code in str(t):
+            hit_name = any(k and k in t for k in keys)
+            # ETF：名字片段命中还不够，正文必须同时出现 ETF/基金/份额/该ETF代码
+            if hit_name and "ETF" in name.upper() and name not in t:
+                if not any(x in t for x in ("ETF", "基金", "份额", code)):
+                    hit_name = False
+            if hit_name or code in str(t):
                 seen.add(t[:24])
                 try:
                     pol = _news_polarity(t)
@@ -1891,6 +1904,25 @@ POLARITY_TRAPS = {
 }
 
 
+def _news_key(t):
+    """★★V8.1 同源新闻指纹：一份文件被媒体拆成N条快讯，只能算1条催化★★
+    8/10实测：《煤炭工业发展"十五五"规划》被拆成18条推送，
+    导致煤炭概念拿到39分排全场第一、热力图油气/煤炭"净+10 催化爆发"。
+    实际只有1条政策。计数膨胀 = 假信号。
+    办法：取书名号《》内的内容作指纹；没有书名号则取标题前12字。"""
+    t = str(t)
+    a = t.find("《")
+    b = t.find("》", a + 1) if a >= 0 else -1
+    if a >= 0 and b > a:
+        return "BOOK:" + t[a:b + 1]
+    # 冒号前的主体也常是同一事件的不同细节
+    for sep in ("：", ":"):
+        i = t.find(sep)
+        if 4 <= i <= 20:
+            return "HEAD:" + t[:i]
+    return "RAW:" + t[:12]
+
+
 def _news_polarity(text):
     """判断一条新闻的多空方向：+1利多 / -1利空 / 0中性
     ★V7.1：先处理反转短语，再数单字"""
@@ -1927,9 +1959,13 @@ def scan_catalyst_heat(uniq_news):
         for tm, t in uniq_news:
             if _is_foreign(t):
                 continue
+            _k2 = _news_key(t)          # ★V8.1 同源去重
+            if _k2 in seen:
+                continue
             for k in kws:
                 if k in t and t[:26] not in seen:
                     seen.add(t[:26])
+                    seen.add(_k2)
                     p = _news_polarity(t)
                     (bull if p > 0 else bear if p < 0 else neu).append((tm, t, k))
                     break
@@ -3229,8 +3265,11 @@ def scan_all_sector_cross(uniq_news):
             keys = {k for k in keys if len(k) >= 2}
             bull, bear, seen = [], [], set()
             for tm, t in uniq_news:
-                if t[:24] in seen:
+                # ★V8.1：同源去重（书名号/冒号主体），防止一份文件灌成N条
+                _k = _news_key(t)
+                if _k in seen or t[:24] in seen:
                     continue
+                seen.add(_k)
                 try:
                     if _is_foreign(t) or _is_noise(t, nm):
                         continue
@@ -3287,7 +3326,7 @@ def scan_all_sector_cross(uniq_news):
                     flag = " ⚠️已大涨"
             w(f"    {i:2d}. [{kind}]{nm} {ct} 新闻净{net:+d}(↑{nb}↓{nr}) 得分{sc}{flag}")
         w("\n  ★前5名的具体新闻催化：")
-        for sc, kind, nm, chg, net, nb, nr, bull in results[:5]:
+        for sc, kind, nm, chg, net, nb, nr, bull, ftxt in results[:5]:
             ct = f"{chg:+.2f}%" if chg is not None and pd.notna(chg) else "?"
             w(f"\n  ◆【{nm}】{ct} 得分{sc}")
             for tm, t in bull[:4]:
@@ -3935,7 +3974,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -3948,7 +3987,6 @@ def main():
     else:
         scan_regime_gate()
         scan_tomorrow_gate()
-        scan_watchlist()
         scan_focus_stocks()
         scan_intraday_hotmoney()
         scan_breadth()
@@ -3994,7 +4032,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
