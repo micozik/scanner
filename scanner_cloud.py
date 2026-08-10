@@ -1887,12 +1887,37 @@ FOREIGN_WORDS = ["匈牙利", "希腊", "西班牙", "葡萄牙", "意大利", "
                  "克罗地亚", "斯洛文尼亚", "亚美尼亚", "刚果", "阿森松岛"]
 
 
+# ★★V8.2 海外机构/市场专有名词：出现即判为外国新闻★★
+# 8/10实测：全板块交叉第1名【银行 22分】，四条催化全是——
+#   "欧洲央行2万亿欧元隔夜存款"、"德银Q2增持美光"、
+#   "美国银行在金风科技H股持股升至5.43%"、"央行授权德银当法兰克福清算行"
+# 没一条跟A股银行板块有关。"银行"两字太泛，把海外机构新闻全吸进来了。
+# 同理【英伟达概念 11分】催化全是美股持仓/美国投资/日本采购。
+# ★注意：这些词出现时，即使句中含"中国/央行"也算外国新闻——
+#   因为"某外资行增持某中国公司H股"讲的是外资的事，不是A股板块催化。
+FOREIGN_ENTITY = [
+    "欧洲央行", "美联储", "日本央行", "英国央行", "澳联储", "瑞士央行",
+    "印度央行", "韩国央行", "德意志银行", "德银", "摩根大通", "高盛",
+    "美国银行", "花旗", "瑞银", "巴克莱", "野村", "贝莱德", "施罗德",
+    "纽约梅隆", "FMR", "杰富瑞", "西太平洋银行", "澳洲国民银行",
+    "SEC", "美国证监会", "隔夜存款", "清算行",
+]
+# H股/港股持股比例变动：是外资持仓披露，不是A股板块催化
+FOREIGN_PATTERN = ["H股的持股比例", "持股比例于", "重仓股", "二季度持仓", "Q2持仓"]
+
+
 def _is_foreign(text):
     """外国新闻不计入A股板块评分（如匈牙利核电停机≠A股电力利空）"""
-    if any(f in text for f in FOREIGN_WORDS):
+    t = str(text)
+    # ★V8.2 硬闸：海外机构/持股披露，一律不进A股板块评分
+    if any(k in t for k in FOREIGN_ENTITY):
+        return True
+    if any(k in t for k in FOREIGN_PATTERN):
+        return True
+    if any(f in t for f in FOREIGN_WORDS):
         cn = ["中国", "A股", "国内", "我国", "央行", "发改委", "工信部",
               "出口", "进口", "对华", "中方", "国产"]
-        if not any(c in text for c in cn):
+        if not any(c in t for c in cn):
             return True
     return False
 
@@ -3979,7 +4004,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4037,7 +4062,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
