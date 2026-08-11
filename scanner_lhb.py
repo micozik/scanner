@@ -49,6 +49,7 @@ import pandas as pd
 
 REPORT = []
 ORDER_HIST_FILE = "reports/order_history.json"
+INST_HIST_FILE = "reports/institution_history.json"   # ★V3.4 机构成绩单
 
 # ★★V3.2 全局：{代码: 龙虎榜净买额(亿)}，由 scan_lhb 填充，scan_jg 交叉校验用
 # key "_date" 存数据日期，用于确认两份数据是同一天
@@ -510,6 +511,67 @@ def scan_jg():
                         float(vv) if vv is not None and pd.notna(vv) else None,
                         float(amt_y) if amt_y is not None and pd.notna(amt_y) else None,
                         cdd))
+        # ★★★V3.4 机构成绩单：把机构每天买了什么全存下来，一段时间后算它准不准★★★
+        # 用户提问："机构为啥要接盘？不想赚钱吗？" —— 这个问题问对了。
+        # "机构接盘"是我用词偷懒。真实可能有五种：
+        #   ①时间尺度不同(游资做3天/机构做3月，同一价格含义相反)
+        #   ②被动买入(指数纳入/ETF申购，不含判断)
+        #   ③机构也会错(中贝5/15主力净流入1.8亿，今天跌39%)
+        #   ④大资金买不了涨停，建仓天生就得买在下跌里 = 常态非异常
+        #   ⑤义务性买单(定增/解禁/做市对冲)
+        # ★这五种事前分不清，只能靠事后统计。所以要这张表。
+        try:
+            # ★V3.4：存档必须带【当日收盘价】，否则将来没法算涨跌
+            _spot = None
+            try:
+                _spot = with_retry(lambda: ak.stock_zh_a_spot_em(), tries=1, timeout=25)
+            except Exception:
+                pass
+            _cc = _cp = _cs = None
+            if _spot is not None:
+                _cc = pick_col(_spot, ["代码", "code"])
+                _cp = pick_col(_spot, ["最新价", "trade"])
+                if _cc:
+                    _cs = _spot[_cc].astype(str)
+
+            def _close(cd):
+                if _cs is None:
+                    return None
+                try:
+                    r = _spot[_cs.str.contains(cd, na=False)]
+                    if len(r) > 0:
+                        v = pd.to_numeric(r.iloc[0][_cp], errors="coerce")
+                        return float(v) if pd.notna(v) else None
+                except Exception:
+                    pass
+                return None
+
+            _arch = []
+            for _r in out:
+                _nm, _pct, _amt, _cd = _r[0], _r[1], _r[2], _r[3]
+                if not _cd or _amt is None:
+                    continue
+                _lhb = LHB_NET_MAP.get(_cd)
+                _arch.append({
+                    "code": _cd, "name": _nm,
+                    "pct": _pct if _pct is not None else 0.0,
+                    "inst": round(float(_amt), 3),
+                    "lhb": (round(float(_lhb), 3) if _lhb is not None else None),
+                    # 分类：机构买【跌】的 vs 买【涨停】的 —— 这是要对比的两组
+                    "price": _close(_cd),   # ★V3.4 当日收盘价
+                    "kind": ("买跌" if (_pct is not None and _pct < 0)
+                             else ("买涨停" if (_pct is not None and _pct >= 9.5)
+                                   else "买微涨")),
+                    "agree": (None if _lhb is None else (_amt > 0 and _lhb > 0)),
+                })
+            if _arch:
+                _d = _bt_load(INST_HIST_FILE)
+                _d[use_date] = _arch
+                _bt_save(INST_HIST_FILE, _d)
+                w(f"  📊 已记入【机构成绩单】{len(_arch)}只 → 累计追踪机构对错")
+        except Exception as _e:
+            w(f"  [机构成绩单存档失败] {type(_e).__name__}")
+
         if n_conflict:
             w(f"\n  🔴 本次拦下 {n_conflict} 只【机构买但全榜净卖】的票")
             w("     这类票看起来是机构建仓，实际是机构接盘游资出货。")
@@ -658,6 +720,130 @@ def gen_order(ambush, jg_rows=None):
     w("=" * 60)
 
 
+def backtest_institution():
+    """★★★V3.4【机构成绩单】机构到底对不对 —— 用户命题★★★
+
+    ★这张表要回答四个问题，每个都是我现在答不出的：
+      Q1 机构买入后1/3/5日，涨的多还是跌的多？（机构准不准）
+      Q2 机构【买跌】的 vs 【买涨停】的，哪组更准？（铁律B成不成立）
+      Q3 机构与全榜【方向一致】vs【符号相反】，哪组更准？（我的闸门有没有用）
+      Q4 净买额大小和后续涨幅有没有关系？（金额是不是信号）
+
+    ★为什么必须统计而不能推理：
+      同一笔"机构净买"背后可能是——建仓/被动申购/义务买单/看错了/
+      时间尺度不同。这五种事前分不清，只有事后胜率能说话。
+    """
+    w("\n" + "=" * 60)
+    w("📊📊【机构成绩单】机构到底对不对 —— 累计追踪 📊📊")
+    w("=" * 60)
+    w("  ★用户命题：『机构为啥要接盘？不想赚钱吗？』")
+    w("  ★答案不能靠想，只能靠统计。这张表就是答案本身。")
+    d = _bt_load(INST_HIST_FILE)
+    if not d:
+        w("\n  尚无数据，今天是第1天。")
+        w("  ⚠️ 需≥5个交易日、≥30个样本才出结论。之前的任何断言都是猜的。")
+        w("=" * 60)
+        return
+
+    # 取当前价
+    spot = None
+    try:
+        spot = with_retry(lambda: ak.stock_zh_a_spot_em(), tries=1, timeout=30)
+    except Exception:
+        pass
+    if spot is None:
+        try:
+            spot = with_retry(lambda: ak.stock_zh_a_spot(), tries=1, timeout=30)
+        except Exception:
+            pass
+    if spot is None:
+        days = sorted(d.keys(), reverse=True)
+        n = sum(len(v) for v in d.values())
+        w(f"\n  已累计 {len(days)}天 / {n}个样本，但快照取价失败，本次无法结算")
+        w("=" * 60)
+        return
+    c_code = pick_col(spot, ["代码", "code"])
+    c_price = pick_col(spot, ["最新价", "trade"])
+    c_str = spot[c_code].astype(str)
+
+    def _px(cd):
+        try:
+            r = spot[c_str.str.contains(cd, na=False)]
+            if len(r) > 0:
+                v = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
+                return float(v) if pd.notna(v) else None
+        except Exception:
+            pass
+        return None
+
+    today = now_beijing()
+    # 桶：[命中数, 样本数, 累计收益]
+    buckets = {"全部": [0, 0, 0.0], "买跌": [0, 0, 0.0],
+               "买涨停": [0, 0, 0.0], "买微涨": [0, 0, 0.0],
+               "方向一致": [0, 0, 0.0], "符号相反": [0, 0, 0.0],
+               "净买≥1亿": [0, 0, 0.0], "净买<1亿": [0, 0, 0.0]}
+    rows = []
+    for day in sorted(d.keys(), reverse=True)[:20]:
+        try:
+            dt = datetime.datetime.strptime(day, "%Y%m%d")
+        except Exception:
+            try:
+                dt = datetime.datetime.strptime(day, "%Y-%m-%d")
+            except Exception:
+                continue
+        gap = (today - dt).days
+        if gap < 1:
+            continue
+        for it in d[day]:
+            cd = it.get("code", "")
+            p1 = _px(cd)
+            # 存档时没存价格，用当日涨跌幅反推当日收盘不可靠 → 存价格是V3.5的事
+            p0 = it.get("price")
+            if not p0 or not p1:
+                continue
+            chg = (p1 - p0) / p0 * 100
+            ok = chg > 3
+            def _add(k):
+                buckets[k][1] += 1
+                buckets[k][0] += 1 if ok else 0
+                buckets[k][2] += chg
+            _add("全部")
+            _add(it.get("kind", "买微涨"))
+            if it.get("agree") is True:
+                _add("方向一致")
+            elif it.get("agree") is False:
+                _add("符号相反")
+            _add("净买≥1亿" if float(it.get("inst", 0)) >= 1 else "净买<1亿")
+            rows.append((day, gap, it.get("name"), it.get("kind"), chg))
+
+    days = sorted(d.keys(), reverse=True)
+    n_all = sum(len(v) for v in d.values())
+    w(f"\n  已累计 {len(days)} 个交易日 / {n_all} 个样本")
+
+    if buckets["全部"][1] == 0:
+        w("\n  ⚠️ 存档里缺【当日收盘价】，无法结算涨跌。")
+        w("     已在本版补上价格字段，从今天起的存档可正常结算。")
+        w("     （这是我设计存档时漏的字段，不是数据源问题）")
+        w("=" * 60)
+        return
+
+    w("\n  ── 分组胜率（买入后至今，>3%算命中）──")
+    for k in ["全部", "买跌", "买涨停", "买微涨", "方向一致", "符号相反",
+              "净买≥1亿", "净买<1亿"]:
+        h, n, sm = buckets[k]
+        if n:
+            w(f"    {k:8s}：{h:>3}/{n:<3} = {h/n*100:5.1f}%  平均{sm/n:+6.2f}%")
+    w("")
+    w("  ── 结论怎么读 ──")
+    w("  · 『全部』<45% → 机构信号整体没有边缘，跟机构这条路走不通")
+    w("  · 『买跌』明显>『买涨停』→ 铁律B成立，机构买跌确实是埋伏")
+    w("  · 两者差不多 → 大资金建仓本来就得买在下跌里，是常态不是信号")
+    w("  · 『方向一致』>『符号相反』→ 我加的交叉校验闸门有价值，保留")
+    w("  · 『符号相反』反而更高 → 闸门拦错了，立刻拆掉")
+    w("  ⚠️ 样本<30 之前，以上任何一条都不许当结论用")
+    w("=" * 60)
+
+
 def backtest_order():
     """★V3.0：转化率0%被反复检讨，但『转化了会不会赚』从没验证过。
     这才是决定该不该提高转化率的依据。"""
@@ -690,7 +876,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.3 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.4 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -726,6 +912,10 @@ def main():
         backtest_order()
     except Exception as e:
         w(f"  [报空] 指令回测：{type(e).__name__}: {str(e)[:60]}")
+    try:
+        backtest_institution()
+    except Exception as e:
+        w(f"  [报空] 机构成绩单：{type(e).__name__}: {str(e)[:60]}")
 
     w("\n" + "=" * 60)
     w("★★★【明日作战提示】★★★")
@@ -743,7 +933,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.3完成")
+    print("\n✅ 龙虎榜扫描V3.4完成")
 
 
 if __name__ == "__main__":
