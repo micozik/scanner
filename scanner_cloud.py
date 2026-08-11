@@ -2587,6 +2587,8 @@ EVENT_L1 = [   # 一级：控制权/资产变动，历史上最强的短线驱�
     "无偿划转", "国有股权划转", "协议转让", "要约收购", "举牌",
     "重大资产重组", "资产注入", "拟收购", "拟置入", "借壳", "吸收合并",
     "重大资产购买", "发行股份购买资产", "更名", "证券简称变更",
+    # ★V8.6 定增：有价格锚、有解禁日、认购方实名，比新闻硬
+    "向特定对象发行", "定向增发", "非公开发行", "发行价格为", "募集资金总额",
 ]
 EVENT_L2 = [   # 二级：业绩/订单突变
     "业绩预增", "业绩大幅预增", "扭亏为盈", "净利润同比增长",
@@ -3165,6 +3167,137 @@ def scan_stock_picker():
         # ★V7.0 存档，供 backtest_picker 回看
         _picker_archive([(nm, cd, sc, ch) for sc, nm, cd, *_r, ch in picks[:12]], spot)
     safe_run("个股级选股器", _do)
+
+
+def scan_placement_radar():
+    """★★★V8.6【定增破发雷达】★★★ —— 用户命题
+
+    ★为什么定增比新闻硬：
+      ① 有确定的价格锚（发行价，白纸黑字，不是研报观点）
+      ② 有确定的日期（限售6个月/18个月，倒计时明确）
+      ③ 认购方实名公开（谁买的、买多少、报价多少）
+      新闻只告诉你"某板块有催化"，定增告诉你"这群人愿意出XX元"
+
+    ★8/11 江波龙(301308) 实例：
+      8/7完成定增，发行价560元，当日收盘386.6元 → 【溢价45%】认购
+      21家认购：易方达5.3亿/财通2.48亿/诺德2.21亿/南方2.01亿…
+      + 发起人股东王伟民、杨晓斌、黄海华、张旭（报价700-710元）
+      + 星宸科技、阳光电源子公司各1亿
+      现价417.50，较发行价折价25.4%
+
+    ★★但必须写死一条反例，防止误读（用户原话："不可能亏钱做生意"）：
+      定增破发 ≠ 公司会拉回去。三个理由：
+        a) 钱已到公司账上，涨跌不退，公司无动力也无能力拉股价（操纵市场违法）
+        b) 限售期内认购方卖不了，浮亏无即时压力
+        c) 解禁日反而是抛压，不是支撑
+      易方达那5.3亿是基民的钱，亏了基金经理不赔。
+      江波龙自己从750跌到308，600-700买的机构早就亏了。
+    ★正确用法：把发行价当【专业买方的定价锚】，不当【保底承诺】。
+    """
+    w("\n" + "=" * 60)
+    w("💵💵【定增破发雷达】专业买方的定价锚 vs 今天的市价 💵💵")
+    w("=" * 60)
+    w("  ★定增的价值不在『会不会拉回去』，在于：")
+    w("    一群做过尽调、要锁6-18个月的人，用真金白银定了一个价。")
+    w("  ⚠️ 反例写死：定增破发≠公司会救。钱已到账不退｜限售期内卖不了｜")
+    w("     解禁日是抛压不是支撑。江波龙自己从750跌到308，机构照样亏。")
+
+    _name, df = None, None
+    for fn_name in ("stock_qbzf_em", "stock_zf_em", "stock_add_stock_em"):
+        fn = getattr(ak, fn_name, None)
+        if fn is None:
+            continue
+        try:
+            df = with_retry(fn, tries=1, wait=2, timeout=40)
+            if df is not None and len(df) > 0:
+                _name = fn_name
+                break
+        except Exception as e:
+            w(f"  [切换] {fn_name} 失败({type(e).__name__})")
+            df = None
+    if df is None or len(df) == 0:
+        w("  [报空] 增发数据接口不可用（akshare 版本可能不含该接口）")
+        w("  → 降级方案：定增公告已并入【事件驱动雷达】关键词，见上一节")
+        w("=" * 60)
+        return
+
+    w(f"  （源：{_name}，共{len(df)}条）")
+    c_code = pick_col(df, ["代码", "股票代码", "code"])
+    c_name2 = pick_col(df, ["名称", "简称", "股票简称"])
+    c_price = pick_col(df, ["发行价格", "增发价格", "发行价"])
+    c_date = pick_col(df, ["发行日期", "增发上市日", "上市日", "公告日"])
+    if not (c_code and c_price):
+        w(f"  [报空] 缺关键列。实际列名：{list(df.columns)[:14]}")
+        w("=" * 60)
+        return
+
+    spot = get_spot()
+    if spot is None:
+        w("  [报空] 快照缺失，无法比价")
+        w("=" * 60)
+        return
+    sc_code = pick_col(spot, ["代码", "code"])
+    sc_price = pick_col(spot, ["最新价", "trade"])
+    sc_pct = pick_col(spot, ["涨跌幅", "changepercent"])
+    s_str = spot[sc_code].astype(str)
+
+    rows = []
+    today = now_beijing()
+    for _, r in df.iterrows():
+        try:
+            cd = str(r[c_code])[-6:]
+            issue = pd.to_numeric(r[c_price], errors="coerce")
+            if pd.isna(issue) or float(issue) <= 0:
+                continue
+            # 只看近180天的（限售期内才有意义）
+            if c_date:
+                try:
+                    d0 = datetime.datetime.strptime(str(r[c_date])[:10], "%Y-%m-%d")
+                    gap = (today - d0).days
+                    if gap < 0 or gap > 200:
+                        continue
+                except Exception:
+                    gap = None
+            else:
+                gap = None
+            m = spot[s_str.str.contains(cd, na=False)]
+            if len(m) == 0:
+                continue
+            now_p = pd.to_numeric(m.iloc[0][sc_price], errors="coerce")
+            if pd.isna(now_p) or float(now_p) <= 0:
+                continue
+            pct = pd.to_numeric(m.iloc[0][sc_pct], errors="coerce")
+            nm = str(m.iloc[0][pick_col(spot, ["名称", "name"])])
+            disc = (float(now_p) - float(issue)) / float(issue) * 100
+            rows.append((disc, nm, cd, float(issue), float(now_p),
+                         float(pct) if pd.notna(pct) else None, gap))
+        except Exception:
+            continue
+
+    if not rows:
+        w("  近200天内无可比对的定增记录")
+        w("=" * 60)
+        return
+
+    rows.sort(key=lambda x: x[0])          # 破发最深的排前面
+    broke = [x for x in rows if x[0] < -10]
+    w(f"\n  ★近200天定增 {len(rows)}笔，其中现价低于发行价10%以上的 {len(broke)}笔★\n")
+    for i, (disc, nm, cd, issue, now_p, pct, gap) in enumerate(broke[:12], 1):
+        ps = f"{pct:+.2f}%" if pct is not None else ""
+        gs = f" 距发行{gap}天" if gap is not None else ""
+        flag = "🟢深度折价" if disc < -30 else ("🟡折价" if disc < -20 else "⚪小幅折价")
+        w(f"  {i:2d}. {nm}({cd}) {flag}")
+        w(f"      发行价{issue:.2f} → 现价{now_p:.2f}  {disc:+.1f}%   今{ps}{gs}")
+    w("\n  ── 怎么用这张表（三条纪律）──")
+    w("  1. ★发行价是【定价锚】不是【保底价】★")
+    w("     折价大 = 专业买方的成本远高于你，不等于它会涨回去")
+    w("  2. ★必须过①-B★：认购方为什么愿意出那个价？")
+    w("     产业买家/创始团队认购 > 纯财务投资者认购")
+    w("     溢价发行(发行价>当时市价) = 极强信号，罕见")
+    w("     折价发行(≤市价8折) = 常规操作，不含信息")
+    w("  3. ★查解禁日★：限售6个月或18个月。")
+    w("     解禁前是空窗，解禁日是抛压。别在解禁前一个月进。")
+    w("=" * 60)
 
 
 def scan_event_radar():
@@ -4402,7 +4535,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.6 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4438,6 +4571,7 @@ def main():
         safe_run("异动无解释", scan_unexplained)
         # ★★V8.3 事件驱动雷达：必须在公告扫描之后（依赖 TODAY_ANNOUNCE_RAW）★★
         safe_run("事件驱动雷达", scan_event_radar)
+        safe_run("定增破发雷达", scan_placement_radar)
     # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
     safe_run("我的持仓相关消息", scan_my_news)
 
@@ -4463,7 +4597,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.5完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.6完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
