@@ -77,6 +77,7 @@ KNOWN_PEAKS = {
 AMBUSH_HIST_FILE = "reports/ambush_history.json"
 HEAT_HIST_FILE = "reports/heat_history.json"
 PICKER_HIST_FILE = "reports/picker_history.json"   # ★V7.0 选股器自检库
+EVENT_HIST_FILE = "reports/event_history.json"     # ★V8.3 事件驱动雷达自检库
 
 # ★AI推荐台账（每次推荐后由AI更新此表）
 # 格式：(日期, 代码, 名称, 成本价, 类型A事件/B周期, 预期周期, 逻辑破的定义)
@@ -2300,6 +2301,7 @@ def scan_rule_scorecard():
         ("热力图·净利多前3", "次日板块涨跌", HEAT_HIST_FILE),
         ("冷低早·六关", "5日胜率", COLD_HIST_FILE),
         ("★选股器前12", "3日命中率(>3%)", PICKER_HIST_FILE),
+        ("★事件驱动雷达", "3日命中率(>3%)", EVENT_HIST_FILE),
     ]:
         d = _bt_load(f)
         n = len(d)
@@ -3256,6 +3258,115 @@ def scan_event_radar():
     w("  3. ★出现『风险提示/重点监控/公司否认』= 催化证伪 = 立即出★")
     w("     高争民爆8/7已公告『不存在资产注入计划』+深交所重点监控")
     w("  ⚠️ 仓位：A类事件仓不许超总资产6%（B类才能到11%）")
+
+    # ★★V8.3 存档：没有后视镜的模块 = 无法证伪 = 迟早变成噪音源★★
+    try:
+        arch = []
+        for lv, nm, cd, t, hitk, risk, pct, px, kind in rows[:15]:
+            if px and not risk:          # 有价格、且未出风险提示的才存
+                arch.append({"code": cd, "name": nm, "lv": lv, "key": hitk,
+                             "price": px, "pct": pct if pct is not None else 0.0})
+        if arch:
+            d = _bt_load(EVENT_HIST_FILE)
+            d[now_beijing().strftime("%Y-%m-%d")] = arch
+            _bt_save(EVENT_HIST_FILE, d)
+            w(f"  📌 已存档{len(arch)}条事件 → 3日后自动回看命中率")
+    except Exception as e:
+        w(f"  [存档失败] {type(e).__name__}")
+    w("=" * 60)
+
+
+def backtest_event():
+    """★V8.3 事件驱动雷达回测。
+    ★核心要验的不是『事件有没有用』，是【当天没涨的】是不是真的比【已涨停的】强。
+      高争民爆7/28没涨→翻倍；8/10第9板→接力最后一棒。
+      如果数据显示两者差不多，说明『公告当天入场』这条规则是我编的，不是真的。"""
+    w("\n" + "=" * 60)
+    w("🔬【事件驱动雷达·回测】『公告当天没涨才是入场点』——真的吗")
+    w("=" * 60)
+    d = _bt_load(EVENT_HIST_FILE)
+    if not d:
+        w("  尚无存档，今天是第1天。")
+        w("  ⚠️ 铁律：≥5天且≥15样本后出胜率；连续<45% → 立即停用本模块")
+        w("=" * 60)
+        return
+    spot = get_spot()
+    if spot is None:
+        w("  [报空] 快照缺失")
+        w("=" * 60)
+        return
+    c_code = pick_col(spot, ["代码", "code"])
+    c_price = pick_col(spot, ["最新价", "trade"])
+    today = now_beijing()
+
+    def _px(cd):
+        try:
+            r = spot[spot[c_code].astype(str).str.contains(cd, na=False)]
+            if len(r) > 0:
+                v = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
+                return float(v) if pd.notna(v) else None
+        except Exception:
+            pass
+        return None
+
+    # 分桶：当天没涨(<3%) vs 当天已大涨(>=9.5%)
+    b_un = [0, 0]      # [命中, 样本]
+    b_up = [0, 0]
+    b_l1 = [0, 0]
+    b_l2 = [0, 0]
+    for day in sorted(d.keys(), reverse=True)[:10]:
+        try:
+            gap = (today - datetime.datetime.strptime(day, "%Y-%m-%d")).days
+        except Exception:
+            continue
+        if gap < 3:
+            continue
+        detail = []
+        for it in d[day]:
+            p0, p1 = it.get("price"), _px(it.get("code", ""))
+            if not p0 or not p1:
+                continue
+            chg = (p1 - p0) / p0 * 100
+            ok = chg > 3
+            p_at = float(it.get("pct", 0))
+            if p_at < 3:
+                b_un[1] += 1
+                b_un[0] += 1 if ok else 0
+            elif p_at >= 9.5:
+                b_up[1] += 1
+                b_up[0] += 1 if ok else 0
+            if it.get("lv") == 1:
+                b_l1[1] += 1
+                b_l1[0] += 1 if ok else 0
+            else:
+                b_l2[1] += 1
+                b_l2[0] += 1 if ok else 0
+            detail.append(f"{it.get('name')}({p_at:+.0f}%当日){chg:+.1f}%")
+        if detail:
+            w(f"  {day}（{gap}天前）：{' | '.join(detail[:8])}")
+
+    tot = b_un[1] + b_up[1]
+    if tot == 0:
+        w("  样本不足（需≥3天前的存档），继续积累")
+        w("=" * 60)
+        return
+    w("")
+    if b_un[1]:
+        w(f"  🟢当天没涨(<3%)：{b_un[0]}/{b_un[1]} = {b_un[0]/b_un[1]*100:.0f}%")
+    if b_up[1]:
+        w(f"  🔴当天已涨停：  {b_up[0]}/{b_up[1]} = {b_up[0]/b_up[1]*100:.0f}%")
+    if b_l1[1]:
+        w(f"  一级(控制权/资产)：{b_l1[0]}/{b_l1[1]} = {b_l1[0]/b_l1[1]*100:.0f}%")
+    if b_l2[1]:
+        w(f"  二级(业绩/订单)：  {b_l2[0]}/{b_l2[1]} = {b_l2[0]/b_l2[1]*100:.0f}%")
+    w("")
+    w("  → 若『没涨』明显高于『已涨停』：公告当天入场这条规则成立，可加大权重")
+    w("  → 若两者差不多：这条规则是我编的，不是真的，必须改口")
+    w("  → 若一级明显高于二级：控制权变动确实比业绩订单强，排序正确")
+    if b_un[1] + b_up[1] >= 15:
+        r = (b_un[0] + b_up[0]) / (b_un[1] + b_up[1])
+        if r < 0.45:
+            w(f"  🔴🔴 整体命中率{r*100:.0f}%<45% → 按铁律【立即停用事件驱动雷达】")
     w("=" * 60)
 
 
@@ -4218,6 +4329,7 @@ def main():
         safe_run("埋伏池回测", lambda: backtest_ambush(TODAY_AMBUSH))
         safe_run("热力图回测", lambda: backtest_heat(TODAY_HEAT_TOP3))
         safe_run("选股器回测", backtest_picker)
+        safe_run("事件雷达回测", backtest_event)
     safe_run("仓位建议", lambda: scan_position_advice(LAST_RISK_SCORE))
     scan_rule_scorecard()
     safe_run("买入后复核", scan_entry_review)
