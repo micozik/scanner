@@ -1011,10 +1011,35 @@ def scan_spot():
 
 # ========== 冷低早筛选 ==========
 
+# ★★V8.5 K线缓存 + 全局时间预算（8/11事故：跑23分钟未结束）★★
+# 成因：盯盘名单从12只加到17只，每只都抓K线，
+#   每次 with_retry(timeout=25) × 两个源 = 单只最坏50秒，
+#   17只 = 最坏14分钟，再叠加冷低早/选股器里的重复抓取 → 跑不完。
+# ★根因不是"加了5只票"，是我的代码【没有总时间预算，会一直等下去】。
+_HIST_CACHE = {}
+_HIST_T0 = [None]          # 首次调用时间
+_HIST_BUDGET = 420         # 秒。超过就不再抓新K线，返回None（模块自动降级）
+
+
 def _hist_close(code, symbol=None):
+    # ★缓存：同一只票在多个模块被重复抓取（盯盘/冷低早/选股器）
+    if code in _HIST_CACHE:
+        return _HIST_CACHE[code]
+    if _HIST_T0[0] is None:
+        _HIST_T0[0] = time.time()
+    elif time.time() - _HIST_T0[0] > _HIST_BUDGET:
+        # ★超预算：直接返回空，让调用方走"无K线"分支，不再等网络
+        _HIST_CACHE[code] = (None, None)
+        return None, None
+    r = _hist_close_raw(code, symbol)
+    _HIST_CACHE[code] = r
+    return r
+
+
+def _hist_close_raw(code, symbol=None):
     if symbol:
         try:
-            k = with_retry(lambda: ak.stock_zh_a_daily(symbol=symbol), tries=1, timeout=25)
+            k = with_retry(lambda: ak.stock_zh_a_daily(symbol=symbol), tries=1, timeout=12)
             if k is not None and len(k) >= 45:
                 return k, pick_col(k, ["close", "收盘"])
         except Exception:
@@ -1023,7 +1048,7 @@ def _hist_close(code, symbol=None):
         end = now_beijing().strftime("%Y%m%d")
         start = (now_beijing() - datetime.timedelta(days=120)).strftime("%Y%m%d")
         k = with_retry(lambda: ak.stock_zh_a_hist(symbol=code, period="daily",
-                       start_date=start, end_date=end, adjust="qfq"), tries=1, timeout=25)
+                       start_date=start, end_date=end, adjust="qfq"), tries=1, timeout=12)
         if k is not None and len(k) >= 45:
             return k, pick_col(k, ["收盘", "close"])
     except Exception:
@@ -1889,6 +1914,22 @@ FOREIGN_WORDS = ["匈牙利", "希腊", "西班牙", "葡萄牙", "意大利", "
                  "克罗地亚", "斯洛文尼亚", "亚美尼亚", "刚果", "阿森松岛"]
 
 
+# ★★V8.4 商品型ETF：跟【商品价格】，不跟【股票板块】★★
+# 8/11教训：黄金ETF易(159934)被映射到"贵金属"行业板块，
+#   报告因"贵金属资金-24亿"判它【初判已错·建议减仓】。
+#   但当天真相是：现货黄金+1.10%涨到4385美元、白银+3.20%，
+#   跌的是【黄金股】(灵宝-4.78%、紫金-4.15%、多支黄金股ETF跌超2%)。
+#   商品与股票背离时，用股票板块资金去judge商品ETF = 判反。
+COMMODITY_ETF = {
+    "159934": "现货黄金(COMEX/上金所)",
+    "518880": "现货黄金",
+    "159937": "现货黄金",
+    "161226": "白银期货",
+    "159981": "能源化工商品",
+    "159980": "有色金属期货",
+}
+
+
 # ★★V8.2 海外机构/市场专有名词：出现即判为外国新闻★★
 # 8/10实测：全板块交叉第1名【银行 22分】，四条催化全是——
 #   "欧洲央行2万亿欧元隔夜存款"、"德银Q2增持美光"、
@@ -2435,7 +2476,7 @@ DEDUCTION_CHAINS = [
     },
     {
         "name": "存储涨价 → 传导链",
-        "trigger": ["AI", "数据中心", "算力", "服务器"],
+        "trigger": ["AI服务器", "AI芯片", "数据中心", "算力中心", "服务器出货"],
         "core": ["存储", "DRAM", "NAND", "HBM", "内存", "闪存", "颗粒",
                  "美光", "海力士", "铠侠", "长鑫", "模组"],
         "layers": ["①AI重塑存储周期→供不应求", "②原厂涨价→模组厂涨价",
@@ -3169,14 +3210,21 @@ def scan_event_radar():
         c_pct = pick_col(spot, ["涨跌幅", "changepercent"])
         c_price = pick_col(spot, ["最新价", "trade"])
 
+    _code_str = None
+    if spot is not None and c_code:
+        try:
+            _code_str = spot[c_code].astype(str)   # ★V8.5 只转一次，别每次调用都转
+        except Exception:
+            _code_str = None
+
     def _quote(cd, nm):
         """返回 (涨跌幅, 现价)；代码优先，其次名称"""
         if spot is None:
             return None, None
         try:
             r = None
-            if cd and c_code:
-                r = spot[spot[c_code].astype(str).str.contains(cd, na=False)]
+            if cd and _code_str is not None:
+                r = spot[_code_str.str.contains(cd, na=False)]
             if (r is None or len(r) == 0) and nm and c_name:
                 r = spot[spot[c_name].astype(str) == nm]
             if r is not None and len(r) > 0:
@@ -3188,7 +3236,27 @@ def scan_event_radar():
             pass
         return None, None
 
-    rows, seen = [], set()
+    # ★V8.4：快讯没有代码/名称，先尝试用全市场名称在正文里定位
+    all_names = []
+    if spot is not None and c_name and c_code:
+        try:
+            # ★V8.5：iterrows 在5000行上很慢，改向量化
+            _nm = spot[c_name].astype(str).str.strip()
+            _cd = spot[c_code].astype(str).str[-6:]
+            _ok = (_nm.str.len() >= 2) & (_nm.str.len() <= 6) & (~_nm.str.contains("ST", na=False))
+            all_names = list(zip(_nm[_ok].tolist(), _cd[_ok].tolist()))
+        except Exception:
+            pass
+
+    def _locate(t):
+        """从正文里找出A股公司名（最长匹配优先，避免『中兴』误配）"""
+        best = ("", "")
+        for n2, c2 in all_names:
+            if n2 in t and len(n2) > len(best[0]):
+                best = (n2, c2)
+        return best
+
+    rows, unloc, seen = [], [], set()
     for kind, nm, cd, t in src:
         lv, hitk = 0, ""
         for k in EVENT_L1:
@@ -3207,7 +3275,13 @@ def scan_event_radar():
         if key in seen:
             continue
         seen.add(key)
+        if not nm and not cd:
+            nm, cd = _locate(t)      # ★V8.4 从正文定位个股
         pct, px = _quote(cd, nm)
+        if not nm and not cd:
+            # ★定位不到就不进正式清单，避免出现『（未识别公司）』这种废条目
+            unloc.append((lv, t, hitk, risk))
+            continue
         rows.append((lv, nm, cd, t, hitk, risk, pct, px, kind))
 
     if not rows:
@@ -3249,6 +3323,13 @@ def scan_event_radar():
         if risk:
             w(f"     🔴风险提示命中：{'、'.join(risk)}")
             w("        → 催化可能已被公司否认/交易所监控，按卖出卡属【催化证伪】")
+        w("")
+
+    if unloc:
+        w(f"  ── 另有{len(unloc)}条事件类快讯【定位不到具体个股】，仅作方向参考 ──")
+        for lv, t, hitk, risk in unloc[:5]:
+            w(f"     ·「{hitk}」{t[:56]}")
+        w("     （快讯不带股票代码，正文里也找不到A股名称→无法给买点，不列入清单）")
         w("")
 
     w("  ─── 事件驱动的三条纪律（与产业驱动完全不同）───")
@@ -3652,26 +3733,42 @@ def scan_deduction(uniq_news, heat_top=None):
     heat_top = heat_top or []
     results = []
     for ch in DEDUCTION_CHAINS:
-        trig, ver, seen = [], [], set()
+        core_hits, up_hits, ver, seen = [], [], [], set()
         core = ch.get("core", [])
         for tm, t in uniq_news:
-            if t[:26] in seen:
+            k2 = _news_key(t)
+            if t[:26] in seen or k2 in seen:
                 continue
             hit_core = any(k in t for k in core)
             hit_ver = any(k in t for k in ch["verify"])
+            hit_up = any(k in t for k in ch["trigger"])
             # ★验证信号必须同时含【板块核心词】AND【验证动作词】
             if hit_core and hit_ver:
-                seen.add(t[:26])
+                seen.add(t[:26]); seen.add(k2)
                 ver.append((tm, t))
-            elif hit_core or any(k in t for k in ch["trigger"]):
-                seen.add(t[:26])
-                trig.append((tm, t))
-        if not trig and not ver:
+            elif hit_core:
+                seen.add(t[:26]); seen.add(k2)
+                core_hits.append((tm, t))
+            elif hit_up:
+                seen.add(t[:26]); seen.add(k2)
+                up_hits.append((tm, t))
+        if not core_hits and not up_hits and not ver:
             continue
         # 市场发现度：该链关键词是否已进热力图前列
         found = any(any(x in h for x in ch["name"].split("→")) for h in heat_top)
-        score = len(trig) * 1 + len(ver) * 3 + (0 if found else 4)
-        results.append((score, ch, trig, ver, found))
+        # ★★V8.4 打分重构（8/11教训）★★
+        # 旧版：trigger词单独命中也算1分，而存储链的trigger是["AI",...]，
+        #   "AI"两个字命中了32条→42分排第1，触发信号是
+        #   『张朝阳：AI内容像化肥催出来的西红柿』『千问AI眼镜』『卫星出征』
+        #   —— 跟存储毫无关系。散热链18分的触发信号是『紫金矿业净卖出10亿』。
+        # 新版：只有命中【板块核心词】才算真触发（×1）；
+        #   只命中上游泛词（AI/算力/数据中心）的，权重0.2且最多计5条。
+        trig = core_hits + up_hits
+        score = (len(core_hits) * 1
+                 + min(len(up_hits), 5) * 0.2
+                 + len(ver) * 3
+                 + (0 if found else 4))
+        results.append((round(score, 1), ch, trig, ver, found, core_hits, up_hits))
 
     if not results:
         w("  本期无推演链被触发")
@@ -3679,22 +3776,30 @@ def scan_deduction(uniq_news, heat_top=None):
     results.sort(key=lambda x: -x[0])
 
     w("\n  ★推演价值排行（上游事实×验证信号×市场未发现度）：")
-    for i, (sc, ch, trig, ver, found) in enumerate(results[:8], 1):
+    for i, (sc, ch, trig, ver, found, core_hits, up_hits) in enumerate(results[:8], 1):
         mk = "⚠️市场已发现" if found else "✅市场还没发现"
-        w(f"    {i}. {ch['name']}：{sc}分（触发{len(trig)} 验证{len(ver)}）{mk}")
+        w(f"    {i}. {ch['name']}：{sc}分（★核心{len(core_hits)} 泛词{len(up_hits)} "
+          f"✅验证{len(ver)}）{mk}")
 
     w("\n  ★前3条链的完整推演：")
-    for sc, ch, trig, ver, found in results[:3]:
+    for sc, ch, trig, ver, found, core_hits, up_hits in results[:3]:
         w(f"\n  ══ 【{ch['name']}】{sc}分 " +
           ("⚠️市场已发现，慎追" if found else "✅市场还没发现，可埋伏"))
         w("    推演路径：")
         for lay in ch["layers"]:
             w(f"      {lay}")
         w(f"    A股标的：{ch['stocks']}")
-        if trig:
-            w("    ── 上游事实（触发信号）──")
-            for tm, t in trig[:3]:
+        if core_hits:
+            w("    ── ★命中【板块核心词】的新闻（真触发）──")
+            for tm, t in core_hits[:4]:
                 w(f"      ▸[{tm}] {t[:56]}")
+        if up_hits:
+            w("    ── 仅命中上游泛词(AI/算力/数据中心)，权重0.2，参考用 ──")
+            for tm, t in up_hits[:2]:
+                w(f"      ·[{tm}] {t[:52]}")
+        if not core_hits:
+            w("    🔴 本链今日【无一条命中板块核心词】→ 分数只来自泛词，")
+            w("       不构成买入依据（8/11教训：存储链42分全靠『AI』两字堆出来）")
         if ver:
             w("    ── ✅验证信号（真实订单/扩产/涨价，最值钱）──")
             for tm, t in ver[:4]:
@@ -3896,10 +4001,21 @@ def scan_entry_review():
                 p = pd.to_numeric(r[bp], errors="coerce") if bp else None
                 cur[str(r[bn])] = (p, v)
 
+        # ★★V8.4：只复核【清单里还持有】的票★★
+        # 8/11教训：沪硅产业8/10已卖出，复核模块还在说"初判成立，按原计划持有"
+        # —— 因为 ENTRY_SNAPSHOT 是独立硬编码表，不跟 我的清单.txt 联动
+        held = {c for c, n, tag, *_r in WATCH_STOCKS if tag == "持仓"}
         for code, snap in ENTRY_SNAPSHOT.items():
+            if held and code not in held:
+                continue
             w(f"\n  ◆ {snap['name']}({code})  买入日 {snap['date']}")
             w(f"     当初理由：{snap['key']}")
             w(f"     当初板块：{snap['sector']} 资金{snap['sector_fund']} {snap['sector_day']}")
+            if code in COMMODITY_ETF:
+                w(f"     ⚠️★商品型ETF★：它跟{COMMODITY_ETF[code]}，不跟股票板块。")
+                w("        下面的『板块资金』指的是【股票板块】，对它无效——")
+                w("        商品涨而股票跌是常态(8/11:金价+1.1%但黄金股-4.8%)。")
+                w("        判它的唯一标尺是【商品价格本身】，不是板块资金。")
             w(f"     当初游资：{snap['ambush']}")
             flags = []
             # 复核1：买入时⑤就是"埋伏池为空/追高型" = 当初判据本身有瑕疵
@@ -4286,7 +4402,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4347,7 +4463,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.5完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
