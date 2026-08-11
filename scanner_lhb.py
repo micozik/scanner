@@ -54,6 +54,9 @@ INST_HIST_FILE = "reports/institution_history.json"   # ★V3.4 机构成绩单
 # ★★V3.2 全局：{代码: 龙虎榜净买额(亿)}，由 scan_lhb 填充，scan_jg 交叉校验用
 # key "_date" 存数据日期，用于确认两份数据是同一天
 LHB_NET_MAP = {}
+# ★★V3.5 {代码: 当日收盘价}。数据源就在龙虎榜明细里，
+# 不必再去调 spot 快照——8/11实测18:01快照挂了，11条记录全丢价格。
+LHB_CLOSE_MAP = {}
 
 # ★★V3.3：账户与持仓改为从 我的清单.txt 读取，不再写死★★
 # 8/10实测：报告显示"可用现金286元"，实际已是8,133元——
@@ -294,6 +297,7 @@ def scan_lhb():
         return [], []
     w(f"  ✅ 命中数据日期：{use_date}")
     LHB_NET_MAP.clear()
+    LHB_CLOSE_MAP.clear()
     LHB_NET_MAP["_date"] = use_date
     if use_date != now_beijing().strftime("%Y%m%d"):
         w(f"  ⚠️ 注意：这是【{use_date}】的龙虎榜，不是今天的。")
@@ -304,6 +308,7 @@ def scan_lhb():
     c_pct = pick_col(df, ["涨跌幅", "涨跌幅度", "收盘涨跌幅"])
     c_net = pick_col(df, ["净买额", "龙虎榜净买额", "机构买入净额", "净额"])
     c_reason = pick_col(df, ["上榜原因", "解读", "指标"])
+    c_close = pick_col(df, ["收盘价", "收盘", "最新价"])   # ★V3.5
     if not c_name:
         w(f"  [报空] 缺名称列，源={src} 实际列名={list(df.columns)[:12]}")
         return [], []
@@ -325,6 +330,11 @@ def scan_lhb():
             for _, rr in df.iterrows():
                 try:
                     cc = str(rr[c_code])[-6:]
+                    # ★V3.5 顺手把收盘价存下来，供机构成绩单结算
+                    if c_close and cc:
+                        _v = pd.to_numeric(rr[c_close], errors="coerce")
+                        if pd.notna(_v) and float(_v) > 0:
+                            LHB_CLOSE_MAP[cc] = float(_v)
                     vv2 = rr.get("_net_yi")
                     if cc and vv2 is not None and pd.notna(vv2):
                         old = LHB_NET_MAP.get(cc)
@@ -521,36 +531,21 @@ def scan_jg():
         #   ⑤义务性买单(定增/解禁/做市对冲)
         # ★这五种事前分不清，只能靠事后统计。所以要这张表。
         try:
-            # ★V3.4：存档必须带【当日收盘价】，否则将来没法算涨跌
-            _spot = None
-            try:
-                _spot = with_retry(lambda: ak.stock_zh_a_spot_em(), tries=1, timeout=25)
-            except Exception:
-                pass
-            _cc = _cp = _cs = None
-            if _spot is not None:
-                _cc = pick_col(_spot, ["代码", "code"])
-                _cp = pick_col(_spot, ["最新价", "trade"])
-                if _cc:
-                    _cs = _spot[_cc].astype(str)
-
+            # ★★V3.5：收盘价直接取自【龙虎榜明细自带的收盘价列】★★
+            # 8/11教训：我舍近求远去调 spot 快照，18:01接口挂了，
+            #   11条记录全部 price=None → 这批数据永远算不出涨跌 = 白存。
+            # 而收盘价本来就在龙虎榜那张表里，零额外网络调用。
             def _close(cd):
-                if _cs is None:
-                    return None
-                try:
-                    r = _spot[_cs.str.contains(cd, na=False)]
-                    if len(r) > 0:
-                        v = pd.to_numeric(r.iloc[0][_cp], errors="coerce")
-                        return float(v) if pd.notna(v) else None
-                except Exception:
-                    pass
-                return None
+                return LHB_CLOSE_MAP.get(cd)
 
             _arch = []
             for _r in out:
                 _nm, _pct, _amt, _cd = _r[0], _r[1], _r[2], _r[3]
                 if not _cd or _amt is None:
                     continue
+                _p0 = _close(_cd)
+                if not _p0:
+                    continue          # ★V3.5 没价格就不存，废数据比没数据更坏
                 _lhb = LHB_NET_MAP.get(_cd)
                 _arch.append({
                     "code": _cd, "name": _nm,
@@ -558,7 +553,7 @@ def scan_jg():
                     "inst": round(float(_amt), 3),
                     "lhb": (round(float(_lhb), 3) if _lhb is not None else None),
                     # 分类：机构买【跌】的 vs 买【涨停】的 —— 这是要对比的两组
-                    "price": _close(_cd),   # ★V3.4 当日收盘价
+                    "price": _p0,   # ★V3.5 当日收盘价（取自龙虎榜明细）
                     "kind": ("买跌" if (_pct is not None and _pct < 0)
                              else ("买涨停" if (_pct is not None and _pct >= 9.5)
                                    else "买微涨")),
@@ -746,16 +741,11 @@ def backtest_institution():
         return
 
     # 取当前价
-    spot = None
-    try:
-        spot = with_retry(lambda: ak.stock_zh_a_spot_em(), tries=1, timeout=30)
-    except Exception:
-        pass
-    if spot is None:
-        try:
-            spot = with_retry(lambda: ak.stock_zh_a_spot(), tries=1, timeout=30)
-        except Exception:
-            pass
+    _sname, spot = multi_source("结算快照", [
+        ("东财", lambda: ak.stock_zh_a_spot_em()),
+        ("新浪", lambda: ak.stock_zh_a_spot()),
+        ("同花顺", lambda: ak.stock_zh_a_spot_ths()),
+    ])
     if spot is None:
         days = sorted(d.keys(), reverse=True)
         n = sum(len(v) for v in d.values())
@@ -876,7 +866,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.4 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.5 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -933,7 +923,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.4完成")
+    print("\n✅ 龙虎榜扫描V3.5完成")
 
 
 if __name__ == "__main__":
