@@ -2590,8 +2590,13 @@ DEDUCTION_CHAINS = [
     {
         "name": "存储涨价 → 传导链",
         "trigger": ["AI服务器", "AI芯片", "数据中心", "算力中心", "服务器出货"],
-        "core": ["存储", "DRAM", "NAND", "HBM", "内存", "闪存", "颗粒",
-                 "美光", "海力士", "铠侠", "长鑫", "模组"],
+        # ★V9.5：删掉裸词"颗粒"。8/12实测它把
+        #   「佐力药业：灵莲花颗粒获批临床」吸进存储链核心词。
+        #   中药/食品/化肥都有"颗粒"，是全行业通用词，不是存储专有词。
+        #   改用"存储颗粒/闪存颗粒/晶圆颗粒"等限定组合。
+        "core": ["存储", "DRAM", "NAND", "HBM", "内存", "闪存",
+                 "存储颗粒", "闪存颗粒", "晶圆", "SSD", "eMMC", "UFS",
+                 "美光", "海力士", "铠侠", "长鑫", "长江存储", "存储模组"],
         "layers": ["①AI重塑存储周期→供不应求", "②原厂涨价→模组厂涨价",
                    "③终端涨价(手机/PC)", "④设备/材料需求→扩产"],
         "stocks": "兆易创新/江波龙/德明利/佰维存储/香农芯创/深科技",
@@ -3860,17 +3865,35 @@ def scan_announcements():
         avail = [c for c in cands if hasattr(ak, c[1])]
         if not avail:
             w(f"  ⚠️ akshare无任何可用公告函数（已探测{len(cands)}个）")
+        # ★★V9.5：不再『先到先用』，而是【择优】★★
+        # 8/12实测：巨潮 CallTimeout 两次(40秒×2=80秒白等)，
+        # 降级到"股市日历"只有83条 → 公告雷达命中1条、事件雷达从23条掉到3条。
+        # 而正常巨潮有984条。83条 vs 984条，差12倍，判断质量天差地别。
+        # 新逻辑：巨潮超时缩到20秒快速失败；继续试后面的源；
+        #        取【条数最多】的那个，不是第一个成功的。
+        best_n, best_tag = 0, ""
         for tag, fname, kw in avail:
             try:
                 fn = getattr(ak, fname)
-                r = with_retry(lambda: fn(**kw), tries=1, wait=2, timeout=40)
-                if r is not None and len(r) > 0:
-                    df = r
-                    w(f"  ✅ 公告源：{tag}（{len(r)}条）")
-                    break
-                w(f"  [跳过] {tag}：返回空")
+                # 巨潮不稳，给20秒快速失败；其余给40秒
+                _to = 20 if "巨潮" in tag else 40
+                r = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=_to)
+                if r is not None and len(r) > best_n:
+                    df, best_n, best_tag = r, len(r), tag
+                    w(f"  ✅ 公告源候选：{tag}（{len(r)}条）")
+                    if len(r) >= 500:      # 够多了，不必再试
+                        break
+                elif r is not None and len(r) > 0:
+                    w(f"  [较少] {tag}：{len(r)}条，保留当前最优{best_n}条")
+                else:
+                    w(f"  [跳过] {tag}：返回空")
             except Exception as e:
                 w(f"  [跳过] {tag}：{type(e).__name__}")
+        if best_tag:
+            w(f"  ★最终采用：{best_tag}（{best_n}条）")
+            if best_n < 300:
+                w(f"  ⚠️ 只有{best_n}条（正常≥900条）→ 事件雷达/定增雷达/")
+                w("     持仓公告核对 三节数据不完整，不可用于决策")
         if df is None:
             w("  [报空] 公告源不可用")
             return
@@ -4138,6 +4161,26 @@ VERIFY_UNIVERSAL = [
 ]
 
 
+# ★★V9.5 核心词误命中黑名单★★
+# 8/12实测：存储链核心词命中「佐力药业：灵莲花颗粒获批临床」
+# 根因：短核心词（2字）在中文里极易被其它行业的词包含。
+# 办法：命中核心词后，再查这条新闻是否明显属于【其它行业】，是则否决。
+CHAIN_EXCLUDE = {
+    "存储涨价 → 传导链": ["药业", "医药", "临床", "适应症", "中药", "颗粒剂",
+                          "食品", "饲料", "化肥", "颗粒物", "PM2.5"],
+    "AI算力 → 散热": ["空调", "家电", "汽车散热", "暖通"],
+    "MLCC涨价链": ["电容器厂房", "储能电容"],
+    "猪周期 → 养殖链": ["宠物", "水产"],
+    "AI+制药 → CXO/算力": ["中药", "饮片", "集采降价"],
+}
+
+
+def _core_hit_ok(chain_name, t):
+    """★V9.5：核心词命中后，再排除明显属于其它行业的新闻"""
+    bad = CHAIN_EXCLUDE.get(chain_name, [])
+    return not any(k in str(t) for k in bad)
+
+
 def _is_verify(t, chain_verify):
     """★V8.8：链专属验证词 OR 通用验证词，命中任一即算验证信号"""
     return (any(k in t for k in chain_verify)
@@ -4162,7 +4205,7 @@ def scan_deduction(uniq_news, heat_top=None):
             k2 = _news_key(t)
             if t[:26] in seen or k2 in seen:
                 continue
-            hit_core = any(k in t for k in core)
+            hit_core = any(k in t for k in core) and _core_hit_ok(ch["name"], t)
             hit_ver = _is_verify(t, ch["verify"])   # ★V8.8 含通用验证词
             hit_up = any(k in t for k in ch["trigger"])
             # ★验证信号必须同时含【板块核心词】AND【验证动作词】
@@ -4841,7 +4884,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V9.4 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V9.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -4913,7 +4956,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V9.4完成 {prefix}_最新.txt")
+    print(f"\n✅ V9.5完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
