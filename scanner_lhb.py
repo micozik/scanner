@@ -475,6 +475,7 @@ def scan_jg():
         if c_net:
             df["_net_yi"] = df[c_net].apply(_to_yi)
             df = df.sort_values("_net_yi", ascending=False, na_position="last")
+        _blocked = []          # ★V3.6 被闸门拦下的票，仍要进成绩单以便验证闸门
         map_date = LHB_NET_MAP.get("_date")
         same_day = (map_date == use_date) and len(LHB_NET_MAP) > 1
         if same_day:
@@ -515,8 +516,20 @@ def scan_jg():
                     #   微涨被买只能算参考，不再直接称"真建仓"
                     flag = " ⚠️微涨被机构买入=参考级(非埋伏，铁律I只认跌着被买)"
             w(f"    {nm}({cdd}){p}{n}{xtxt}{badtxt}{flag}")
+            # ★★V3.6：被拦下的票【也要进机构成绩单】★★
+            # 8/12实测：成绩单里『符号相反』一组永远是空的，
+            #   因为 conflict 的票被 continue 掉了，根本没进存档。
+            # ★后果：我拦下的票永远不会被记录，也就永远无法证明
+            #   我拦对了还是拦错了 —— 一个无法被证伪的闸门 = 信仰不是规则。
+            # 今天就拦了4只(百花医药3.89亿/ST威领2.84亿/万邦医药/新大洲A)，
+            # 如果它们明天大涨，说明闸门是错的，但我看不到。
+            # 修法：conflict/bad 的票照样存档(agree=False)，只是不进下单指令。
             if bad or conflict:
-                continue          # ★可疑值/冲突值不进下单指令
+                _blocked.append((nm, cdd,
+                                 float(vv) if vv is not None and pd.notna(vv) else None,
+                                 float(amt_y) if amt_y is not None and pd.notna(amt_y) else None,
+                                 (False if conflict else None)))
+                continue          # ★可疑值/冲突值不进下单指令，但已存档
             out.append((nm,
                         float(vv) if vv is not None and pd.notna(vv) else None,
                         float(amt_y) if amt_y is not None and pd.notna(amt_y) else None,
@@ -539,8 +552,10 @@ def scan_jg():
                 return LHB_CLOSE_MAP.get(cd)
 
             _arch = []
-            for _r in out:
+            # ★V3.6：out(放行) + _blocked(拦下) 一起存，才能对比闸门有没有用
+            for _r in list(out) + [(x[0], x[2], x[3], x[1], x[4]) for x in _blocked]:
                 _nm, _pct, _amt, _cd = _r[0], _r[1], _r[2], _r[3]
+                _forced_agree = _r[4] if len(_r) > 4 else None
                 if not _cd or _amt is None:
                     continue
                 _p0 = _close(_cd)
@@ -557,7 +572,9 @@ def scan_jg():
                     "kind": ("买跌" if (_pct is not None and _pct < 0)
                              else ("买涨停" if (_pct is not None and _pct >= 9.5)
                                    else "买微涨")),
-                    "agree": (None if _lhb is None else (_amt > 0 and _lhb > 0)),
+                    "agree": (_forced_agree if _forced_agree is not None
+                              else (None if _lhb is None else (_amt > 0 and _lhb > 0))),
+                    "blocked": _forced_agree is False,
                 })
             if _arch:
                 _d = _bt_load(INST_HIST_FILE)
@@ -811,9 +828,14 @@ def backtest_institution():
     w(f"\n  已累计 {len(days)} 个交易日 / {n_all} 个样本")
 
     if buckets["全部"][1] == 0:
-        w("\n  ⚠️ 存档里缺【当日收盘价】，无法结算涨跌。")
-        w("     已在本版补上价格字段，从今天起的存档可正常结算。")
-        w("     （这是我设计存档时漏的字段，不是数据源问题）")
+        # ★V3.6：区分两种"算不出"，别再误报（8/11把"还没到次日"报成"缺价格"）
+        _n_priced = sum(1 for v in d.values() for it in v if it.get("price"))
+        if _n_priced == 0:
+            w("\n  ⚠️ 存档里缺【当日收盘价】，无法结算。")
+            w("     （V3.5起收盘价改从龙虎榜明细直接取，新存档已带价格）")
+        else:
+            w(f"\n  ⏳ 已有{_n_priced}条带价格的存档，但都还没到次日，无法结算。")
+            w("     明天这个时候就会出第一批数字。")
         w("=" * 60)
         return
 
@@ -866,7 +888,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.5 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.6 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -923,7 +945,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.5完成")
+    print("\n✅ 龙虎榜扫描V3.6完成")
 
 
 if __name__ == "__main__":
