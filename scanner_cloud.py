@@ -1405,7 +1405,17 @@ def scan_cold_low():
                 or _stock_industry(h["code"])
             ipct = imap.get(ind) if ind else None
             if ipct is None:
-                w(f"    ❓ {h['name']}({h['code']}) 行业[{ind or '未知'}] 无板块数据，存疑")
+                # ★★V9.1：行业未知不再一票否决★★
+                # 8/12实测：对照表只有630只，江化微/拓普集团/汇川技术等
+                # 好票天天被"行业未知"毙掉，冷低早连续三次输出"今日无标的"。
+                # 但⓪大盘闸门（上涨占比≥50%）已经过了 —— 环境不差。
+                # ★"查不到行业" ≠ "板块逆风"。前者是我的数据缺陷，
+                #   后者才是市场信号。不该拿我的缺陷去否决市场机会。
+                w(f"    ⚠️放行 {h['name']}({h['code']}) 行业[未知] {h['price']} "
+                  f"今{h['pct']}% | 60日{h['chg60']:.1f}% | "
+                  f"缩量{h['vr']:.2f} | 量比{h['ud']:.2f}")
+                w("       └ 对照表查不到行业，但⓪大盘闸门已过 → 放行，需人工确认板块")
+                passed += 1
                 continue
             if ipct < -1.5:
                 w(f"    ❌ {h['name']}({h['code']}) 板块[{ind}]{ipct:+.2f}% 逆风 → 否决")
@@ -1419,6 +1429,7 @@ def scan_cold_low():
 
         if passed == 0:
             w("    ⚠️ 全部候选被板块闸门否决 → 今日无标的")
+            w("    （V9.1起，只有【板块确实跌超1.5%】才否决；行业未知改为放行）")
         else:
             w(f"  ※ 最终{passed}只过关。⑦催化日期 ⑧止损由你我集中分析定。")
 
@@ -2670,7 +2681,9 @@ def get_stock_flow():
     ]
     for nm, fn, kcols, vcols in src_list:
         try:
-            f = with_retry(fn, tries=1, wait=2, timeout=45)
+            # ★V9.1：8/12实测快扫时六源全挂 → 埋伏池瞎了（铁律B的信号源）
+            # 个股资金流是【实时埋伏池】的唯一输入，属关键数据，不受快扫压缩
+            f = with_retry(fn, tries=1, wait=2, timeout=45, critical=True)
             if f is None or len(f) == 0:
                 continue
             kc = pick_col(f, kcols)
@@ -4688,21 +4701,28 @@ def main():
     # 盘中真正要的只有三件事：我的票怎么样 / 板块和钱去哪了 / 有没有埋伏信号。
     # 推演/交叉/回测/公告/事件雷达 → 盘后看就够，盘中跑纯粹是等。
     # 触发：环境变量 FAST=1，或者盘中时段自动开启（收盘后仍跑全套）。
+    # ★★★V9.2：快扫默认关闭★★★
+    # 8/12用户质问："快扫有何用？不完整的数据我要来有何用？"
+    # 他是对的。我提速的方向选错了 ——
+    #   不该靠【砍掉数据】提速，该靠【修数据源】提速。
+    #   今天慢的真实原因是东财连挂5次、每次等满超时，那个已经修好
+    #   （东财降为备源 + 关键请求 critical 保护）。
+    # ★一份缺了新闻/推演/交叉/回测的报告，等于让AI闭着一只眼做判断。
+    #   省下的几分钟，换来的是判断质量下降 —— 这笔账不划算。
+    # 现在：默认永远全扫。只有显式设 FAST=1 才快扫（应急用）。
     FAST = os.environ.get("FAST", "").strip() in ("1", "true", "yes", "on")
-    if intraday and os.environ.get("FULL", "").strip() not in ("1", "true", "yes"):
-        FAST = True
     globals()["FAST_MODE"] = FAST
     if weekend:
         mode = "周末新闻扫描"
     elif intraday:
-        mode = "盘中快扫⚡" if FAST else "盘中全扫描"
+        mode = "盘中快扫⚡(应急)" if FAST else "盘中全扫描"
     else:
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V9.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V9.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
-        w("⚡ 快扫模式：目标1-2分钟出结果。完整分析见15:30盘后全扫。")
+        w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4771,7 +4791,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V9.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V9.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
