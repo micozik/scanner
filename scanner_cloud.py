@@ -159,10 +159,19 @@ def _alarm_handler(signum, frame):
     raise CallTimeout("接口超时")
 
 
-def with_retry(fn, tries=2, wait=3, timeout=60):
-    # ★V8.9 快扫模式：重试1次、等1秒、超时20秒。等待就是成本。
-    # 8/12实测：东财连挂5次，每次都要等满超时再切备源 → 拖了几分钟。
-    if globals().get("FAST_MODE"):
+def with_retry(fn, tries=2, wait=3, timeout=60, critical=False):
+    """★V8.9 快扫模式：非关键请求 重试1次、等1秒、超时20秒。
+
+    ★★V9.0 修正（8/12 13:06 实测事故）★★
+      症状：快扫时【新浪快照失败 CallTimeout】→ 重点盯盘/游资雷达/
+            冷低早/止盈体系 全部瘫痪，9只持仓6只"取价失败"。
+      根因：我把超时一刀切压到20秒。但全市场快照是5000只票的大请求，
+            本来就要30-60秒 —— 20秒必然超时。
+      ★教训：提速不能牺牲【关键数据】。快照是所有模块的地基，
+            地基塌了，跑再快也没用。
+      修法：critical=True 的请求不受快扫压缩，保持原超时。
+    """
+    if globals().get("FAST_MODE") and not critical:
         tries = 1
         wait = 1
         timeout = min(timeout, 20)
@@ -221,16 +230,33 @@ def get_etf_spot():
 
 
 def get_spot():
-    """全市场快照：东财对海外服务器封锁，直接用新浪"""
+    """全市场快照：所有模块的地基。多源轮试 + critical(不受快扫压缩)
+
+    ★★V9.0（8/12事故修复）★★
+      快扫时新浪快照20秒超时 → 盯盘/游资/冷低早/止盈全瘫。
+      快照是地基，必须 critical=True 且多源兜底。
+    """
     global SPOT_DF, SPOT_SRC
     if SPOT_DF is not None:
         return SPOT_DF
-    try:
-        SPOT_DF = with_retry(ak.stock_zh_a_spot, tries=3, wait=5, timeout=120)
-        SPOT_SRC = "新浪"
-    except Exception as e:
-        w(f"  [报空] 新浪快照失败：{type(e).__name__}")
-        SPOT_DF = None
+    sources = [
+        ("新浪", lambda: ak.stock_zh_a_spot()),
+        ("东财", lambda: ak.stock_zh_a_spot_em()),
+        ("同花顺", lambda: ak.stock_zh_a_spot_ths()),
+    ]
+    for nm, fn in sources:
+        try:
+            df = with_retry(fn, tries=2, wait=3, timeout=120, critical=True)
+            if df is not None and len(df) > 500:
+                SPOT_DF, SPOT_SRC = df, nm
+                if nm != "新浪":
+                    w(f"  ✅ 快照源已切换：{nm}（{len(df)}只）")
+                return SPOT_DF
+        except Exception as e:
+            w(f"  [切换] 快照·{nm}失败({type(e).__name__})，尝试备源...")
+    w("  🔴🔴 全部快照源失败 → 盯盘/游资/冷低早/止盈全部无法计算")
+    w("     这是地基级故障，本次报告不可用于决策")
+    SPOT_DF = None
     return SPOT_DF
 
 
@@ -1051,7 +1077,7 @@ def _hist_close(code, symbol=None):
 def _hist_close_raw(code, symbol=None):
     if symbol:
         try:
-            k = with_retry(lambda: ak.stock_zh_a_daily(symbol=symbol), tries=1, timeout=12)
+            k = with_retry(lambda: ak.stock_zh_a_daily(symbol=symbol), tries=1, timeout=12, critical=True)
             if k is not None and len(k) >= 45:
                 return k, pick_col(k, ["close", "收盘"])
         except Exception:
@@ -1060,7 +1086,7 @@ def _hist_close_raw(code, symbol=None):
         end = now_beijing().strftime("%Y%m%d")
         start = (now_beijing() - datetime.timedelta(days=120)).strftime("%Y%m%d")
         k = with_retry(lambda: ak.stock_zh_a_hist(symbol=code, period="daily",
-                       start_date=start, end_date=end, adjust="qfq"), tries=1, timeout=12)
+                       start_date=start, end_date=end, adjust="qfq"), tries=1, timeout=12, critical=True)
         if k is not None and len(k) >= 45:
             return k, pick_col(k, ["收盘", "close"])
     except Exception:
@@ -4674,7 +4700,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V9.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式：目标1-2分钟出结果。完整分析见15:30盘后全扫。")
     w("=" * 60)
@@ -4745,7 +4771,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.9完成 {prefix}_最新.txt")
+    print(f"\n✅ V9.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
