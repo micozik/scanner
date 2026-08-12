@@ -31,6 +31,7 @@ CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
 
 # ★★V8.0 全局缓存：供跨模块使用★★
+FAST_MODE = False      # ★V8.9 快扫模式开关
 SECTOR_FLOW_MAP = {}   # {板块名: 主力净额(亿)} 由 scan_sector_flow 填充
 TODAY_NEWS = []        # [(时间, 标题)] 由 scan_news 填充，供【我的持仓相关消息】用
 
@@ -159,6 +160,12 @@ def _alarm_handler(signum, frame):
 
 
 def with_retry(fn, tries=2, wait=3, timeout=60):
+    # ★V8.9 快扫模式：重试1次、等1秒、超时20秒。等待就是成本。
+    # 8/12实测：东财连挂5次，每次都要等满超时再切备源 → 拖了几分钟。
+    if globals().get("FAST_MODE"):
+        tries = 1
+        wait = 1
+        timeout = min(timeout, 20)
     last = None
     for _ in range(tries):
         try:
@@ -1021,13 +1028,18 @@ _HIST_T0 = [None]          # 首次调用时间
 _HIST_BUDGET = 420         # 秒。超过就不再抓新K线，返回None（模块自动降级）
 
 
+def _hist_budget():
+    """★V8.9 快扫模式K线预算压到120秒"""
+    return 120 if globals().get("FAST_MODE") else _HIST_BUDGET
+
+
 def _hist_close(code, symbol=None):
     # ★缓存：同一只票在多个模块被重复抓取（盯盘/冷低早/选股器）
     if code in _HIST_CACHE:
         return _HIST_CACHE[code]
     if _HIST_T0[0] is None:
         _HIST_T0[0] = time.time()
-    elif time.time() - _HIST_T0[0] > _HIST_BUDGET:
+    elif time.time() - _HIST_T0[0] > _hist_budget():
         # ★超预算：直接返回空，让调用方走"无K线"分支，不再等网络
         _HIST_CACHE[code] = (None, None)
         return None, None
@@ -1211,8 +1223,10 @@ def _build_ind_cache():
 
 def _get_industry_map():
     src, df = multi_source("行业榜(冷低早)", [
-        ("东财", lambda: ak.stock_board_industry_name_em()),
+        # ★V8.9：8/12实测东财连挂5次(ConnectionError/HTTPError/JSONDecodeError)，
+        # 每次都要等超时再切备源，纯浪费。同花顺次次成功 → 提为第一顺位。
         ("同花顺", lambda: ak.stock_board_industry_summary_ths()),
+        ("东财", lambda: ak.stock_board_industry_name_em()),
         ("同花顺资金流", lambda: ak.stock_fund_flow_industry(symbol="即时")),
     ])
     if df is None:
@@ -1557,14 +1571,15 @@ def scan_board_rank():
 
     def _industry():
         _rank("行业", [
+            ("同花顺", lambda: ak.stock_board_industry_summary_ths()),   # ★V8.9 东财降备源
             ("东财", lambda: ak.stock_board_industry_name_em()),
-            ("同花顺", lambda: ak.stock_board_industry_summary_ths()),
             ("同花顺资金流", lambda: ak.stock_fund_flow_industry(symbol="即时")),
         ], hist_ind, saved_ind)
     safe_run("行业板块榜", _industry)
 
     def _concept():
         _rank("概念", [
+            ("同花顺", lambda: ak.stock_fund_flow_concept(symbol="即时")),   # ★V8.9 提前
             ("东财", lambda: ak.stock_board_concept_name_em()),
             ("同花顺资金流", lambda: ak.stock_fund_flow_concept(symbol="即时")),
             ("同花顺", lambda: ak.stock_board_concept_summary_ths()),
@@ -1596,9 +1611,9 @@ def scan_sector_flow():
 
     def _do():
         src, df = multi_source("行业资金流", [
+            ("同花顺", lambda: ak.stock_fund_flow_industry(symbol="即时")),   # ★V8.9 东财降备源
             ("东财", lambda: ak.stock_sector_fund_flow_rank(
                 indicator="今日", sector_type="行业资金流")),
-            ("同花顺", lambda: ak.stock_fund_flow_industry(symbol="即时")),
         ])
         if df is None:
             raise RuntimeError("行业资金流双源失败")
@@ -4642,15 +4657,26 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     weekend = bj.weekday() >= 5
     intraday = (not weekend) and (9 <= bj.hour < 15)
+    # ★★★V8.9【快扫模式】★★★
+    # 8/12用户反馈：盘中跑一次要十几分钟，等不起。
+    # 盘中真正要的只有三件事：我的票怎么样 / 板块和钱去哪了 / 有没有埋伏信号。
+    # 推演/交叉/回测/公告/事件雷达 → 盘后看就够，盘中跑纯粹是等。
+    # 触发：环境变量 FAST=1，或者盘中时段自动开启（收盘后仍跑全套）。
+    FAST = os.environ.get("FAST", "").strip() in ("1", "true", "yes", "on")
+    if intraday and os.environ.get("FULL", "").strip() not in ("1", "true", "yes"):
+        FAST = True
+    globals()["FAST_MODE"] = FAST
     if weekend:
         mode = "周末新闻扫描"
     elif intraday:
-        mode = "盘中快照"
+        mode = "盘中快扫⚡" if FAST else "盘中全扫描"
     else:
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.8 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    if FAST:
+        w("⚡ 快扫模式：目标1-2分钟出结果。完整分析见15:30盘后全扫。")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4675,11 +4701,17 @@ def main():
             scan_lhb()
             scan_hot_money()
             scan_north()
-        scan_news()
+        if FAST:
+            w("\n⚡【快扫模式】已跳过：全量新闻流/催化热力图/推演引擎/全板块交叉/")
+            w("   深层含义/公告/异动/事件雷达/定增雷达/四大回测")
+            w("   → 盘中只保留：持仓盯盘 + 游资雷达 + 冷低早 + 板块 + 资金 + 止盈")
+            w("   → 要完整版：手动触发时把 FULL=1，或等15:30盘后自动全扫")
+        else:
+            scan_news()
 
     # ★★V7.0：这5个模块不再依赖新闻源成败，独立运行★★
-    safe_run("止盈体系", scan_take_profit)
-    if not weekend:
+    safe_run("止盈体系", scan_take_profit)          # ★快扫也保留：止盈是命
+    if not weekend and not FAST:
         safe_run("启动日雷达", scan_launch_radar)
         safe_run("个股级选股器", scan_stock_picker)
         safe_run("公告扫描", scan_announcements)
@@ -4687,10 +4719,11 @@ def main():
         # ★★V8.3 事件驱动雷达：必须在公告扫描之后（依赖 TODAY_ANNOUNCE_RAW）★★
         safe_run("事件驱动雷达", scan_event_radar)
         safe_run("定增破发雷达", scan_placement_radar)
-    # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
-    safe_run("我的持仓相关消息", scan_my_news)
+    if not FAST:
+        # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
+        safe_run("我的持仓相关消息", scan_my_news)
 
-    if not weekend:
+    if not weekend and not FAST:
         safe_run("埋伏池回测", lambda: backtest_ambush(TODAY_AMBUSH))
         safe_run("热力图回测", lambda: backtest_heat(TODAY_HEAT_TOP3))
         safe_run("选股器回测", backtest_picker)
@@ -4712,7 +4745,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.8完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.9完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
