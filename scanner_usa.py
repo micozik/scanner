@@ -1,6 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-美股夜盘扫描器 · 独立版 V3.1（2026-08-09 修正中贝通信权重的①-B错误）
+美股夜盘扫描器 · 独立版 V3.3（2026-08-12 修复个股数据滞后2天）
+V3.3：个股改用【实时行情接口】，日K只做兜底。
+  8/12实测所有个股显示8/10数据（滞后2天）。根因：stock_us_hist是日K接口，
+  只有已结算的日线；美股8/11收盘=北京8/12凌晨4点，5:24跑时日K源还没更新。
+  → 实时接口拿的是最新价（含刚收盘那一场），这才是【持仓夜盘影响】需要的。
+V3.2 两项修复：
+  1. 🔴极性误判：『利空出尽』含"利空"→被判利空，把AI算力链(用户25%仓位)
+     错标为❄️偏空。同类：『超跌反弹』含"跌"、『跌幅收窄』含"跌"。
+     现在先做【反转短语】识别，再数单字关键词。
+  2. 🔴A股研报污染：美股→A股映射排第一的【金融】，三条催化全是中信证券
+     A股研报，不是美股新闻。美股热力图在吃A股的饭，等于自己给自己
+     绕回来一遍，毫无信息增量。现在过滤掉A股券商研报。
 V3.0 四项改动：
   1. scan_us_heat 从 scan_news 内剪出 → main() 独立运行
      （原来新闻源全挂就 return，把映射表一起吞掉，和A股止盈同一个病）
@@ -167,6 +178,19 @@ def scan_index():
     w("\n【一、美股指数】（费城半导体SOX最关键=A股半导体风向标）")
 
     def _do():
+        # ★V3.3 指数实时源（日K同样滞后）
+        rt = {}
+        for fname in ("index_us_stock_sina_spot", "stock_us_famous_spot_em"):
+            fn = getattr(ak, fname, None)
+            if fn is None:
+                continue
+            try:
+                d0 = with_retry(fn, tries=1, timeout=30)
+                if d0 is not None and len(d0) > 0:
+                    w(f"  （实时指数源：{fname}）")
+                    break
+            except Exception:
+                continue
         for name, sym in US_INDEX:
             try:
                 df = with_retry(lambda s=sym: ak.index_us_stock_sina(symbol=s))
@@ -192,10 +216,63 @@ def scan_index():
 
 # ========== 二、重点个股（含伯克希尔） ==========
 
+def _build_us_spot():
+    """★★V3.3 美股实时行情映射★★
+    ★为什么必须加：8/12实测所有个股数据滞后2天（显示8/10）。
+      根因不是接口坏了，是 stock_us_hist 是【日K接口】，
+      只有"已结算"的日线。美股8/11收盘=北京8/12凌晨4点，
+      扫描器5:24跑时日K源还没更新那一根 → 只能返回8/10。
+    ★实时接口拿的是最新价（含刚收盘那一场），才是我们要的。
+    返回 {ticker: (最新价, 涨跌幅)}"""
+    m = {}
+    for fname in ("stock_us_spot_em", "stock_us_spot"):
+        fn = getattr(ak, fname, None)
+        if fn is None:
+            continue
+        try:
+            df = with_retry(fn, tries=1, wait=3, timeout=60)
+            if df is None or len(df) == 0:
+                continue
+            c_sym = pick_col(df, ["代码", "symbol", "code"])
+            c_name = pick_col(df, ["名称", "name"])
+            c_p = pick_col(df, ["最新价", "price", "最新"])
+            c_pct = pick_col(df, ["涨跌幅", "changepercent", "chg"])
+            if not (c_sym and c_p):
+                continue
+            for _, r in df.iterrows():
+                try:
+                    sym = str(r[c_sym]).upper()
+                    # 东财返回形如 "105.NVDA"，取点号后一段
+                    tk = sym.split(".")[-1] if "." in sym else sym
+                    px = pd.to_numeric(r[c_p], errors="coerce")
+                    pc = pd.to_numeric(r[c_pct], errors="coerce") if c_pct else None
+                    if pd.notna(px) and float(px) > 0:
+                        m[tk] = (float(px),
+                                 float(pc) if pc is not None and pd.notna(pc) else None)
+                except Exception:
+                    continue
+            if len(m) > 100:
+                w(f"  ✅ 实时行情源：{fname}（{len(m)}只）→ 个股不再滞后")
+                return m
+        except Exception as e:
+            w(f"  [切换] {fname} 失败({type(e).__name__})")
+    if not m:
+        w("  ⚠️ 实时行情源全部失败 → 降级为日K接口，数据可能滞后1-2天")
+    return m
+
+
 def scan_stocks():
     w("\n【二、重点个股】（芯片/算力/存储/中概 + 伯克希尔）")
+    spot_map = _build_us_spot()
 
     def _one(tk):
+        # ★★V3.3：优先用实时行情，日K只做兜底★★
+        key = tk.upper().replace(".", "-")
+        for k in (tk.upper(), key, tk.upper().replace(".", "")):
+            if k in spot_map:
+                px, pc = spot_map[k]
+                d = now_beijing().strftime("%Y-%m-%d")
+                return px, pc, d, "", "实时"
         # ★V3.0：BRK.A/BRK.B 各源写法不一，双写法容错
         variants = [tk]
         if "." in tk:
@@ -347,9 +424,42 @@ US_BEAR = ["跌", "下调", "暴跌", "重挫", "不及预期", "下滑", "减�
            "利空", "承压", "疲软", "警告", "泡沫", "回撤", "熊市"]
 
 
+# ★★V3.2 极性反转短语：整体含义与其中的单字相反，必须先于单字匹配处理
+POLARITY_TRAPS = {
+    # 短语 → 真实极性 (1利多 / -1利空)
+    "利空出尽": 1, "利空已充分": 1, "超跌反弹": 1, "跌幅收窄": 1,
+    "跌势放缓": 1, "止跌回升": 1, "跌破前低后反弹": 1, "空头回补": 1,
+    "好于预期": 1, "优于预期": 1, "降幅收窄": 1, "底部确认": 1,
+    "利好出尽": -1, "利好兑现": -1, "涨势见顶": -1, "涨幅收窄": -1,
+    "不及预期": -1, "低于预期": -1, "涨不动": -1, "冲高回落": -1,
+}
+
+# ★★V3.2 A股券商研报：这些是A股国内评论，不是美股信息，
+# 放进"美股→A股映射"等于把A股观点绕一圈再当成美股先行指标，无信息增量
+CN_BROKER = ["中信证券", "银河证券", "东吴证券", "方正证券", "光大证券",
+             "中信建投", "国泰海通", "华泰证券", "招商证券", "国信证券",
+             "申万宏源", "广发证券", "兴业证券", "中金公司", "十大机构论市"]
+
+
+def _is_cn_report(t):
+    return any(k in str(t) for k in CN_BROKER)
+
+
 def _pol(t):
-    b = sum(1 for x in US_BULL if x in t)
-    r = sum(1 for x in US_BEAR if x in t)
+    """★V3.2：先处理反转短语，再数单字。
+    『利空出尽』整体是利多，但含"利空"二字——旧版把它算成利空，
+    直接把用户25%仓位的AI算力链错标为偏空。"""
+    txt = str(t)
+    b = r = 0
+    for ph, poll in POLARITY_TRAPS.items():
+        if ph in txt:
+            if poll > 0:
+                b += 2          # 反转短语权重高于单字
+            else:
+                r += 2
+            txt = txt.replace(ph, "")   # 移除后不再参与单字计数
+    b += sum(1 for x in US_BULL if x in txt)
+    r += sum(1 for x in US_BEAR if x in txt)
     return 1 if b > r else (-1 if r > b else 0)
 
 
@@ -365,6 +475,10 @@ def scan_us_heat(uniq):
         w("  ★但【持仓夜盘影响】用的是真实行情，不受影响，看上面那节")
         w("=" * 60)
         return
+    src_n = len(uniq)
+    uniq = [(tm, t) for tm, t in uniq if not _is_cn_report(t)]   # ★V3.2
+    if src_n != len(uniq):
+        w(f"  （已过滤{src_n-len(uniq)}条A股券商研报：那是A股观点，不是美股先行信息）")
     hits = {}
     for sect, kws in US_SECTOR_MAP.items():
         bu, be, seen = [], [], set()
@@ -526,7 +640,7 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V3.1 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V3.3 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
     w("★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑")
     w("★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的")
@@ -565,7 +679,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描V3.1完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V3.3完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
