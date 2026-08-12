@@ -3169,6 +3169,62 @@ def scan_stock_picker():
     safe_run("个股级选股器", _do)
 
 
+def _placement_from_announce():
+    """★V8.7 定增雷达的兜底：接口挂了就从【公告标题】里抠发行价。
+    公告标题常见形态：
+      『XX关于向特定对象发行股票发行情况报告书』
+      『XX：完成向特定对象发行股票，发行价格为560.00元/股』
+    抠到价格就能和现价比，抠不到就只列出有定增动作的公司。"""
+    import re as _re
+    ann = globals().get("TODAY_ANNOUNCE_RAW", []) or []
+    news = globals().get("TODAY_NEWS", []) or []
+    src = [(nm, cd, t) for nm, cd, t in ann] + [("", "", t) for _tm, t in news]
+    KEY = ["向特定对象发行", "定向增发", "非公开发行", "发行价格"]
+    hits, seen = [], set()
+    for nm, cd, t in src:
+        if not any(k in t for k in KEY):
+            continue
+        if t[:26] in seen:
+            continue
+        seen.add(t[:26])
+        m = _re.search(r"发行价格?为?\s*([0-9]+(?:\.[0-9]+)?)\s*元", str(t))
+        price = float(m.group(1)) if m else None
+        hits.append((nm, cd, t, price))
+    if not hits:
+        w("  今日公告与快讯中无定增相关内容")
+        return
+    spot = get_spot()
+    sc_code = sc_price = s_str = None
+    if spot is not None:
+        sc_code = pick_col(spot, ["代码", "code"])
+        sc_price = pick_col(spot, ["最新价", "trade"])
+        if sc_code:
+            s_str = spot[sc_code].astype(str)
+    w(f"\n  ★从公告/快讯中命中 {len(hits)} 条定增相关★\n")
+    for i, (nm, cd, t, price) in enumerate(hits[:10], 1):
+        now_p = None
+        if cd and s_str is not None:
+            try:
+                r = spot[s_str.str.contains(cd, na=False)]
+                if len(r) > 0:
+                    v = pd.to_numeric(r.iloc[0][sc_price], errors="coerce")
+                    now_p = float(v) if pd.notna(v) else None
+            except Exception:
+                pass
+        line = f"  {i:2d}. {nm or '（未识别公司）'}({cd})"
+        if price:
+            line += f"  发行价{price:.2f}"
+            if now_p:
+                d = (now_p - price) / price * 100
+                flag = "🟢深度折价" if d < -30 else ("🟡折价" if d < -10 else
+                       ("⚪平价" if d < 5 else "🔴溢价(现价高于发行价)"))
+                line += f" → 现价{now_p:.2f} {d:+.1f}% {flag}"
+        w(line)
+        w(f"      {str(t)[:66]}")
+    w("\n  ⚠️ 兜底模式只覆盖【今日新出的】定增，不含历史。")
+    w("     完整历史需要 stock_qbzf_em 接口恢复。")
+
+
 def scan_placement_radar():
     """★★★V8.6【定增破发雷达】★★★ —— 用户命题
 
@@ -3202,22 +3258,27 @@ def scan_placement_radar():
     w("  ⚠️ 反例写死：定增破发≠公司会救。钱已到账不退｜限售期内卖不了｜")
     w("     解禁日是抛压不是支撑。江波龙自己从750跌到308，机构照样亏。")
 
+    # ★V8.7：8/12实测 stock_qbzf_em 超时。改多接口轮试 + 缩短超时 + 公告兜底
     _name, df = None, None
-    for fn_name in ("stock_qbzf_em", "stock_zf_em", "stock_add_stock_em"):
+    for fn_name in ("stock_qbzf_em", "stock_zf_em", "stock_add_stock_em",
+                    "stock_zh_a_gdhs", "stock_restricted_release_queue_em"):
         fn = getattr(ak, fn_name, None)
         if fn is None:
             continue
         try:
-            df = with_retry(fn, tries=1, wait=2, timeout=40)
+            df = with_retry(fn, tries=1, wait=2, timeout=25)
             if df is not None and len(df) > 0:
-                _name = fn_name
-                break
+                # 必须含"发行价格"类字段才算可用
+                if pick_col(df, ["发行价格", "增发价格", "发行价"]):
+                    _name = fn_name
+                    break
+                df = None
         except Exception as e:
             w(f"  [切换] {fn_name} 失败({type(e).__name__})")
             df = None
     if df is None or len(df) == 0:
-        w("  [报空] 增发数据接口不可用（akshare 版本可能不含该接口）")
-        w("  → 降级方案：定增公告已并入【事件驱动雷达】关键词，见上一节")
+        w("  ⚠️ 增发数据接口不可用 → 启用【公告兜底】")
+        _placement_from_announce()
         w("=" * 60)
         return
 
@@ -3829,6 +3890,19 @@ def scan_all_sector_cross(uniq_news):
             w("  今日无板块命中≥2条新闻")
             return
         results.sort(key=lambda x: -x[0])
+        # ★★V8.7 同名去重：8/12实测【黄金概念】占了前5名里的3个坑★★
+        # 东财/同花顺/通达信各有一个"黄金概念"，内容几乎一样，
+        # 前5名有3行是同一个东西 → 真正的第2/第3名被挤出榜外。
+        _seen_nm, _dedup = set(), []
+        for _row in results:
+            _key = str(_row[2]).strip().rstrip("概念板块行业指数产业ⅡⅢ").strip()
+            if _key and _key in _seen_nm:
+                continue
+            _seen_nm.add(_key)
+            _dedup.append(_row)
+        if len(_dedup) != len(results):
+            w(f"  （已合并同名板块 {len(results)-len(_dedup)} 条，防止一个概念占多个坑）")
+            results = _dedup
         w("\n  ★★【有催化 且 位置好 且 钱在进】前15（净利多×2 + 位置分 + 资金分）：")
         w("    位置分：跌着有催化=3 | 微涨<1.5%=2 | 涨1.5-4%=1 | 涨>4%=-1")
         w("    ★V8.0资金分：+20亿↑=+6 | +5亿↑=+4 | 正=+2 | 负=-2 | -20亿↓=-6 | -80亿↓=-12")
@@ -4535,7 +4609,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.6 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4597,7 +4671,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.6完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.7完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
