@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-美股夜盘扫描器 · 独立版 V3.3（2026-08-12 修复个股数据滞后2天）
+美股夜盘扫描器 · 独立版 V3.4（2026-08-12 持仓改读 我的清单.txt）
+V3.4：MY_HOLDINGS 不再写死。8/12实测它还在算已卖出的沪硅(8/10卖)、
+  牧原(8/11卖)，同时缺了8/11新买的英维克/中恒电气/江化微。
+  cloud和lhb都接了清单，只有usa没接 —— "同一份持仓抄三份"的必然后果。
+  新增 CHAIN_TO_US 表：驱动链 → 美股先行标的，清单改了自动跟着变。
 V3.3：个股改用【实时行情接口】，日K只做兜底。
   8/12实测所有个股显示8/10数据（滞后2天）。根因：stock_us_hist是日K接口，
   只有已结算的日线；美股8/11收盘=北京8/12凌晨4点，5:24跑时日K源还没更新。
@@ -51,28 +55,77 @@ US_INDEX = [
 # 与 scanner_cloud.py 的 WATCH_STOCKS 驱动链一一对应，买卖后两边一起改。
 # 格式：(A股代码, 名称, 驱动链, 成本, 止损, [(美股ticker, 权重), ...])
 # 权重：这只美股对该A股的解释力。1.0=直接对标，0.5=同链但间接。
+WATCH_FILE = "我的清单.txt"
+
+# ★★V3.4：持仓改为从 我的清单.txt 读取，不再写死★★
+# 8/12实测：cloud和lhb都接了清单，只有usa没接 → 它还在算已卖出的
+# 沪硅产业(8/10卖)和牧原股份(8/11卖)，同时缺了8/11新买的
+# 英维克/中恒电气/江化微三只。这就是"同一份持仓抄三份"的必然后果。
+# 缺省值仅作兜底，清单存在时被完全覆盖。
+
+# A股驱动链 → 美股先行标的（这张表是本文件独有的，不在清单里）
+CHAIN_TO_US = {
+    "AI算力链": [("NVDA", 1.0), ("AVGO", 0.8), ("AMD", 0.5), ("MSFT", 0.5),
+                 ("AMZN", 0.5), ("GOOGL", 0.4)],
+    "半导体材料链": [("MU", 0.8), ("AMAT", 1.0), ("LRCX", 1.0), ("ASML", 0.8),
+                     ("TSM", 0.6)],
+    "存储涨价链": [("MU", 1.0), ("STX", 0.8), ("WDC", 0.8), ("SNDK", 0.8)],
+    "MLCC涨价链": [("AAPL", 0.6), ("TSLA", 0.4)],
+    "锂电/钠电链": [("TSLA", 1.0)],
+    "贵金属链": [("NEM", 1.0)],
+    "医药链": [("LLY", 0.8)],
+    "AI散热链": [("NVDA", 0.8), ("AVGO", 0.5), ("AMAT", 0.3)],
+    "AI供电链": [("NVDA", 0.7), ("AMZN", 0.5), ("MSFT", 0.5)],
+    "AI+制药CXO链": [("LLY", 0.8)],
+    "农业(独立)": [],
+    "用户自定": [],
+}
+
 MY_HOLDINGS = [
-    ("000938", "紫光股份", "AI算力链", 34.681, 29.48,
-     [("NVDA", 1.0), ("AVGO", 0.8), ("AMD", 0.5), ("MSFT", 0.5)]),
-    # ★V3.1 修正：Coherent/康宁暴涨由CPO光模块驱动，中贝通信真实驱动是算力租赁/
-    #   数据中心建设，两者不是同一驱动（①-B）。旧权重COHR0.6/GLW0.5属于
-    #   "拿板块顺风给它加分"，正是铁律L禁止的错误。降到0.2仅作参考。
-    ("603220", "中贝通信", "AI算力链", 18.396, 16.19,
-     [("NVDA", 0.8), ("AVGO", 0.5), ("MSFT", 0.5), ("AMZN", 0.5),
-      ("COHR", 0.2), ("GLW", 0.2)]),
-    ("688126", "沪硅产业", "半导体材料链", 26.228, 22.90,
-     [("MU", 0.8), ("AMAT", 1.0), ("LRCX", 1.0), ("ASML", 0.8), ("TSM", 0.6)]),
-    ("605376", "博迁新材", "MLCC涨价链", 165.223, 144.00,
-     [("AAPL", 0.6), ("TSLA", 0.4)]),
-    ("159796", "电池ETF汇", "锂电/钠电链", 0.820, 0.760,
-     [("TSLA", 1.0)]),
-    ("159934", "黄金ETF易", "贵金属链", 8.938, 8.20,
-     [("NEM", 1.0)]),
-    ("516080", "创新药ETF", "医药链", 0.710, 0.640,
-     [("LLY", 0.8)]),
-    ("002714", "牧原股份", "农业(独立)", 39.613, 36.50,
-     []),   # 猪周期与美股无关，空表示"今夜美股不影响它"
+    ("000938", "紫光股份", "AI算力链", 34.681, 29.48, CHAIN_TO_US["AI算力链"]),
 ]
+
+
+def _load_holdings():
+    """★V3.4 从 我的清单.txt 读持仓，用 CHAIN_TO_US 映射到美股标的"""
+    global MY_HOLDINGS
+    if not os.path.exists(WATCH_FILE):
+        w(f"  ⚠️ 未找到 {WATCH_FILE}，持仓用代码内缺省值（可能已过期）")
+        return
+    try:
+        out = []
+        with open(WATCH_FILE, "r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                p = [x.strip() for x in line.split("|")]
+                if len(p) < 8 or p[0] != "持仓":
+                    continue
+                code, name = p[1], p[2]
+                try:
+                    cost = float(p[3]) if p[3] else 0.0
+                    stop = float(p[5]) if p[5] else 0.0
+                except Exception:
+                    cost = stop = 0.0
+                chain = p[7] or "未分类"
+                refs = CHAIN_TO_US.get(chain)
+                if refs is None:
+                    # 未知链：按关键词模糊匹配
+                    refs = []
+                    for k, v in CHAIN_TO_US.items():
+                        if k[:2] and k[:2] in chain:
+                            refs = v
+                            break
+                out.append((code, name, chain, cost, stop, refs))
+        if out:
+            MY_HOLDINGS = out
+            n_map = sum(1 for x in out if x[5])
+            w(f"  ✅ 已从 {WATCH_FILE} 载入持仓 {len(out)}只（{n_map}只有美股对标）")
+        else:
+            w(f"  ⚠️ {WATCH_FILE} 里没读到持仓行，用缺省值")
+    except Exception as e:
+        w(f"  🔴 {WATCH_FILE} 解析失败：{type(e).__name__} → 用缺省值")
 
 # 聪明钱关键词（大佬动向自动置顶）
 SMART_MONEY = [
@@ -225,7 +278,9 @@ def _build_us_spot():
     ★实时接口拿的是最新价（含刚收盘那一场），才是我们要的。
     返回 {ticker: (最新价, 涨跌幅)}"""
     m = {}
-    for fname in ("stock_us_spot_em", "stock_us_spot"):
+    # ★V3.4：8/12实测两个源都挂了(ConnectionError/CallTimeout)，加备源
+    for fname in ("stock_us_spot_em", "stock_us_spot", "stock_us_famous_spot_em",
+                  "stock_us_pink_spot_em"):
         fn = getattr(ak, fname, None)
         if fn is None:
             continue
@@ -640,10 +695,15 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V3.3 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V3.4 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
     w("★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑")
     w("★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的")
+
+    try:
+        _load_holdings()
+    except Exception as e:
+        w(f"  [报空] 载入持仓：{type(e).__name__}")
 
     scan_index()
     scan_stocks()
@@ -670,7 +730,7 @@ def main():
     w("           ④美联储/CPI → 成长股整体估值")
     w("           ⑤油价/黄金 → A股资源链")
     w("           ⑥💰聪明钱专区 → 巴菲特等大佬持仓/表态（13F披露日重点看）")
-    w("\n  ⚠️ 买卖后，MY_HOLDINGS 与 scanner_cloud 的 WATCH_STOCKS 必须同步改")
+    w("\n  ✅ V3.4起：持仓从 我的清单.txt 自动载入，三个扫描器共用一份，不用同步改")
     w("=" * 60)
 
     os.makedirs("reports", exist_ok=True)
@@ -679,7 +739,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描V3.3完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V3.4完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
