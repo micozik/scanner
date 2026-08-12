@@ -3226,53 +3226,52 @@ def _placement_from_announce():
 
 
 def scan_placement_radar():
-    """★★★V8.6【定增破发雷达】★★★ —— 用户命题
+    """★★★V8.8【定增定价锚雷达】—— 用户命题（8/11江波龙）★★★
 
-    ★为什么定增比新闻硬：
-      ① 有确定的价格锚（发行价，白纸黑字，不是研报观点）
-      ② 有确定的日期（限售6个月/18个月，倒计时明确）
-      ③ 认购方实名公开（谁买的、买多少、报价多少）
-      新闻只告诉你"某板块有催化"，定增告诉你"这群人愿意出XX元"
+    ★★我8/11把这套逻辑做错了方向，现在改回来★★
+      错版：按【折价最深】排序 → 当作"跌多了会涨回去"
+      真相：折价8折发行是A股常规操作，一大半定增都这样，【不含信息】
+            ★溢价发行才罕见 —— 有人愿意为一个未来【多付钱】
 
-    ★8/11 江波龙(301308) 实例：
-      8/7完成定增，发行价560元，当日收盘386.6元 → 【溢价45%】认购
-      21家认购：易方达5.3亿/财通2.48亿/诺德2.21亿/南方2.01亿…
-      + 发起人股东王伟民、杨晓斌、黄海华、张旭（报价700-710元）
-      + 星宸科技、阳光电源子公司各1亿
-      现价417.50，较发行价折价25.4%
+    ★江波龙(301308) 8/7 完成定增，这才是标准样本：
+        当日收盘 386.6 元，发行价 560 元 → 【溢价45%】
+        21家认购：易方达5.3亿 / 财通2.48 / 诺德2.21 / 南方2.01 / 华夏1.14
+        ★发起人股东王伟民、杨晓斌、黄海华、张旭，报价 700-710 元
+        ★产业买家：星宸科技、阳光电源子公司 各1亿
+        有效报价区间 452.90-710.00，最终定在 560
+      → 最懂它的人 + 同业产业方 + 头部公募，一起把价定在560-710。
+        今天市价417.5。这才是【定价锚】的意义。
 
-    ★★但必须写死一条反例，防止误读（用户原话："不可能亏钱做生意"）：
-      定增破发 ≠ 公司会拉回去。三个理由：
-        a) 钱已到公司账上，涨跌不退，公司无动力也无能力拉股价（操纵市场违法）
-        b) 限售期内认购方卖不了，浮亏无即时压力
-        c) 解禁日反而是抛压，不是支撑
+    ★★三条反例写死（用户原话："不可能亏钱做生意"）★★
+      定增破发 ≠ 公司会拉回去：
+        a) 钱已到公司账上，涨跌不退。上市公司拉抬自家股价是操纵市场，违法
+        b) 限售6-18个月，认购方在期内卖不了，浮亏无即时压力
+        c) 解禁日是【抛压】不是支撑
       易方达那5.3亿是基民的钱，亏了基金经理不赔。
-      江波龙自己从750跌到308，600-700买的机构早就亏了。
-    ★正确用法：把发行价当【专业买方的定价锚】，不当【保底承诺】。
+      江波龙自己从750跌到308，600-700元买的机构早就亏了。
+    ★正确用法：发行价 = 专业买方的【定价锚】，不是【保底承诺】。
     """
     w("\n" + "=" * 60)
-    w("💵💵【定增破发雷达】专业买方的定价锚 vs 今天的市价 💵💵")
+    w("💵💵【定增定价锚雷达】谁愿意为这只票多付钱 💵💵")
     w("=" * 60)
-    w("  ★定增的价值不在『会不会拉回去』，在于：")
-    w("    一群做过尽调、要锁6-18个月的人，用真金白银定了一个价。")
+    w("  ★★核心不是『折价多少』，是『溢价还是折价』★★")
+    w("    折价8折发行 = A股常规操作，一大半定增都这样，不含信息")
+    w("    ★溢价发行 = 罕见 = 有人愿意为一个未来多付钱")
+    w("  ★加分项：创始团队/原高管认购 > 产业买家认购 > 头部公募领投")
     w("  ⚠️ 反例写死：定增破发≠公司会救。钱已到账不退｜限售期内卖不了｜")
     w("     解禁日是抛压不是支撑。江波龙自己从750跌到308，机构照样亏。")
 
-    # ★V8.7：8/12实测 stock_qbzf_em 超时。改多接口轮试 + 缩短超时 + 公告兜底
     _name, df = None, None
-    for fn_name in ("stock_qbzf_em", "stock_zf_em", "stock_add_stock_em",
-                    "stock_zh_a_gdhs", "stock_restricted_release_queue_em"):
+    for fn_name in ("stock_qbzf_em", "stock_zf_em", "stock_add_stock_em"):
         fn = getattr(ak, fn_name, None)
         if fn is None:
             continue
         try:
             df = with_retry(fn, tries=1, wait=2, timeout=25)
-            if df is not None and len(df) > 0:
-                # 必须含"发行价格"类字段才算可用
-                if pick_col(df, ["发行价格", "增发价格", "发行价"]):
-                    _name = fn_name
-                    break
-                df = None
+            if df is not None and len(df) > 0 and pick_col(df, ["发行价格", "增发价格", "发行价"]):
+                _name = fn_name
+                break
+            df = None
         except Exception as e:
             w(f"  [切换] {fn_name} 失败({type(e).__name__})")
             df = None
@@ -3284,9 +3283,11 @@ def scan_placement_radar():
 
     w(f"  （源：{_name}，共{len(df)}条）")
     c_code = pick_col(df, ["代码", "股票代码", "code"])
-    c_name2 = pick_col(df, ["名称", "简称", "股票简称"])
     c_price = pick_col(df, ["发行价格", "增发价格", "发行价"])
     c_date = pick_col(df, ["发行日期", "增发上市日", "上市日", "公告日"])
+    # ★关键新列：发行时的市价/折价率，用来判断溢价还是折价
+    c_mkt = pick_col(df, ["发行日收盘价", "增发价格/发行日收盘价", "发行日市价"])
+    c_disc = pick_col(df, ["折价率", "溢价率", "发行价格/发行日收盘价"])
     if not (c_code and c_price):
         w(f"  [报空] 缺关键列。实际列名：{list(df.columns)[:14]}")
         w("=" * 60)
@@ -3294,12 +3295,12 @@ def scan_placement_radar():
 
     spot = get_spot()
     if spot is None:
-        w("  [报空] 快照缺失，无法比价")
+        w("  [报空] 快照缺失")
         w("=" * 60)
         return
     sc_code = pick_col(spot, ["代码", "code"])
     sc_price = pick_col(spot, ["最新价", "trade"])
-    sc_pct = pick_col(spot, ["涨跌幅", "changepercent"])
+    sc_name = pick_col(spot, ["名称", "name"])
     s_str = spot[sc_code].astype(str)
 
     rows = []
@@ -3310,54 +3311,65 @@ def scan_placement_radar():
             issue = pd.to_numeric(r[c_price], errors="coerce")
             if pd.isna(issue) or float(issue) <= 0:
                 continue
-            # 只看近180天的（限售期内才有意义）
+            gap = None
             if c_date:
                 try:
                     d0 = datetime.datetime.strptime(str(r[c_date])[:10], "%Y-%m-%d")
                     gap = (today - d0).days
-                    if gap < 0 or gap > 200:
+                    if gap < 0 or gap > 400:
                         continue
                 except Exception:
                     gap = None
-            else:
-                gap = None
+            # ★发行时溢价率：发行价 vs 发行日市价
+            prem = None
+            if c_mkt:
+                mv = pd.to_numeric(r[c_mkt], errors="coerce")
+                if pd.notna(mv) and float(mv) > 0:
+                    prem = (float(issue) - float(mv)) / float(mv) * 100
             m = spot[s_str.str.contains(cd, na=False)]
             if len(m) == 0:
                 continue
             now_p = pd.to_numeric(m.iloc[0][sc_price], errors="coerce")
             if pd.isna(now_p) or float(now_p) <= 0:
                 continue
-            pct = pd.to_numeric(m.iloc[0][sc_pct], errors="coerce")
-            nm = str(m.iloc[0][pick_col(spot, ["名称", "name"])])
-            disc = (float(now_p) - float(issue)) / float(issue) * 100
-            rows.append((disc, nm, cd, float(issue), float(now_p),
-                         float(pct) if pd.notna(pct) else None, gap))
+            nm = str(m.iloc[0][sc_name])
+            vs_now = (float(now_p) - float(issue)) / float(issue) * 100
+            rows.append((prem, nm, cd, float(issue), float(now_p), vs_now, gap))
         except Exception:
             continue
 
     if not rows:
-        w("  近200天内无可比对的定增记录")
+        w("  近400天内无可比对的定增记录")
         w("=" * 60)
         return
 
-    rows.sort(key=lambda x: x[0])          # 破发最深的排前面
-    broke = [x for x in rows if x[0] < -10]
-    w(f"\n  ★近200天定增 {len(rows)}笔，其中现价低于发行价10%以上的 {len(broke)}笔★\n")
-    for i, (disc, nm, cd, issue, now_p, pct, gap) in enumerate(broke[:12], 1):
-        ps = f"{pct:+.2f}%" if pct is not None else ""
-        gs = f" 距发行{gap}天" if gap is not None else ""
-        flag = "🟢深度折价" if disc < -30 else ("🟡折价" if disc < -20 else "⚪小幅折价")
-        w(f"  {i:2d}. {nm}({cd}) {flag}")
-        w(f"      发行价{issue:.2f} → 现价{now_p:.2f}  {disc:+.1f}%   今{ps}{gs}")
-    w("\n  ── 怎么用这张表（三条纪律）──")
-    w("  1. ★发行价是【定价锚】不是【保底价】★")
-    w("     折价大 = 专业买方的成本远高于你，不等于它会涨回去")
-    w("  2. ★必须过①-B★：认购方为什么愿意出那个价？")
-    w("     产业买家/创始团队认购 > 纯财务投资者认购")
-    w("     溢价发行(发行价>当时市价) = 极强信号，罕见")
-    w("     折价发行(≤市价8折) = 常规操作，不含信息")
-    w("  3. ★查解禁日★：限售6个月或18个月。")
-    w("     解禁前是空窗，解禁日是抛压。别在解禁前一个月进。")
+    # ★★排序核心：溢价发行排最前（prem大→小），无溢价数据的排后面★★
+    rows.sort(key=lambda x: (-(x[0] if x[0] is not None else -999)))
+    prem_rows = [x for x in rows if x[0] is not None and x[0] > -5]
+    deep_rows = sorted([x for x in rows if x[5] < -20], key=lambda y: y[5])
+
+    if prem_rows:
+        w(f"\n  ★★🟢【溢价/平价发行】{len(prem_rows)}笔 —— 罕见，最值钱★★")
+        for i, (prem, nm, cd, issue, now_p, vs_now, gap) in enumerate(prem_rows[:10], 1):
+            f1 = "🟢🟢溢价" if prem > 10 else ("🟢小幅溢价" if prem > 0 else "⚪平价")
+            gs = f" 距发行{gap}天" if gap is not None else ""
+            w(f"  {i:2d}. {nm}({cd}) {f1}{prem:+.0f}%发行")
+            w(f"      发行价{issue:.2f} → 现价{now_p:.2f}  {vs_now:+.1f}%{gs}")
+    else:
+        w("\n  近期无溢价发行案例（这是常态，溢价发行本就罕见）")
+
+    if deep_rows:
+        w(f"\n  ── 🟡现价低于发行价20%以上 {len(deep_rows)}笔（仅供参考，非买入理由）──")
+        for i, (prem, nm, cd, issue, now_p, vs_now, gap) in enumerate(deep_rows[:8], 1):
+            ps = f" 当时{prem:+.0f}%" if prem is not None else ""
+            w(f"  {i:2d}. {nm}({cd}) 发行价{issue:.2f}→现价{now_p:.2f} {vs_now:+.1f}%{ps}")
+
+    w("\n  ── 怎么用（三条纪律）──")
+    w("  1. ★只有【溢价发行】才是强信号★。折价8折是常规，不含信息")
+    w("  2. ★必须查认购名单★：创始团队/原高管 > 产业买家 > 头部公募 > 纯财务")
+    w("     江波龙有前三类全占（王伟民等4位发起人报价700-710）")
+    w("  3. ★查解禁日★：限售6或18个月。解禁前是空窗，解禁日是抛压。")
+    w("     ⚠️ 别在解禁前一个月进")
     w("=" * 60)
 
 
@@ -3928,6 +3940,35 @@ def scan_all_sector_cross(uniq_news):
     safe_run("全板块交叉", _do)
 
 
+# ★★★V8.8 通用验证词（8/12实测漏判）★★★
+# 存储链核心词命中13条，但"✅验证0"——因为verify表里写的是
+# "涨价""扩产"，而当天真实新闻写的是：
+#   「本月服务器DDR5内存条价格【全面上涨】15%至23%」  ← 真涨价，字面不含"涨价"
+#   「SK海力士【重启】大连NAND二期【工厂建设】，年内完成设备导入」← 真扩产
+# 后果：一条有真实扩产+真实涨价的链，被标成"故事阶段，可观察不可重仓"
+#      → 系统低估了当天最强的那条线。
+# 修法：每条链的verify表之外，再叠加一张【通用验证词】表。
+VERIFY_UNIVERSAL = [
+    # 涨价的各种写法
+    "价格上涨", "价格全面上涨", "报价上调", "上调价格", "上调报价",
+    "调价", "价格上行", "均价上涨", "现货价上涨", "全面上涨",
+    # 扩产/建设的各种写法
+    "工厂建设", "产线建设", "新建产能", "重启", "复产", "达产",
+    "设备导入", "产能扩大", "扩建", "追加投资", "资本开支上调",
+    # 订单/交付的各种写法
+    "在手订单", "订单饱满", "产能利用率高", "满负荷", "供不应求",
+    "售罄", "已全部售罄", "锁定产能", "提前锁定", "长协",
+    # 业绩兑现（比研报硬）
+    "净利预增", "业绩预增", "净利同比增长", "营收同比增长", "创新高",
+]
+
+
+def _is_verify(t, chain_verify):
+    """★V8.8：链专属验证词 OR 通用验证词，命中任一即算验证信号"""
+    return (any(k in t for k in chain_verify)
+            or any(k in t for k in VERIFY_UNIVERSAL))
+
+
 def scan_deduction(uniq_news, heat_top=None):
     """产业链推演：从已发生的事实，推出还没被市场发现的下游"""
     w("\n" + "=" * 60)
@@ -3947,7 +3988,7 @@ def scan_deduction(uniq_news, heat_top=None):
             if t[:26] in seen or k2 in seen:
                 continue
             hit_core = any(k in t for k in core)
-            hit_ver = any(k in t for k in ch["verify"])
+            hit_ver = _is_verify(t, ch["verify"])   # ★V8.8 含通用验证词
             hit_up = any(k in t for k in ch["trigger"])
             # ★验证信号必须同时含【板块核心词】AND【验证动作词】
             if hit_core and hit_ver:
@@ -4609,7 +4650,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V8.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V8.8 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     w("=" * 60)
 
     # ★★V8.0：先从 我的清单.txt 载入持仓（覆盖代码内写死的表）★★
@@ -4671,7 +4712,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V8.7完成 {prefix}_最新.txt")
+    print(f"\n✅ V8.8完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
