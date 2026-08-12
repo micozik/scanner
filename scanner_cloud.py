@@ -1967,8 +1967,11 @@ SECTOR_KEYWORDS = {
                 "IDC", "智算", "超算", "capex", "资本开支", "英伟达", "GPU"],
     "半导体设备/材料": ["半导体设备", "光刻", "刻蚀", "薄膜沉积", "CMP", "封测",
                   "先进封装", "晶圆", "12英寸", "国产替代", "中微", "北方华创"],
+    # ★V9.6：删掉裸词"颗粒"（与推演引擎同步修）。8/12实测两套词典分开写，
+    #   只修了推演引擎的core，热力图这边照样把「佐力药业灵莲花颗粒」算成存储利多。
+    #   ★教训：同一个概念写在两个地方，就必然只修一个。
     "存储芯片": ["存储", "DRAM", "NAND", "HBM", "闪存", "内存", "美光", "海力士",
-              "长鑫", "铠侠", "颗粒"],
+              "长鑫", "铠侠", "长江存储", "存储颗粒", "闪存颗粒", "SSD", "eMMC"],
     "光模块/CPO": ["光模块", "CPO", "硅光", "800G", "1.6T", "光芯片", "光引擎"],
     "软件/EDA/AI应用": ["EDA", "工业软件", "操作系统", "信创", "大模型", "AI应用",
                    "智能体", "Agent", "开源模型", "国产软件"],
@@ -2147,6 +2150,10 @@ def scan_catalyst_heat(uniq_news):
                 continue
             _k2 = _news_key(t)          # ★V8.1 同源去重
             if _k2 in seen:
+                continue
+            # ★V9.6：热力图也要排除跨行业误命中（药业/食品/化肥的"颗粒"等）
+            if sect in ("存储芯片",) and any(x in t for x in
+                    ("药业", "医药", "临床", "适应症", "中药", "食品", "饲料")):
                 continue
             for k in kws:
                 if k in t and t[:26] not in seen:
@@ -3871,26 +3878,37 @@ def scan_announcements():
         # 而正常巨潮有984条。83条 vs 984条，差12倍，判断质量天差地别。
         # 新逻辑：巨潮超时缩到20秒快速失败；继续试后面的源；
         #        取【条数最多】的那个，不是第一个成功的。
-        best_n, best_tag = 0, ""
+        # ★★V9.6：择优要看【质量】，不只看条数★★
+        # 8/12实测：选了"东财-资讯快讯"200条，但它是【快讯】不是【公告】，
+        #   没有股票代码列 → 输出全是「▸ () 鲁抗医药：...」
+        #   → 事件雷达定位不到个股、持仓公告核对全部失效。
+        # ★200条无代码 < 93条有代码。评分 = 条数 × (有代码?3:1)
+        best_score, best_n, best_tag, best_hascode = 0, 0, "", False
         for tag, fname, kw in avail:
             try:
                 fn = getattr(ak, fname)
-                # 巨潮不稳，给20秒快速失败；其余给40秒
                 _to = 20 if "巨潮" in tag else 40
                 r = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=_to)
-                if r is not None and len(r) > best_n:
-                    df, best_n, best_tag = r, len(r), tag
-                    w(f"  ✅ 公告源候选：{tag}（{len(r)}条）")
-                    if len(r) >= 500:      # 够多了，不必再试
-                        break
-                elif r is not None and len(r) > 0:
-                    w(f"  [较少] {tag}：{len(r)}条，保留当前最优{best_n}条")
-                else:
+                if r is None or len(r) == 0:
                     w(f"  [跳过] {tag}：返回空")
+                    continue
+                _hascode = pick_col(r, ["代码", "股票代码", "证券代码", "symbol", "code"]) is not None
+                _score = len(r) * (3 if _hascode else 1)
+                _mark = "✅带代码" if _hascode else "⚠️无代码(定位不到个股)"
+                if _score > best_score:
+                    df, best_score, best_n, best_tag, best_hascode = r, _score, len(r), tag, _hascode
+                    w(f"  ✅ 公告源候选：{tag}（{len(r)}条 {_mark}）← 当前最优")
+                else:
+                    w(f"  [较弱] {tag}：{len(r)}条 {_mark}")
+                if _hascode and len(r) >= 500:
+                    break
             except Exception as e:
                 w(f"  [跳过] {tag}：{type(e).__name__}")
         if best_tag:
-            w(f"  ★最终采用：{best_tag}（{best_n}条）")
+            w(f"  ★最终采用：{best_tag}（{best_n}条，{'带代码' if best_hascode else '★无代码★'}）")
+            if not best_hascode:
+                w("  🔴 该源无股票代码列 → 事件雷达无法定位个股、")
+                w("     持仓公告核对失效。本次这两节不可用于决策。")
             if best_n < 300:
                 w(f"  ⚠️ 只有{best_n}条（正常≥900条）→ 事件雷达/定增雷达/")
                 w("     持仓公告核对 三节数据不完整，不可用于决策")
@@ -4884,7 +4902,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V9.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V9.6 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -4956,7 +4974,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V9.5完成 {prefix}_最新.txt")
+    print(f"\n✅ V9.6完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
