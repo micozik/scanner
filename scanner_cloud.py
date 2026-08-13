@@ -880,6 +880,8 @@ def scan_deep_stock(code, name=""):
     """
     out = {"code": code, "name": name}
     c6 = str(code)[-6:]
+    # ★V11.4：本函数内部4类接口(快照/资金/财务/股东)彼此独立，
+    #   由上层 ThreadPoolExecutor 并发调度。此处保持顺序但每个都短超时。
 
     # ── 1) 实时快照：价格/涨跌/换手/量比/市盈/市值 ──
     sp = get_spot()
@@ -1090,9 +1092,10 @@ def scan_deep_stock(code, name=""):
     return out
 
 
-def print_deep_stock(code, name=""):
-    """★V10.1 打印个股深度体检表。抓不到的写【无数据】，不许编"""
-    d = scan_deep_stock(code, name)
+def print_deep_stock(code, name="", cached=None):
+    """★V10.1 打印个股深度体检表。抓不到的写【无数据】，不许编
+    ★V11.4：支持传入已并发抓好的数据，避免重复请求"""
+    d = cached if cached else scan_deep_stock(code, name)
     w(f"\n  ══════ 【个股深度体检】{name}({code}) ══════")
     rn = d.get("真实名称")
     # ★V11.3：ETF/LOF不在A股快照里，不算"查无此股"
@@ -1186,8 +1189,38 @@ def print_deep_stock(code, name=""):
     return d
 
 
+def _prewarm_klines(codes):
+    """★★V11.4：K线【并发预热】★★
+    8/13实测：21只×每只2源 = 42次串行K线请求 ≈ 4分钟。
+    K线有 _HIST_CACHE 缓存，只要提前并发灌满，后面所有模块直接命中缓存。
+    ★不砍数据，只是把"一个一个等"改成"一起等"。
+    """
+    todo = [c for c in codes if c and c not in _HIST_CACHE]
+    if not todo:
+        return
+    try:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        t0 = time.time()
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            fut = {ex.submit(_hist_close_raw, c): c for c in todo}
+            for f in as_completed(fut, timeout=200):
+                c = fut[f]
+                try:
+                    _HIST_CACHE[c] = f.result()
+                except Exception:
+                    _HIST_CACHE[c] = (None, None)
+        w(f"  ⚡K线并发预热 {len(todo)}只，耗时{time.time()-t0:.0f}秒")
+    except Exception as e:
+        w(f"  [K线预热失败] {type(e).__name__}")
+
+
 def scan_focus_stocks():
     w("\n★★★【重点盯盘个股·独立跟踪】★★★（每天全维度盯，不看截图）")
+    # ★V11.4：先并发灌满K线缓存，后面所有模块直接命中
+    try:
+        _prewarm_klines([str(t[0])[-6:] for t in WATCH_STOCKS if t[0]])
+    except Exception:
+        pass
 
     def _flow_map_old():
         """个股主力净流入映射：东财→同花顺"""
@@ -4245,13 +4278,34 @@ def scan_all_deep():
     # 持仓优先，候选其次
     targets.sort(key=lambda x: {"持仓": 0, "候选": 1}.get(x[2], 2))
     n_bad = 0
-    # ★V11.0提速：持仓全跑，候选只跑前6只（体检要抓个股资金流，每只1-2秒）
+    # ★★★V11.4 提速：体检【并发】抓取★★★
+    # 8/13实测跑17分钟。构成：14只×每只4次接口(财务/股东户数/十大股东/资金流)
+    #   = 56次【串行】网络请求，每次1-8秒 → 光这一节就8分钟。
+    # ★不砍任何数据，只把"排队等"改成"同时等"。
+    #   56次串行(8分钟) → 8线程并发(约1分钟)
     _hold = [t for t in targets if t[2] == "持仓"]
-    _other = [t for t in targets if t[2] != "持仓"][:6]
+    _other = [t for t in targets if t[2] != "持仓"][:8]
     targets = _hold + _other
+    _cache = {}
+    try:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        _t0 = time.time()
+        with ThreadPoolExecutor(max_workers=8) as _ex:
+            _fut = {_ex.submit(scan_deep_stock, c, n): (c, n, tg)
+                    for c, n, tg in targets}
+            for _f in as_completed(_fut, timeout=300):
+                c, n, tg = _fut[_f]
+                try:
+                    _cache[c] = _f.result()
+                except Exception:
+                    _cache[c] = {"code": c, "name": n}
+        w(f"  ⚡并发体检 {len(targets)}只，耗时{time.time()-_t0:.0f}秒")
+    except Exception as _e:
+        w(f"  [并发失败，改串行] {type(_e).__name__}")
+
     for _code, _name, _tag in targets:
         w(f"\n  [{_tag}]")
-        _d = print_deep_stock(_code, _name)
+        _d = print_deep_stock(_code, _name, _cache.get(_code))
         _rn = _d.get("真实名称")
         if not _rn or (_name and _rn != _name and _name not in _rn and _rn not in _name):
             n_bad += 1
@@ -5913,7 +5967,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V11.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V11.4 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5996,7 +6050,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V11.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V11.4完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
