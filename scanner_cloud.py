@@ -946,7 +946,107 @@ def scan_deep_stock(code, name=""):
         except Exception:
             continue
 
-    # ── 3) 技术位置：MA5/MA20/60日涨跌/缩量 ──
+    # ── 3) ★★V11.1 财务基本面★★ ──
+    # 用户2026-08-13：『你什么都不查就推荐，我很害怕』
+    # 缺财务和股东，等于只看K线不看公司。
+    for fname, kw in (("stock_financial_abstract_ths", {"symbol": c6, "indicator": "按报告期"}),
+                      ("stock_financial_abstract", {"symbol": c6})):
+        fn = getattr(ak, fname, None)
+        if fn is None:
+            continue
+        try:
+            f = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=18)
+            if f is None or len(f) == 0:
+                continue
+            # 同花顺版：行是报告期，列是指标
+            row = f.iloc[0] if "ths" in fname else None
+            if row is not None:
+                for key, cols in [
+                    ("报告期", ["报告期"]),
+                    ("营业总收入", ["营业总收入"]),
+                    ("营收同比", ["营业总收入同比增长率", "营业收入同比增长率"]),
+                    ("净利润", ["净利润"]),
+                    ("净利同比", ["净利润同比增长率"]),
+                    ("扣非净利", ["扣非净利润"]),
+                    ("每股收益", ["基本每股收益"]),
+                    ("净资产收益率", ["净资产收益率"]),
+                    ("销售毛利率", ["销售毛利率"]),
+                    ("资产负债率", ["资产负债率"]),
+                ]:
+                    for cnm in cols:
+                        if cnm in f.columns:
+                            out[key] = str(row[cnm])
+                            break
+            else:
+                # 东财版：第一列是指标名，后面是各期
+                ic = f.columns[0]
+                vc = f.columns[2] if len(f.columns) > 2 else f.columns[-1]
+                mp = {"营业总收入": "营业总收入", "净利润": "净利润",
+                      "资产负债率": "资产负债率", "净资产收益率": "净资产收益率",
+                      "销售毛利率": "销售毛利率", "基本每股收益": "每股收益"}
+                for _, rr in f.iterrows():
+                    k = str(rr[ic]).strip()
+                    if k in mp:
+                        out[mp[k]] = str(rr[vc])
+            if out.get("营业总收入") or out.get("净利润"):
+                break
+        except Exception:
+            continue
+
+    # ── 4) ★★V11.1 股东结构★★ ──
+    for fname, kw in (("stock_gdhs_detail_em", {"symbol": c6}),):
+        fn = getattr(ak, fname, None)
+        if fn is None:
+            continue
+        try:
+            f = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=18)
+            if f is not None and len(f) > 0:
+                r0 = f.iloc[0]
+                for key, cols in [("股东户数", ["股东户数-本次", "股东户数"]),
+                                  ("户数变化", ["股东户数-增减比例", "较上期变化"]),
+                                  ("户均持股", ["户均持股市值", "户均持股数量"])]:
+                    col = pick_col(f, cols)
+                    if col:
+                        out[key] = str(r0[col])
+                break
+        except Exception:
+            continue
+
+    # 十大流通股东（机构占比）
+    for fname in ("stock_gdfx_free_top_10_em", "stock_top_10_holders_em"):
+        fn = getattr(ak, fname, None)
+        if fn is None:
+            continue
+        try:
+            pre = "sh" if c6[0] in "56" else ("bj" if c6[0] in "489" else "sz")
+            f = with_retry(lambda: fn(symbol=pre + c6), tries=1, wait=1, timeout=18)
+            if f is None or len(f) == 0:
+                f = with_retry(lambda: fn(symbol=c6), tries=1, wait=1, timeout=15)
+            if f is not None and len(f) > 0:
+                cn2 = pick_col(f, ["股东名称", "名称"])
+                cr = pick_col(f, ["占总流通股本持股比例", "持股比例", "占流通股比例"])
+                names, tot = [], 0.0
+                for _, rr in f.head(10).iterrows():
+                    n2 = str(rr[cn2]) if cn2 else ""
+                    names.append(n2[:14])
+                    if cr:
+                        v = pd.to_numeric(str(rr[cr]).replace("%", ""), errors="coerce")
+                        if pd.notna(v):
+                            tot += float(v)
+                out["十大流通股东"] = names
+                if tot > 0:
+                    out["十大合计占比"] = tot
+                # 机构类关键词
+                inst = [n2 for n2 in names if any(k in n2 for k in
+                        ("基金", "证券", "保险", "社保", "养老", "年金", "资管",
+                         "信托", "QFII", "陆股通", "投资"))]
+                out["机构席位数"] = len(inst)
+                out["机构名单"] = inst[:5]
+                break
+        except Exception:
+            continue
+
+    # ── 5) 技术位置：MA5/MA20/60日涨跌/缩量 ──
     try:
         k5, k20 = _hist_close(c6)
         if k5:
@@ -992,6 +1092,42 @@ def print_deep_stock(code, name=""):
           + "，" + ("站上MA20" if px >= ma20 else "★仍在MA20下方(位置低)★"))
     else:
         w("  📊 技术：【无数据】")
+
+    # ★★V11.1 财务基本面 ★★
+    _fin = [(k, d.get(k)) for k in
+            ("报告期", "营业总收入", "营收同比", "净利润", "净利同比",
+             "扣非净利", "每股收益", "净资产收益率", "销售毛利率", "资产负债率")
+            if d.get(k)]
+    if _fin:
+        w("  🏢 基本面：" + " ｜ ".join(f"{k}{v}" for k, v in _fin[:5]))
+        if len(_fin) > 5:
+            w("           " + " ｜ ".join(f"{k}{v}" for k, v in _fin[5:]))
+    else:
+        w("  🏢 基本面：【无数据】← ★不知道公司赚不赚钱，不许给重仓建议★")
+
+    # ★★V11.1 股东结构 ★★
+    _gd = d.get("股东户数")
+    _n_inst = d.get("机构席位数")
+    if _gd or _n_inst is not None:
+        _l = "  👥 股东："
+        if _gd:
+            _l += f"股东户数{_gd}"
+            if d.get("户数变化"):
+                _l += f"(变化{d['户数变化']})"
+        if _n_inst is not None:
+            _l += f" ｜十大流通股东中机构{_n_inst}席"
+        if d.get("十大合计占比"):
+            _l += f" ｜十大合计{d['十大合计占比']:.1f}%"
+        w(_l)
+        if d.get("机构名单"):
+            w(f"     机构：{'、'.join(d['机构名单'])}")
+        if _n_inst is not None:
+            if _n_inst >= 5:
+                w("     ✅机构扎堆（≥5席）= 有专业资金长期看着")
+            elif _n_inst == 0:
+                w("     ⚠️十大流通股东里★一个机构都没有★= 纯游资/散户结构，波动大")
+    else:
+        w("  👥 股东：【无数据】")
 
     z, dd, zz, xx = (d.get("超大单净额"), d.get("大单净额"),
                      d.get("中单净额"), d.get("小单净额"))
@@ -3821,6 +3957,33 @@ def scan_pipeline():
         # 换手：3-15%健康
         if c["to"] is not None and 3 <= c["to"] <= 15:
             sc += 1; why.append(f"换手{c['to']:.1f}%")
+        # ★V11.1 基本面：净利同比
+        _ny = d.get("净利同比")
+        if _ny:
+            try:
+                _v = float(str(_ny).replace("%", "").replace(",", ""))
+                if _v > 30:
+                    sc += 2; why.append(f"净利同比+{_v:.0f}%")
+                elif _v < -30:
+                    sc -= 2; why.append(f"⚠️净利同比{_v:.0f}%")
+            except Exception:
+                pass
+        # ★V11.1 负债率
+        _dr = d.get("资产负债率")
+        if _dr:
+            try:
+                _v = float(str(_dr).replace("%", ""))
+                if _v > 70:
+                    sc -= 1.5; why.append(f"⚠️负债率{_v:.0f}%")
+            except Exception:
+                pass
+        # ★V11.1 股东结构：机构扎堆
+        _ni = d.get("机构席位数")
+        if _ni is not None:
+            if _ni >= 5:
+                sc += 2; why.append(f"机构{_ni}席")
+            elif _ni == 0:
+                sc -= 1.5; why.append("⚠️无机构")
         scored.append((sc, c, d, why))
     scored.sort(key=lambda x: -x[0])
 
@@ -5538,7 +5701,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V11.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V11.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5612,7 +5775,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V11.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V11.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
