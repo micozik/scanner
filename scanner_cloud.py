@@ -48,6 +48,66 @@ def dh(name, status, note=""):
         pass
 
 
+# ═══════════════════════════════════════════════════════
+# ★★★V15.0【规则自动淘汰机制】—— 判决权交给数据，不由AI决定★★★
+# 2026-08-14凌晨，机构成绩单第一份数据出来，三条都在打AI的脸：
+#   买跌 33.3% < 买涨停 37.5%   → 铁律B可能不成立
+#   符号相反 50% > 方向一致 36% → AI加的交叉闸门可能拦错了
+#   净买≥1亿 25% < <1亿 40.9%   → 金额大反而差
+# ★但样本只有3-4个，这个量级下一只票就能翻盘。
+#   AI这三天最大的错就是拿单日数据下结论（紫光"资金-0.08亿"）。
+#   拿3个样本推翻铁律B，是同一个错。
+# ★所以：不由AI决定何时改规则，由【样本量+胜率】自动判决。
+#   样本≥15 且 胜率<45% → 自动停用，报告不再输出，AI不许再用它推荐。
+#   ★这样用户不用监督AI，也不用AI保持诚实。
+# ═══════════════════════════════════════════════════════
+RULE_MIN_SAMPLE = 15
+RULE_MIN_RATE = 0.45
+RULE_STATUS = {}
+RULE_DISABLED = set()
+
+
+def rule_verdict(name, hit, total, note=""):
+    """★V15.0 规则判决。返回 True=可用 / False=已停用"""
+    try:
+        total = int(total); hit = int(hit)
+    except Exception:
+        return True
+    if total < RULE_MIN_SAMPLE:
+        RULE_STATUS[name] = ("积累中", total, None,
+                             f"样本{total}/{RULE_MIN_SAMPLE}，未到判决门槛")
+        return True
+    rate = hit / total if total else 0.0
+    if rate < RULE_MIN_RATE:
+        RULE_DISABLED.add(name)
+        RULE_STATUS[name] = ("🔴已停用", total, rate,
+                             f"样本{total}个，胜率{rate*100:.1f}% < 45% → 自动停用")
+        return False
+    RULE_STATUS[name] = ("✅可用", total, rate, f"样本{total}个，胜率{rate*100:.1f}%")
+    return True
+
+
+def rule_alive(name):
+    """模块运行前先问：我还活着吗？"""
+    return name not in RULE_DISABLED
+
+
+def rule_banner(name):
+    """模块输出开头印状态"""
+    st = RULE_STATUS.get(name)
+    if not st:
+        w(f"  ⚠️【{name}】尚无回测数据 → ★仅供参考，不构成买入依据★")
+        return
+    status, n, rate, note = st
+    if status == "🔴已停用":
+        w(f"  🔴🔴【{name} 已被自动停用】{note}")
+        w("     ★本模块输出仅作记录，AI不许用它推荐任何标的★")
+    elif status == "积累中":
+        w(f"  ⚠️【{name}】{note} → ★仅供参考，不构成买入依据★")
+    else:
+        w(f"  ✅【{name}】{note}")
+
+
 def _sane_check(name, value, lo, hi, unit=""):
     """★V14.0 合理性检查：超出常识范围就登记为可疑
     8/13教训：财务显示1993年、市盈率取到涨跌幅的值 —— 都是"有值但荒谬"。
@@ -2818,6 +2878,10 @@ def scan_catalyst_heat(uniq_news):
     """催化热力图 V2：新闻映射板块 + 多空方向识别，按【净利多】排序"""
     w("\n" + "=" * 60)
     w("🔥🔥【催化热力图·多空版】新闻→板块 + 方向识别 🔥🔥")
+    rule_banner("热力图·净利多前3")
+    if not rule_alive("热力图·净利多前3"):
+        w("  🔴 本模块已被自动停用（累计胜率<45%）。")
+        w("     下面的排名【仅作记录】，AI不许用它推荐任何标的。")
     w("=" * 60)
     w("  （V3.4：净利多排序 + 外国新闻已过滤，不污染A股板块评分）")
     w("  （V3.2升级：只数条数会误判——油价暴跌10条也是10条，")
@@ -3036,6 +3100,7 @@ def backtest_ambush(today_pool):
     """埋伏池回测：验证铁律B(机构/游资在跌时买入=明天机会)到底有没有用"""
     w("\n" + "=" * 60)
     w("📊【埋伏池回测】铁律B到底成不成立 —— 用胜率说话")
+    rule_banner("铁律B·埋伏池")
     w("=" * 60)
     bj = now_beijing()
     today = bj.strftime("%Y-%m-%d")
@@ -3085,6 +3150,19 @@ def backtest_ambush(today_pool):
                 verdict = "❌铁律B在当前行情不成立，停止依赖"
             w(f"\n  ◆ {base} 那批（{n}只）{label}后：")
             w(f"    胜率 {win}/{n} = {wr:.1f}% | 平均收益 {avg:+.2f}% → {verdict}")
+            # ★V15.0 跨天累计 + 自动判决
+            try:
+                _ah = _bt_load(AMBUSH_HIST_FILE)
+                _aa = _ah.get("_acc", {"hit": 0, "tot": 0})
+                _aa["hit"] = _aa.get("hit", 0) + win
+                _aa["tot"] = _aa.get("tot", 0) + n
+                _ah["_acc"] = _aa
+                _bt_save(AMBUSH_HIST_FILE, _ah)
+                w(f"    ★累计：{_aa['hit']}/{_aa['tot']} = "
+                  f"{_aa['hit']/max(_aa['tot'],1)*100:.1f}%")
+                rule_verdict("铁律B·埋伏池", _aa["hit"], _aa["tot"])
+            except Exception:
+                pass
             for nm, p in sorted(detail, key=lambda x: -x[1])[:5]:
                 w(f"      {nm} {p:+.2f}%")
     if not days:
@@ -3120,6 +3198,7 @@ def backtest_heat(top3):
     """热力图回测：净利多前3的板块，之后真的跑赢吗"""
     w("\n" + "=" * 60)
     w("📊【热力图回测】净利多前3 到底跑不跑赢 —— 用超额说话")
+    rule_banner("热力图·净利多前3")
     w("=" * 60)
     bj = now_beijing()
     today = bj.strftime("%Y-%m-%d")
@@ -3164,6 +3243,19 @@ def backtest_heat(top3):
             else:
                 w(f"    {sect} → 无对应板块数据")
         w(f"    ★命中 {hit}/3")
+        # ★V15.0 累计登记（跨天累加）
+        try:
+            _hh = _bt_load(HEAT_HIST_FILE)
+            _acc = _hh.get("_acc", {"hit": 0, "tot": 0})
+            _acc["hit"] = _acc.get("hit", 0) + hit
+            _acc["tot"] = _acc.get("tot", 0) + 3
+            _hh["_acc"] = _acc
+            _bt_save(HEAT_HIST_FILE, _hh)
+            w(f"    ★累计：{_acc['hit']}/{_acc['tot']} = "
+              f"{_acc['hit']/max(_acc['tot'],1)*100:.1f}%")
+            rule_verdict("热力图·净利多前3", _acc["hit"], _acc["tot"])
+        except Exception:
+            pass
         w("    ⚠️ 连续5次命中<1/3 → 热力图排序无效，需调整词典权重")
     else:
         w("  首次运行或板块数据缺失，今日起积累")
@@ -3806,6 +3898,7 @@ def backtest_picker():
     """★选股器回测：涨幅>3%算命中。这是唯一能证明选股器有没有用的东西"""
     w("\n" + "=" * 60)
     w("🔬【选股器回测】我推的到底准不准 · 机器说了算")
+    rule_banner("选股器")
     w("=" * 60)
     d = _bt_load(PICKER_HIST_FILE)
     if not d:
@@ -5154,6 +5247,7 @@ def backtest_event():
       如果数据显示两者差不多，说明『公告当天入场』这条规则是我编的，不是真的。"""
     w("\n" + "=" * 60)
     w("🔬【事件驱动雷达·回测】『公告当天没涨才是入场点』——真的吗")
+    rule_banner("事件驱动雷达")
     w("=" * 60)
     d = _bt_load(EVENT_HIST_FILE)
     if not d:
@@ -6390,7 +6484,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V14.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V15.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6487,7 +6581,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V14.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V15.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
