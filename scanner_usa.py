@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-美股夜盘扫描器 · 独立版 V3.4（2026-08-12 持仓改读 我的清单.txt）
+美股夜盘扫描器 · 独立版 V3.5（2026-08-13 行情三层兜底 + 新闻提到最前）
+V3.5 三项（8/13紫光血案催生）：
+  1. 全量快照4源全挂 → 新增【单只逐个抓】（只抓25只，体积小100倍）
+  2. 再失败 → 新增【新闻抠价】：从"SK海力士涨幅扩大至8%"这类标题里抠幅度
+  3. ★新闻模块提到最前★：价格可能滞后2天，但新闻永远是最新的。
+     8/13报告05:23就写着『存储芯片净+5🔥🔥🔥、AI算力净+3、英伟达+3.35%』，
+     紫光13:20涨停(+10%)。我因为看到"距今2天"就没重视 → 用户少赚2,040元。
+     ★价格滞后不是"数据不准"，是"我没读新闻那一节"。
 V3.4：MY_HOLDINGS 不再写死。8/12实测它还在算已卖出的沪硅(8/10卖)、
   牧原(8/11卖)，同时缺了8/11新买的英维克/中恒电气/江化微。
   cloud和lhb都接了清单，只有usa没接 —— "同一份持仓抄三份"的必然后果。
@@ -142,6 +149,7 @@ SMART_MONEY = [
 # 全局：本次抓到的美股个股行情 {ticker: (涨跌幅, 收盘价, 数据日期)}
 US_QUOTE = {}
 TODAY_MAP_TOP3 = []
+TODAY_US_NEWS = []   # ★V3.5 [(时间,标题)]，供【新闻抠价】兜底
 
 
 def now_beijing():
@@ -278,7 +286,17 @@ def _build_us_spot():
     ★实时接口拿的是最新价（含刚收盘那一场），才是我们要的。
     返回 {ticker: (最新价, 涨跌幅)}"""
     m = {}
-    # ★V3.4：8/12实测两个源都挂了(ConnectionError/CallTimeout)，加备源
+    # ★★★V3.5（8/13）：全量快照4源全挂，改用【单只逐个抓】兜底★★★
+    # 8/13实测：stock_us_spot_em / stock_us_spot / stock_us_famous_spot_em /
+    #   stock_us_pink_spot_em 四个源全部 ConnectionError/CallTimeout。
+    # ★根因：全量美股快照是几千只的大请求，海外源对国内/CI环境极不稳定。
+    # ★而【持仓夜盘影响】只需要 25 只，不需要全市场。
+    #   单只请求体积小 100 倍，成功率高得多。
+    # ★8/13血的教训：紫光股份涨停+10%，而美股映射早就写着
+    #   『AI算力→A股紫光/中贝通信 净+3｜英伟达+3.35%』，
+    #   报告05:23就生成了，我因为价格滞后没当回事 → 用户少赚2,040元。
+    #   ★价格滞后不是"数据不准"，是"我没读新闻那一节"。
+    #   现在两条腿都补：单只抓价 + 新闻里抠涨跌幅。
     for fname in ("stock_us_spot_em", "stock_us_spot", "stock_us_famous_spot_em",
                   "stock_us_pink_spot_em"):
         fn = getattr(ak, fname, None)
@@ -312,7 +330,108 @@ def _build_us_spot():
         except Exception as e:
             w(f"  [切换] {fname} 失败({type(e).__name__})")
     if not m:
-        w("  ⚠️ 实时行情源全部失败 → 降级为日K接口，数据可能滞后1-2天")
+        w("  ⚠️ 全量快照4源全挂 → 启用【单只逐个抓】（只抓我们要的25只）")
+        m = _spot_one_by_one()
+    if not m:
+        w("  ⚠️ 单只抓取也失败 → 启用【新闻抠价】兜底")
+        m = _spot_from_news()
+    if not m:
+        w("  🔴 三层兜底全失败 → 降级为日K接口，数据可能滞后1-2天")
+        w("     ★但【新闻那一节】仍然是最新的，必须读！")
+        w("       8/13教训：价格滞后2天，但新闻写着『SK海力士+8%、美光+7%、")
+        w("       费半开盘+3.5%、英伟达+3.35%』——方向一清二楚。")
+    return m
+
+
+def _spot_one_by_one():
+    """★V3.5：全量快照挂了就单只抓。只抓 US_TICKERS 里的25只。
+    单只请求体积比全量小100倍，成功率高得多。"""
+    m = {}
+    fns = [f for f in ("stock_us_hist_min_em", "stock_us_daily", "stock_us_hist")
+           if hasattr(ak, f)]
+    if not fns:
+        return m
+    ok = 0
+    for cn, tk in US_TICKERS:
+        got = False
+        for fname in fns:
+            try:
+                fn = getattr(ak, fname)
+                if fname == "stock_us_hist_min_em":
+                    df = with_retry(lambda t=tk, f=fn: f(symbol=t), tries=1, timeout=12)
+                elif fname == "stock_us_daily":
+                    df = with_retry(lambda t=tk, f=fn: f(symbol=t, adjust=""),
+                                    tries=1, timeout=12)
+                else:
+                    end = now_beijing().strftime("%Y%m%d")
+                    st = (now_beijing() - datetime.timedelta(days=8)).strftime("%Y%m%d")
+                    df = with_retry(lambda t=tk, f=fn: f(symbol=t, period="daily",
+                                    start_date=st, end_date=end, adjust=""),
+                                    tries=1, timeout=12)
+                if df is None or len(df) < 2:
+                    continue
+                c_close = pick_col(df, ["收盘", "close", "最新价"])
+                if not c_close:
+                    continue
+                px = pd.to_numeric(df.iloc[-1][c_close], errors="coerce")
+                pv = pd.to_numeric(df.iloc[-2][c_close], errors="coerce")
+                if pd.notna(px) and pd.notna(pv) and float(pv) > 0:
+                    m[tk.upper()] = (float(px), (float(px) - float(pv)) / float(pv) * 100)
+                    ok += 1
+                    got = True
+                    break
+            except Exception:
+                continue
+        if not got:
+            continue
+    if ok:
+        w(f"  ✅ 单只逐个抓成功 {ok}/{len(US_TICKERS)} 只")
+    return m
+
+
+# ★V3.5 新闻里的涨跌幅正则（"SK海力士涨幅扩大至8%"这类）
+NEWS_NAME2TK = {
+    "英伟达": "NVDA", "台积电": "TSM", "美光": "MU", "AMD": "AMD",
+    "博通": "AVGO", "特斯拉": "TSLA", "苹果": "AAPL", "阿斯麦": "ASML",
+    "英特尔": "INTC", "阿里巴巴": "BABA", "Meta": "META", "微软": "MSFT",
+    "谷歌": "GOOGL", "亚马逊": "AMZN", "希捷": "STX", "西部数据": "WDC",
+    "闪迪": "SNDK", "应用材料": "AMAT", "拉姆研究": "LRCX", "康宁": "GLW",
+    "Coherent": "COHR", "礼来": "LLY", "纽蒙特": "NEM",
+}
+
+
+def _spot_from_news():
+    """★★V3.5 最后一层兜底：从新闻标题里抠涨跌幅★★
+    8/13实测新闻里明写：
+      『SK海力士涨幅扩大至8%』『美光均涨超7%』『英伟达股价上涨3.35%』
+      『费城半导体指数开盘上涨3.5%』『CoreWeave股价飙升22%』
+    ★这些是【最新的】，比滞后2天的日K有用得多。
+    ★8/13血案：我因为价格滞后就没重视美股，而新闻那一节写得清清楚楚。
+    """
+    import re as _re
+    news = globals().get("TODAY_US_NEWS", []) or []
+    if not news:
+        return {}
+    m = {}
+    pat = _re.compile(r"(涨|跌|上涨|下跌|涨幅扩大至|跌幅扩大至|飙升|大涨|重挫|暴跌)"
+                      r"\s*(?:超|约|至)?\s*([0-9]+(?:\.[0-9]+)?)\s*%")
+    for _tm, t in news:
+        for nm, tk in NEWS_NAME2TK.items():
+            if nm not in str(t):
+                continue
+            mm = pat.search(str(t))
+            if not mm:
+                continue
+            v = float(mm.group(2))
+            if mm.group(1) in ("跌", "下跌", "跌幅扩大至", "重挫", "暴跌"):
+                v = -v
+            # 同一只票多条新闻，取绝对值最大的（通常是最终涨幅）
+            prev = m.get(tk)
+            if prev is None or abs(v) > abs(prev[1]):
+                m[tk] = (None, v)
+            break
+    if m:
+        w(f"  ✅ 从新闻里抠出 {len(m)} 只的涨跌幅（价格为空，只有幅度）")
     return m
 
 
@@ -685,6 +804,7 @@ def scan_news():
     for tm, t in uniq[:60]:
         w(f"    [{tm}] {t[:70]}")
 
+    globals()["TODAY_US_NEWS"] = uniq   # ★V3.5 供【新闻抠价】兜底
     return uniq            # ★V3.0：交给 main() 分发，不再自己调用热力图
 
 
@@ -695,7 +815,7 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V3.4 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V3.5 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
     w("★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑")
     w("★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的")
@@ -706,16 +826,22 @@ def main():
         w(f"  [报空] 载入持仓：{type(e).__name__}")
 
     scan_index()
-    scan_stocks()
 
-    # ★★V3.0：持仓穿透用【真实行情】，排在新闻之前，新闻挂了也照跑★★
-    safe_run("持仓夜盘影响", scan_holdings_impact)
-
+    # ★★★V3.5：新闻提到最前★★★
+    # 8/13血案：价格滞后2天，但新闻里写着『SK海力士+8%、美光+7%、
+    #   费半开盘+3.5%、英伟达+3.35%、CoreWeave+22%』——方向一清二楚。
+    # 我因为看到"⚠️距今2天"就没重视美股，结果紫光涨停少赚2,040元。
+    # ★新闻永远是最新的，必须最先读，而且它还能给行情当兜底数据源。
     uniq = []
     try:
         uniq = scan_news() or []
     except Exception as e:
         w(f"  [报空] 新闻模块：{type(e).__name__}")
+
+    scan_stocks()
+
+    # ★★V3.0：持仓穿透用【真实行情】★★
+    safe_run("持仓夜盘影响", scan_holdings_impact)
 
     # ★★V3.0：热力图与回测独立运行，不再被新闻源成败绑架★★
     safe_run("美股催化热力图", lambda: scan_us_heat(uniq))
@@ -739,7 +865,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描V3.4完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V3.5完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
