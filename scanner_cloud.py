@@ -2956,6 +2956,13 @@ def scan_launch_radar():
             except Exception as e:
                 w(f"  [跳过] {kind}库读取失败 {type(e).__name__}")
                 continue
+            # ★★V9.8 修复：库的真实结构是 {"days": {日期: {...}}}，
+            # 旧代码直接 len(hist) 得到的是顶层key数（=1，只有"days"），
+            # 所以永远报"仅1天"→【启动日雷达从上线起就没生效过】。
+            # 8/13实测：基因测序跳330位、禽流感跳308位，雷达一条没报，
+            #   全靠我手工从板块榜里扒 —— 这正是它该自动干的事。
+            if isinstance(hist, dict) and "days" in hist and isinstance(hist["days"], dict):
+                hist = hist["days"]
             if not isinstance(hist, dict) or len(hist) < 2:
                 w(f"  [跳过] {kind}库仅{len(hist) if isinstance(hist,dict) else 0}天，需≥2天")
                 continue
@@ -2968,9 +2975,16 @@ def scan_launch_radar():
                     # 可能是 {板块名: 排名} 或 {"list":[...]}
                     inner = obj.get("list") or obj.get("data")
                     if inner is None:
+                        # ★V9.8：库的真实格式是 {板块名: {"pct":涨幅, "rank":排名}}
                         for k, v in obj.items():
                             try:
-                                out[str(k)] = (int(v), None)
+                                if isinstance(v, dict):
+                                    r = v.get("rank") or v.get("排名")
+                                    c = v.get("pct") or v.get("涨跌幅")
+                                    if r is not None:
+                                        out[str(k)] = (int(r), c)
+                                else:
+                                    out[str(k)] = (int(v), None)
                             except Exception:
                                 pass
                         return out
@@ -4960,7 +4974,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V9.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V9.8 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5032,7 +5046,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V9.7完成 {prefix}_最新.txt")
+    print(f"\n✅ V9.8完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
