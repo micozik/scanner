@@ -31,6 +31,37 @@ CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
 
 # ★★V8.0 全局缓存：供跨模块使用★★
+# ★★★V14.0【数据可信度登记表】★★★
+# 用户2026-08-14凌晨原话：『我现在就怕我们辛苦获取的所有数据，资讯都是错的』
+# 这个担心是对的：佰维存储显示"报告期1993-12-31"，我信了三天。
+# ★根因：报告里【拿不到】和【拿到了但是错的】混在一起，看不出区别。
+# ★解法：每个数据源登记 成功/失败/降级/可疑，报告开头给总评分。
+#   ★评分低于60 = 报告第一行印红字"本次数据不可用于决策"
+DATA_HEALTH = []       # [(名称, 状态, 说明)] 状态: ok/degraded/fail/suspect
+
+
+def dh(name, status, note=""):
+    """登记一个数据源的健康状况"""
+    try:
+        DATA_HEALTH.append((str(name), str(status), str(note)))
+    except Exception:
+        pass
+
+
+def _sane_check(name, value, lo, hi, unit=""):
+    """★V14.0 合理性检查：超出常识范围就登记为可疑
+    8/13教训：财务显示1993年、市盈率取到涨跌幅的值 —— 都是"有值但荒谬"。
+    """
+    try:
+        v = float(value)
+    except Exception:
+        return value
+    if v < lo or v > hi:
+        dh(name, "suspect", f"值{v}{unit}超出合理范围[{lo},{hi}]")
+        return None
+    return v
+
+
 TODAY_VERIFIED_CHAINS = []   # ★V11.0 今日有✅验证信号的链名
 SECTOR_JUMP_MAP = {}   # ★V9.7 {板块名: 排名跳升位数}。正=上升，是【领先指标】
 FAST_MODE = False      # ★V8.9 快扫模式开关
@@ -258,15 +289,59 @@ def get_spot():
             df = with_retry(fn, tries=2, wait=3, timeout=120, critical=True)
             if df is not None and len(df) > 500:
                 SPOT_DF, SPOT_SRC = df, nm
+                dh("全市场快照", "ok", f"{nm} {len(df)}只")
                 if nm != "新浪":
                     w(f"  ✅ 快照源已切换：{nm}（{len(df)}只）")
                 return SPOT_DF
         except Exception as e:
             w(f"  [切换] 快照·{nm}失败({type(e).__name__})，尝试备源...")
+    dh("全市场快照", "fail", "三源全挂")
     w("  🔴🔴 全部快照源失败 → 盯盘/游资/冷低早/止盈全部无法计算")
     w("     这是地基级故障，本次报告不可用于决策")
     SPOT_DF = None
     return SPOT_DF
+
+
+def scan_data_health():
+    """★★★V14.0【数据可信度体检】—— 报告最前面，先说数据能不能信★★★
+    用户2026-08-14凌晨：『我现在就怕我们辛苦获取的所有数据，资讯都是错的』
+    """
+    w("\n" + "=" * 60)
+    w("🩺🩺【数据可信度体检】先说数据能不能信，再说别的 🩺🩺")
+    w("=" * 60)
+    ok = [x for x in DATA_HEALTH if x[1] == "ok"]
+    deg = [x for x in DATA_HEALTH if x[1] == "degraded"]
+    fail = [x for x in DATA_HEALTH if x[1] == "fail"]
+    sus = [x for x in DATA_HEALTH if x[1] == "suspect"]
+    tot = max(len(DATA_HEALTH), 1)
+    score = int((len(ok) * 100 + len(deg) * 50) / tot)
+    w(f"  ★可信度评分：{score}/100"
+      f"（正常{len(ok)} 降级{len(deg)} 失败{len(fail)} 可疑{len(sus)}）")
+    if score < 60:
+        w("  🔴🔴🔴 评分<60 → ★本次报告不可用于决策★")
+        w("     多个关键数据源失败，任何基于它的判断都可能是错的")
+    elif score < 80:
+        w("  ⚠️ 评分<80 → 部分数据降级，看下面哪几项，避开它们做判断")
+    else:
+        w("  ✅ 数据健康，可用于决策")
+    if fail:
+        w("\n  🔴 失败（这些数据本次【完全没有】）：")
+        for n, _s, note in fail[:12]:
+            w(f"     · {n}" + (f" —— {note}" if note else ""))
+    if sus:
+        w("\n  ⚠️ 可疑（有值但不合理，★已作废，不许用★）：")
+        for n, _s, note in sus[:12]:
+            w(f"     · {n} —— {note}")
+    if deg:
+        w("\n  🟡 降级（用了备源或缓存，标注了日期）：")
+        for n, _s, note in deg[:12]:
+            w(f"     · {n} —— {note}")
+    w("\n  ★铁律Y（V14.0）：★")
+    w("    ①【无数据】和【数据错了】必须分开标，绝不混在一起")
+    w("    ②有值但不合理（报告期1993年/市盈率取到涨跌幅）= 作废，不是可用")
+    w("    ③缓存数据必须标日期，绝不假装是实时的")
+    w("    ④评分<60 → AI不许给任何买卖建议")
+    w("=" * 60)
 
 
 def scan_skeleton_top():
@@ -1118,6 +1193,23 @@ def scan_deep_stock(code, name=""):
                     ("销售毛利率", ["销售毛利率", "销售毛利率(%)", "毛利率"]),
                     ("资产负债率", ["资产负债率", "资产负债率(%)"]),
                 ]
+                # ★★V14.0：报告期必须在近2年内，否则整条数据作废★★
+                # 8/13事故：佰维2018、新宙邦2006、风华高科1993 —— 我信了三天
+                _rp = None
+                for _dc in ("报告期", "日期", "报表日期"):
+                    if _dc in f.columns:
+                        _rp = str(row[_dc])[:10]
+                        break
+                if _rp:
+                    try:
+                        _y = int(_rp[:4])
+                        _cy = now_beijing().year
+                        if _y < _cy - 2:
+                            dh(f"财务·{c6}", "suspect",
+                               f"报告期{_rp}距今{_cy-_y}年，已作废")
+                            continue
+                    except Exception:
+                        pass
                 for key, cols in _map:
                     for cnm in cols:
                         if cnm in f.columns:
@@ -6298,7 +6390,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V13.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V14.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6307,6 +6399,7 @@ def main():
     safe_run("载入我的清单", _load_watchlist)
 
     scan_skeleton_top()
+    safe_run("数据可信度体检", scan_data_health)
 
     if weekend:
         scan_news()
@@ -6394,7 +6487,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V13.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V14.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
