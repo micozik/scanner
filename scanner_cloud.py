@@ -3812,6 +3812,155 @@ def _board_cons(board_name, kind="行业"):
     return []
 
 
+def _find_code_by_name(name):
+    """★★V11.2 按【名称】查代码 —— 从全市场快照里找，不靠记忆★★
+    8/13事故：我凭记忆写香农芯创=603322（实际300475），价差6倍。
+    ★从今天起，任何票的代码都必须用这个函数查出来。
+    返回 [(代码, 真实名称)]，可能多个（模糊匹配）"""
+    sp = get_spot()
+    if sp is None:
+        return []
+    cc = pick_col(sp, ["代码", "code"])
+    cn = pick_col(sp, ["名称", "name"])
+    if not (cc and cn):
+        return []
+    key = str(name).strip().replace(" ", "")
+    out = []
+    try:
+        nm_s = sp[cn].astype(str).str.replace(" ", "", regex=False)
+        cd_s = sp[cc].astype(str).str[-6:]
+        # 先精确
+        ex = sp[nm_s == key]
+        for _, r in ex.iterrows():
+            out.append((str(r[cc])[-6:], str(r[cn]).strip()))
+        if out:
+            return out
+        # 再模糊
+        fz = sp[nm_s.str.contains(key, na=False, regex=False)]
+        for _, r in fz.head(8).iterrows():
+            out.append((str(r[cc])[-6:], str(r[cn]).strip()))
+        # 代码直查
+        if not out and key.isdigit():
+            m = sp[cd_s.str.contains(key[-6:], na=False)]
+            for _, r in m.head(3).iterrows():
+                out.append((str(r[cc])[-6:], str(r[cn]).strip()))
+    except Exception:
+        pass
+    return out
+
+
+def check_stock(name_or_code):
+    """★★★V11.2【单只即时体检】—— 用户要求『当天推荐就经过多重认证』★★★
+
+    用法：check_stock("香农芯创") 或 check_stock("300475")
+    ★不需要预先加进清单，不需要等第二天。
+    ★流程：按名字查真实代码 → 全维度体检 → 打分 → 给结论
+
+    ★为什么这个函数存在（2026-08-13）：
+      用户：『我要你当天推荐就经过多重认证的，不要延迟1天那种』
+      在此之前，清单外的票我一个数据都没有，只能凭印象推 → 出了代码写错事故。
+    """
+    w("\n" + "=" * 60)
+    w(f"🔍🔍【单只即时体检】{name_or_code} 🔍🔍")
+    w("=" * 60)
+    hits = _find_code_by_name(name_or_code)
+    if not hits:
+        w(f"  🔴 全市场快照里【找不到】『{name_or_code}』")
+        w("     → 可能：名字打错／已退市／快照源失败")
+        w("     ★找不到 = 我没有它的任何数据 = 一票否决，不许推荐★")
+        w("=" * 60)
+        return None
+    if len(hits) > 1:
+        w(f"  ⚠️ 匹配到 {len(hits)} 只，全部列出（请确认是哪一只）：")
+        for c, n in hits:
+            w(f"     {n}({c})")
+        w("")
+    code, real = hits[0]
+    d = print_deep_stock(code, real)
+
+    # ── 评分（与流水线同一套标准）──
+    sc, why, miss = 0.0, [], []
+    px = d.get("现价")
+    ma5, ma20 = d.get("MA5"), d.get("MA20")
+    if ma5 and ma20 and px:
+        if px >= ma5 and px < ma20:
+            sc += 4; why.append("站上MA5仍在MA20下(启动位)")
+        elif px >= ma5:
+            sc += 2; why.append("双线之上")
+        else:
+            sc -= 2; why.append("跌破MA5")
+    else:
+        miss.append("技术位置")
+    z = d.get("超大单净额")
+    if z is not None:
+        zz = d.get("中单净额") or 0
+        if z > 0:
+            sc += 4; why.append(f"超大单+{z/1e4:.0f}万")
+        elif zz > 0:
+            sc -= 4; why.append("🔴超大单流出中单接盘=主力出货")
+        else:
+            sc -= 1
+    else:
+        miss.append("个股资金流")
+    d5 = d.get("主力5日累计")
+    if d5 is not None and d5 > 0:
+        sc += 2; why.append(f"主力5日+{d5/1e8:.2f}亿")
+    g = d.get("涨跌幅")
+    if g is not None:
+        if g > 5:
+            sc -= 2; why.append(f"⚠️当天已涨{g:.1f}%=追高")
+        elif g < 0:
+            sc += 2; why.append(f"当天{g:.1f}%(没涨)")
+        elif g < 2:
+            sc += 1.5
+    pe = d.get("市盈率")
+    if pe is not None:
+        if 0 < pe <= 60:
+            sc += 1.5
+        elif pe > 120:
+            sc -= 1.5; why.append(f"⚠️PE{pe:.0f}偏高")
+    ny = d.get("净利同比")
+    if ny:
+        try:
+            v = float(str(ny).replace("%", "").replace(",", ""))
+            if v > 30:
+                sc += 2; why.append(f"净利同比+{v:.0f}%")
+            elif v < -30:
+                sc -= 2; why.append(f"⚠️净利同比{v:.0f}%")
+        except Exception:
+            pass
+    else:
+        miss.append("财务基本面")
+    ni = d.get("机构席位数")
+    if ni is not None:
+        if ni >= 5:
+            sc += 2; why.append(f"机构{ni}席")
+        elif ni == 0:
+            sc -= 1.5; why.append("⚠️无机构")
+    else:
+        miss.append("股东结构")
+
+    w(f"\n  ★综合得分：{sc:.1f}")
+    w(f"  ★依据：{' | '.join(why) if why else '无'}")
+    if miss:
+        w(f"  🔴【无数据】{len(miss)}项：{'、'.join(miss)}")
+    # ── 结论（写死，不许临场改）──
+    w("\n  ── 结论 ──")
+    if len(miss) >= 2:
+        w("  🔴【不许推荐】缺2项以上核心数据，等于没查清楚")
+    elif len(miss) == 1:
+        w(f"  ⚠️【只许试探仓 ≤6%】缺【{miss[0]}】")
+    elif sc >= 8:
+        w("  ✅【可推荐 · 仓位11-20%】证据齐全且强")
+    elif sc >= 4:
+        w("  ⚠️【可小仓 ≤11%】证据一般")
+    else:
+        w("  🔴【不推荐】数据齐全，但证据不支持")
+    w("  ⚠️ 仍需人工过①-B：它靠什么赚钱？和板块涨的原因是同一个吗？")
+    w("=" * 60)
+    return d
+
+
 def scan_pipeline():
     """★★★V11.0 选股流水线：新闻→美股→板块→成分股→全维度→选一只★★★"""
     w("\n" + "=" * 60)
@@ -5701,7 +5850,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V11.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V11.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5766,6 +5915,15 @@ def main():
     scan_sell_card()
     scan_decision_card()
 
+    # ★★V11.2：环境变量 CHECK 可指定任意票做即时体检（逗号分隔多只）★★
+    _chk = os.environ.get("CHECK", "").strip()
+    if _chk:
+        for _one in [x.strip() for x in _chk.replace("，", ",").split(",") if x.strip()]:
+            try:
+                check_stock(_one)
+            except Exception as _e:
+                w(f"  [体检失败] {_one}: {type(_e).__name__}")
+
     os.makedirs("reports", exist_ok=True)
     text = "\n".join(REPORT)
     date = bj.strftime("%Y%m%d")
@@ -5775,7 +5933,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V11.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V11.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
