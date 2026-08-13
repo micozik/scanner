@@ -31,6 +31,7 @@ CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
 
 # ★★V8.0 全局缓存：供跨模块使用★★
+SECTOR_JUMP_MAP = {}   # ★V9.7 {板块名: 排名跳升位数}。正=上升，是【领先指标】
 FAST_MODE = False      # ★V8.9 快扫模式开关
 SECTOR_FLOW_MAP = {}   # {板块名: 主力净额(亿)} 由 scan_sector_flow 填充
 TODAY_NEWS = []        # [(时间, 标题)] 由 scan_news 填充，供【我的持仓相关消息】用
@@ -524,6 +525,19 @@ def scan_tomorrow_gate():
         else:
             w("  >>> 【明日健康】可按七关开仓")
     safe_run("次日预判", _do)
+
+
+def _rank_jump_of(name):
+    """★V9.7 板块名 → 排名跳升位数（正=上升）。领先指标。"""
+    if not name:
+        return None
+    if name in SECTOR_JUMP_MAP:
+        return SECTOR_JUMP_MAP[name]
+    n = str(name).rstrip("概念行业板块产业指数ⅡⅢ")
+    for k, v in SECTOR_JUMP_MAP.items():
+        if n and (n in k or k in n):
+            return v
+    return None
 
 
 def _sector_flow_of(name):
@@ -1607,6 +1621,13 @@ def _fmt_tag(hist, name, today, rank_now, pct_now):
     c3 = f" 3日{cum:+.1f}%" if len(ds) >= 2 else ""
     rk = ""
     if prev:
+        # ★★V9.7：跳升位数存进全局，供【全板块交叉】当【领先指标】打分★★
+        # 8/13教训：资金流是滞后指标(记录钱已流过的地方)，
+        #   排名跳升才是领先的(CRO今天从358跳到第1，昨天它还在358名、资金为负)
+        try:
+            SECTOR_JUMP_MAP[str(name)] = int(prev) - int(rank_now)
+        except Exception:
+            pass
         if prev - rank_now >= 8:
             rk = f" 🚀{prev}→{rank_now}名"
         elif rank_now - prev >= 8:
@@ -4095,24 +4116,55 @@ def scan_all_sector_cross(uniq_news):
             if chg is not None and pd.notna(chg):
                 c = float(chg)
                 pos = 3 if c < 0 else (2 if c < 1.5 else (1 if c < 4 else -1))
-            # ★★V8.0 资金分：钱在流出的板块，新闻再好也不该排第一★★
+            # ★★★V9.7 领先/滞后指标权重重构★★★
+            # ★8/13血的教训（一天两笔）：
+            #   紫光股份：8/12我说"计算机设备资金-0.08亿，钱不在它那条腿" → 建议清仓
+            #             8/13 计算机设备资金+9.79亿，紫光+5.16%，少赚1,145元
+            #   创新药ETF：8/12我说"医疗服务-16.81亿，该卖" → 建议卖出
+            #             8/13 医疗服务+4.28%全场第1、资金+9.35亿，它+5.18%
+            # ★根因：资金流是【滞后指标】——它记录钱【已经流过】的地方。
+            #   而【排名跳升】是领先指标：CRO今天从358名跳到第1名，
+            #   昨天它还在358名、资金也是负的。
+            # ★修正：
+            #   ① 跳升分（领先）：新增，权重最高
+            #   ② 资金分（滞后）：从±12压到±6，且【流出不再重罚】
+            #      ——昨天流出可能正是今天启动的前夜
+            _jump = _rank_jump_of(nm)
+            jsc, jtxt = 0, ""
+            if _jump is not None:
+                if _jump >= 100:
+                    jsc, jtxt = 10, f" 🚀跳升{_jump}位(领先信号)"
+                elif _jump >= 50:
+                    jsc, jtxt = 7, f" 🚀跳升{_jump}位"
+                elif _jump >= 30:
+                    jsc, jtxt = 5, f" 🚀跳升{_jump}位"
+                elif _jump >= 10:
+                    jsc, jtxt = 2, f" ↗升{_jump}位"
+                elif _jump <= -30:
+                    jsc, jtxt = -3, f" 📉退{-_jump}位"
             fl = _sector_flow_of(nm)
             fsc, ftxt = 0, ""
             if fl is not None:
+                # ★V9.7：流入仍加分，但【流出不再重罚】
+                #   —— 昨天流出可能正是今天启动的前夜（8/13医药就是）
                 if fl >= 20:
-                    fsc, ftxt = 6, f" 资金+{fl:.0f}亿🔥"
+                    fsc, ftxt = 5, f" 资金+{fl:.0f}亿🔥"
                 elif fl >= 5:
-                    fsc, ftxt = 4, f" 资金+{fl:.0f}亿✅"
+                    fsc, ftxt = 3, f" 资金+{fl:.0f}亿✅"
                 elif fl > 0:
-                    fsc, ftxt = 2, f" 资金+{fl:.1f}亿"
+                    fsc, ftxt = 1, f" 资金+{fl:.1f}亿"
                 elif fl > -20:
-                    fsc, ftxt = -2, f" 资金{fl:.1f}亿⚠️"
+                    fsc, ftxt = -1, f" 资金{fl:.1f}亿"
                 elif fl > -80:
-                    fsc, ftxt = -6, f" 资金{fl:.0f}亿🔴"
+                    fsc, ftxt = -3, f" 资金{fl:.0f}亿⚠️"
                 else:
-                    fsc, ftxt = -12, f" 资金{fl:.0f}亿🔴🔴失血"
-            results.append((net * 2 + pos + fsc, kind, nm, chg, net,
-                            len(bull), len(bear), bull, ftxt))
+                    fsc, ftxt = -6, f" 资金{fl:.0f}亿🔴失血"
+                # ★反常加分：资金流出但板块在涨 = 有人在恐慌里收货（铁律K）
+                if fl < 0 and chg is not None and pd.notna(chg) and float(chg) > 1:
+                    fsc += 3
+                    ftxt += " ★反常:资金出但板块涨"
+            results.append((net * 2 + pos + fsc + jsc, kind, nm, chg, net,
+                            len(bull), len(bear), bull, ftxt + jtxt))
 
         if not results:
             w("  今日无板块命中≥2条新闻")
@@ -4133,8 +4185,14 @@ def scan_all_sector_cross(uniq_news):
             results = _dedup
         w("\n  ★★【有催化 且 位置好 且 钱在进】前15（净利多×2 + 位置分 + 资金分）：")
         w("    位置分：跌着有催化=3 | 微涨<1.5%=2 | 涨1.5-4%=1 | 涨>4%=-1")
-        w("    ★V8.0资金分：+20亿↑=+6 | +5亿↑=+4 | 正=+2 | 负=-2 | -20亿↓=-6 | -80亿↓=-12")
-        w("       8/10教训：半导体资金-132亿全场最大流出，旧模型仍给它16分排第1")
+        w("    ★V9.7跳升分(领先指标，权重最高)：跳100位↑=+10 | 50位↑=+7 | 30位↑=+5 | 10位↑=+2 | 退30位↓=-3")
+        w("    ★V9.7资金分(滞后指标，权重减半)：+20亿↑=+5 | +5亿↑=+3 | 正=+1 | -20亿↓=-3 | -80亿↓=-6")
+        w("       ★反常加分：资金流出但板块在涨 = 有人在恐慌里收货(铁律K) +3")
+        w("    ⚠️8/13教训：资金流记录的是钱【已经流过】的地方，不是要去的地方。")
+        w("       紫光(计算机设备-0.08亿→次日+9.79亿，股价+5.16%)")
+        w("       创新药(医疗服务-16.81亿→次日全场第1，ETF+5.18%)")
+        w("       两笔我都用『昨天资金流出』劝卖，两笔都错。")
+        w("       而CRO今天从358名跳到第1名——昨天它资金也是负的。")
         for i, (sc, kind, nm, chg, net, nb, nr, _, ftxt) in enumerate(results[:15], 1):
             ct = f"{chg:+.2f}%" if chg is not None and pd.notna(chg) else "?"
             flag = ""
@@ -4902,7 +4960,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V9.6 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V9.7 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -4974,7 +5032,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V9.6完成 {prefix}_最新.txt")
+    print(f"\n✅ V9.7完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
