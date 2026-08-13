@@ -952,11 +952,19 @@ def scan_deep_stock(code, name=""):
         except Exception:
             continue
 
-    # ── 3) ★★V11.1 财务基本面★★ ──
-    # 用户2026-08-13：『你什么都不查就推荐，我很害怕』
-    # 缺财务和股东，等于只看K线不看公司。
-    for fname, kw in (("stock_financial_abstract_ths", {"symbol": c6, "indicator": "按报告期"}),
-                      ("stock_financial_abstract", {"symbol": c6})):
+    # ── 3) ★★V11.5 财务基本面（重写）★★ ──
+    # 8/13两次翻车：
+    #   V11.1 取 f.iloc[0] → 报告期是1993/2006/2011年（接口按时间正序）
+    #   V11.3 加排序+False过滤 → 修过头，财务全变【无数据】，比之前更糟
+    # ★教训：修bug时把"有但错"改成"完全没有"，是倒退不是修复。
+    # 重写原则：多接口轮试 + 宽松取值 + 只在明确无效时才丢弃
+    _fin_ok = False
+    for fname, kw in (
+            ("stock_financial_abstract_ths", {"symbol": c6, "indicator": "按报告期"}),
+            ("stock_financial_abstract_ths", {"symbol": c6}),
+            ("stock_financial_abstract", {"symbol": c6}),
+            ("stock_financial_analysis_indicator", {"symbol": c6}),
+    ):
         fn = getattr(ak, fname, None)
         if fn is None:
             continue
@@ -964,70 +972,91 @@ def scan_deep_stock(code, name=""):
             f = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=18)
             if f is None or len(f) == 0:
                 continue
-            # ★★★V11.3 修复：报告期取错（8/13实测）★★★
-            # 事故：佰维显示2018-12-31、新宙邦2006-12-31、风华高科1993-12-31
-            #   —— 全是十几年前甚至三十三年前的数据。
-            # 根因：我取 f.iloc[0]，以为是最新一期。
-            #   但同花顺接口返回【按时间正序】，第一行是【最老】的。
-            # 修法：按"报告期"列排序取最大，没有该列就取最后一行。
-            row = None
-            if "ths" in fname:
+
+            def _pick_latest(df):
+                """★取最新一期：优先按报告期/日期列排序，否则比较首末行"""
+                dc = None
+                for cand in ("报告期", "日期", "报表日期", "截止日期"):
+                    if cand in df.columns:
+                        dc = cand
+                        break
+                if dc:
+                    try:
+                        t = df.copy()
+                        t["_d"] = pd.to_datetime(t[dc], errors="coerce")
+                        t = t.dropna(subset=["_d"]).sort_values("_d")
+                        if len(t):
+                            return t.iloc[-1]
+                    except Exception:
+                        pass
+                # 没有日期列：首末行都试，取"看起来是最新"的
                 try:
-                    rc = pick_col(f, ["报告期"])
-                    if rc:
-                        f2 = f.copy()
-                        f2["_dt"] = pd.to_datetime(f2[rc], errors="coerce")
-                        f2 = f2.dropna(subset=["_dt"]).sort_values("_dt")
-                        row = f2.iloc[-1] if len(f2) else f.iloc[-1]
-                    else:
-                        row = f.iloc[-1]
+                    a, b = df.iloc[0], df.iloc[-1]
+                    for cand in ("报告期", "日期"):
+                        if cand in df.columns:
+                            return a if str(a[cand]) > str(b[cand]) else b
                 except Exception:
-                    row = f.iloc[-1]
-            if row is not None:
-                for key, cols in [
-                    ("报告期", ["报告期"]),
-                    ("营业总收入", ["营业总收入"]),
+                    pass
+                return df.iloc[-1]
+
+            # 形态A：行=报告期，列=指标
+            if any(c in f.columns for c in ("报告期", "日期", "净利润", "营业总收入")):
+                row = _pick_latest(f)
+                _map = [
+                    ("报告期", ["报告期", "日期", "报表日期"]),
+                    ("营业总收入", ["营业总收入", "营业收入", "*营业总收入"]),
                     ("营收同比", ["营业总收入同比增长率", "营业收入同比增长率",
-                                  "营业总收入同比增长", "营收同比增长率", "营业收入增长率"]),
-                    ("净利润", ["净利润"]),
+                                  "营业总收入同比增长", "主营业务收入增长率"]),
+                    ("净利润", ["净利润", "归母净利润", "*净利润"]),
                     ("净利同比", ["净利润同比增长率", "归母净利润同比增长率",
-                                  "净利润同比增长", "净利润增长率"]),
-                    ("扣非净利", ["扣非净利润"]),
-                    ("每股收益", ["基本每股收益"]),
-                    ("净资产收益率", ["净资产收益率"]),
-                    ("销售毛利率", ["销售毛利率"]),
-                    ("资产负债率", ["资产负债率"]),
-                ]:
+                                  "净利润增长率"]),
+                    ("扣非净利", ["扣非净利润", "扣除非经常性损益后的净利润"]),
+                    ("每股收益", ["基本每股收益", "每股收益", "摊薄每股收益"]),
+                    ("净资产收益率", ["净资产收益率", "净资产收益率(%)", "净资产收益率-摊薄"]),
+                    ("销售毛利率", ["销售毛利率", "销售毛利率(%)", "毛利率"]),
+                    ("资产负债率", ["资产负债率", "资产负债率(%)"]),
+                ]
+                for key, cols in _map:
                     for cnm in cols:
                         if cnm in f.columns:
                             _v = row[cnm]
-                            # ★V11.3：False/nan/空 一律当【无数据】，不写进去
-                            if _v is None or (isinstance(_v, bool) and _v is False):
-                                continue
                             _sv = str(_v).strip()
-                            if _sv in ("False", "nan", "None", "--", "", "0"):
+                            # ★V11.5：只丢明确无效的，不丢"0"（0也是数据）
+                            if _sv in ("nan", "None", "--", "", "False"):
                                 continue
                             out[key] = _sv
+                            _fin_ok = True
                             break
             else:
-                # 东财版：第一列是指标名，后面是各期
-                # ★V11.3：东财版第一列是指标名，后面按时间【倒序】排，取第2列(最新)
+                # 形态B：第一列=指标名，其余列=各报告期（东财，通常按时间倒序）
                 ic = f.columns[0]
-                vc = f.columns[1] if len(f.columns) > 1 else f.columns[-1]
-                mp = {"营业总收入": "营业总收入", "净利润": "净利润",
-                      "资产负债率": "资产负债率", "净资产收益率": "净资产收益率",
-                      "销售毛利率": "销售毛利率", "基本每股收益": "每股收益"}
-                for _, rr in f.iterrows():
-                    k = str(rr[ic]).strip()
-                    if k in mp:
-                        out[mp[k]] = str(rr[vc])
-            if out.get("营业总收入") or out.get("净利润"):
+                vcs = [c for c in f.columns[1:]]
+                if vcs:
+                    vc = vcs[0]
+                    _m2 = {"营业总收入": "营业总收入", "营业收入": "营业总收入",
+                           "净利润": "净利润", "归母净利润": "净利润",
+                           "资产负债率": "资产负债率",
+                           "净资产收益率": "净资产收益率",
+                           "销售毛利率": "销售毛利率", "毛利率": "销售毛利率",
+                           "基本每股收益": "每股收益", "每股收益": "每股收益"}
+                    for _, rr in f.iterrows():
+                        k = str(rr[ic]).strip()
+                        if k in _m2:
+                            _sv = str(rr[vc]).strip()
+                            if _sv in ("nan", "None", "--", "", "False"):
+                                continue
+                            out[_m2[k]] = _sv
+                            _fin_ok = True
+                    out.setdefault("报告期", str(vc))
+            if _fin_ok:
                 break
         except Exception:
             continue
 
-    # ── 4) ★★V11.1 股东结构★★ ──
-    for fname, kw in (("stock_gdhs_detail_em", {"symbol": c6}),):
+    # ── 4) ★★V11.5 股东结构（加备源）★★ ──
+    for fname, kw in (("stock_gdhs_detail_em", {"symbol": c6}),
+                      ("stock_zh_a_gdhs_detail_em", {"symbol": c6}),
+                      ("stock_gdhs_em", {"symbol": c6})):
         fn = getattr(ak, fname, None)
         if fn is None:
             continue
@@ -1052,9 +1081,14 @@ def scan_deep_stock(code, name=""):
             continue
         try:
             pre = "sh" if c6[0] in "56" else ("bj" if c6[0] in "489" else "sz")
-            f = with_retry(lambda: fn(symbol=pre + c6), tries=1, wait=1, timeout=18)
-            if f is None or len(f) == 0:
-                f = with_retry(lambda: fn(symbol=c6), tries=1, wait=1, timeout=15)
+            f = None
+            for _sym in (pre + c6, c6, c6 + ("." + pre.upper())):
+                try:
+                    f = with_retry(lambda _s=_sym: fn(symbol=_s), tries=1, wait=1, timeout=15)
+                    if f is not None and len(f) > 0:
+                        break
+                except Exception:
+                    f = None
             if f is not None and len(f) > 0:
                 cn2 = pick_col(f, ["股东名称", "名称"])
                 cr = pick_col(f, ["占总流通股本持股比例", "持股比例", "占流通股比例"])
@@ -5967,7 +6001,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V11.4 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V11.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6050,7 +6084,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V11.4完成 {prefix}_最新.txt")
+    print(f"\n✅ V11.5完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
