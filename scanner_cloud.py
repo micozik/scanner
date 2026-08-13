@@ -636,6 +636,10 @@ def _load_watchlist():
                         _code, _name = _h[0], _h[1]
                         if not _code or len(str(_code)) < 6:
                             continue
+                        # ★V11.3：ETF不在A股快照，跳过校验
+                        if (str(_code).startswith(("15", "51", "56", "58"))
+                                or "ETF" in str(_name).upper()):
+                            continue
                         _r = _sp[_cs.str.contains(str(_code)[-6:], na=False)]
                         if len(_r) == 0:
                             _bad.append((_code, _name, "★代码在全市场查无此股★"))
@@ -958,15 +962,34 @@ def scan_deep_stock(code, name=""):
             f = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=18)
             if f is None or len(f) == 0:
                 continue
-            # 同花顺版：行是报告期，列是指标
-            row = f.iloc[0] if "ths" in fname else None
+            # ★★★V11.3 修复：报告期取错（8/13实测）★★★
+            # 事故：佰维显示2018-12-31、新宙邦2006-12-31、风华高科1993-12-31
+            #   —— 全是十几年前甚至三十三年前的数据。
+            # 根因：我取 f.iloc[0]，以为是最新一期。
+            #   但同花顺接口返回【按时间正序】，第一行是【最老】的。
+            # 修法：按"报告期"列排序取最大，没有该列就取最后一行。
+            row = None
+            if "ths" in fname:
+                try:
+                    rc = pick_col(f, ["报告期"])
+                    if rc:
+                        f2 = f.copy()
+                        f2["_dt"] = pd.to_datetime(f2[rc], errors="coerce")
+                        f2 = f2.dropna(subset=["_dt"]).sort_values("_dt")
+                        row = f2.iloc[-1] if len(f2) else f.iloc[-1]
+                    else:
+                        row = f.iloc[-1]
+                except Exception:
+                    row = f.iloc[-1]
             if row is not None:
                 for key, cols in [
                     ("报告期", ["报告期"]),
                     ("营业总收入", ["营业总收入"]),
-                    ("营收同比", ["营业总收入同比增长率", "营业收入同比增长率"]),
+                    ("营收同比", ["营业总收入同比增长率", "营业收入同比增长率",
+                                  "营业总收入同比增长", "营收同比增长率", "营业收入增长率"]),
                     ("净利润", ["净利润"]),
-                    ("净利同比", ["净利润同比增长率"]),
+                    ("净利同比", ["净利润同比增长率", "归母净利润同比增长率",
+                                  "净利润同比增长", "净利润增长率"]),
                     ("扣非净利", ["扣非净利润"]),
                     ("每股收益", ["基本每股收益"]),
                     ("净资产收益率", ["净资产收益率"]),
@@ -975,12 +998,20 @@ def scan_deep_stock(code, name=""):
                 ]:
                     for cnm in cols:
                         if cnm in f.columns:
-                            out[key] = str(row[cnm])
+                            _v = row[cnm]
+                            # ★V11.3：False/nan/空 一律当【无数据】，不写进去
+                            if _v is None or (isinstance(_v, bool) and _v is False):
+                                continue
+                            _sv = str(_v).strip()
+                            if _sv in ("False", "nan", "None", "--", "", "0"):
+                                continue
+                            out[key] = _sv
                             break
             else:
                 # 东财版：第一列是指标名，后面是各期
+                # ★V11.3：东财版第一列是指标名，后面按时间【倒序】排，取第2列(最新)
                 ic = f.columns[0]
-                vc = f.columns[2] if len(f.columns) > 2 else f.columns[-1]
+                vc = f.columns[1] if len(f.columns) > 1 else f.columns[-1]
                 mp = {"营业总收入": "营业总收入", "净利润": "净利润",
                       "资产负债率": "资产负债率", "净资产收益率": "净资产收益率",
                       "销售毛利率": "销售毛利率", "基本每股收益": "每股收益"}
@@ -1064,6 +1095,13 @@ def print_deep_stock(code, name=""):
     d = scan_deep_stock(code, name)
     w(f"\n  ══════ 【个股深度体检】{name}({code}) ══════")
     rn = d.get("真实名称")
+    # ★V11.3：ETF/LOF不在A股快照里，不算"查无此股"
+    if not rn and (str(code).startswith(("15", "51", "56", "58", "159", "510"))
+                   or "ETF" in str(name).upper()):
+        w(f"  0️⃣ 代码核对：{code} ⚠️ETF/基金不在A股快照，改用ETF专用源")
+        w(f"     （不是查无此股。ETF的价格见【重点盯盘】那一节的[ETF源]标记）")
+        w("  ═══════════════════════════════════")
+        return d
     if rn:
         ok = (not name) or (rn == name) or (name in rn) or (rn in name)
         w(f"  0️⃣ 代码核对：{code} → 实际名称【{rn}】 "
@@ -3976,7 +4014,15 @@ def scan_pipeline():
     # ── 第1步：方向（来自热力图 + 推演验证信号 + 跳升榜）──
     w("\n  ── 第1步：今日方向（新闻催化 × 验证信号 × 排名跳升）──")
     dirs = {}          # {板块名: 得分}
-    for nm, sc in (globals().get("TODAY_HEAT_TOP3") or [])[:3]:
+    # ★V11.3 修复：TODAY_HEAT_TOP3 是【字符串列表】不是元组
+    # 8/13报错：ValueError: too many values to unpack (expected 2)
+    for _it in (globals().get("TODAY_HEAT_TOP3") or [])[:3]:
+        try:
+            nm = _it[0] if isinstance(_it, (tuple, list)) else str(_it)
+        except Exception:
+            continue
+        if not nm:
+            continue
         dirs[nm] = dirs.get(nm, 0) + 3
         w(f"    热力图前3：{nm} (+3)")
     for nm, jp in sorted(SECTOR_JUMP_MAP.items(), key=lambda x: -x[1])[:8]:
@@ -3996,6 +4042,23 @@ def scan_pipeline():
         return
     top_dirs = sorted(dirs.items(), key=lambda x: -x[1])[:3]
     w(f"\n  ★方向前3：" + " ｜ ".join(f"{n}({v}分)" for n, v in top_dirs))
+
+    # ★V11.3：热力图/推演用的是自定义链名（如"存储涨价 → 传导链"），
+    # 板块成分股接口只认真实板块名 → 先做映射
+    _ALIAS = {
+        "存储芯片": "半导体", "存储涨价 → 传导链": "半导体",
+        "光模块/CPO": "通信设备", "光模块 → 上游光芯片": "通信设备",
+        "算力/云计算": "计算机设备", "AI算力 → 散热": "专用设备",
+        "创新药/医药": "医疗服务", "AI+制药 → CXO/算力": "医疗服务",
+        "半导体设备/材料": "半导体", "MLCC涨价 → 被动元件": "元件",
+        "机器人量产 → 零部件": "自动化设备", "有色/稀土": "小金属",
+        "电力/核电/特高压": "电力", "核电核准 → 设备链": "电力",
+        "特高压 → 设备链": "电网设备", "锂电/钠电": "电池",
+        "养殖/农业": "养殖业", "软件/EDA/AI应用": "软件开发",
+        "油气/煤炭": "煤炭开采",
+    }
+    top_dirs = [(_ALIAS.get(n, n), v) for n, v in top_dirs]
+    w(f"  ★映射为真实板块：" + " ｜ ".join(f"{n}({v}分)" for n, v in top_dirs))
 
     # ── 第2步：取这些板块的成分股 ──
     w("\n  ── 第2步：从这些板块取成分股 ──")
@@ -5850,7 +5913,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V11.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V11.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5933,7 +5996,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V11.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V11.3完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
