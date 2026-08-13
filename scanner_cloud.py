@@ -241,10 +241,17 @@ def get_spot():
     global SPOT_DF, SPOT_SRC
     if SPOT_DF is not None:
         return SPOT_DF
+    # ★★★V12.0（8/13根因）：换源优先级★★★
+    # 今天所有失败的接口全是【新浪/东财/巨潮】，而【同花顺】一次没挂过
+    #   （板块榜/板块资金/埋伏池/K线 全走同花顺，全部成功）
+    # 报告里上个实例早就写过："东财对海外服务器封锁"。
+    # GitHub Actions 在海外 → 东财/新浪的个股详情类接口被封或超时。
+    # ★不是代码逻辑问题，是【源选错了】。全部改同花顺优先。
     sources = [
-        ("新浪", lambda: ak.stock_zh_a_spot()),
-        ("东财", lambda: ak.stock_zh_a_spot_em()),
         ("同花顺", lambda: ak.stock_zh_a_spot_ths()),
+        ("东财-实时", lambda: ak.stock_zh_a_spot_em()),
+        ("新浪", lambda: ak.stock_zh_a_spot()),
+        ("东财-涨跌幅榜", lambda: ak.stock_zh_a_spot_em()),
     ]
     for nm, fn in sources:
         try:
@@ -916,8 +923,11 @@ def scan_deep_stock(code, name=""):
             pass
 
     # ── 2) 个股资金流：超大单/大单/中单/小单 + 多日 ──
-    for fname, kw in (("stock_individual_fund_flow", {"stock": c6}),
-                      ("stock_individual_fund_flow", {"stock": c6, "market": "sh" if c6[0] in "56" else "sz"})):
+    # ★V12.0：先试同花顺个股资金（东财的 stock_individual_fund_flow 今天全挂）
+    _mkt = "sh" if c6[0] in "56" else ("bj" if c6[0] in "489" else "sz")
+    for fname, kw in (("stock_fund_flow_individual", {"symbol": "即时"}),
+                      ("stock_individual_fund_flow", {"stock": c6, "market": _mkt}),
+                      ("stock_individual_fund_flow", {"stock": c6})):
         fn = getattr(ak, fname, None)
         if fn is None:
             continue
@@ -925,6 +935,30 @@ def scan_deep_stock(code, name=""):
             f = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=20)
             if f is None or len(f) == 0:
                 continue
+            # ★V12.0：同花顺返回全市场表，要先按代码筛出这一只
+            if fname == "stock_fund_flow_individual":
+                cc2 = pick_col(f, ["股票代码", "代码"])
+                if not cc2:
+                    continue
+                f = f[f[cc2].astype(str).str[-6:] == c6]
+                if len(f) == 0:
+                    continue
+                last = f.iloc[0]
+                for key, cols in [("主力净额", ["净额", "资金净流入", "主力净额"]),
+                                  ("超大单净额", ["超大单净额", "超大单净流入"]),
+                                  ("大单净额", ["大单净额", "大单净流入"]),
+                                  ("中单净额", ["中单净额", "中单净流入"]),
+                                  ("小单净额", ["小单净额", "小单净流入"])]:
+                    col = pick_col(f, cols)
+                    if col:
+                        v = pd.to_numeric(str(last[col]).replace("亿", "").replace("万", ""),
+                                          errors="coerce")
+                        if pd.notna(v):
+                            # 同花顺单位是"亿"或"万"，统一成元
+                            _raw = str(last[col])
+                            _mul = 1e8 if "亿" in _raw else (1e4 if "万" in _raw else 1)
+                            out[key] = float(v) * _mul
+                break
             last = f.iloc[-1]
             for key, cols in [
                 ("主力净额", ["主力净流入-净额"]),
@@ -959,11 +993,14 @@ def scan_deep_stock(code, name=""):
     # ★教训：修bug时把"有但错"改成"完全没有"，是倒退不是修复。
     # 重写原则：多接口轮试 + 宽松取值 + 只在明确无效时才丢弃
     _fin_ok = False
+    # ★V12.0：同花顺(_ths)优先，东财类靠后；并加"按单季度/按年度"多口径
     for fname, kw in (
             ("stock_financial_abstract_ths", {"symbol": c6, "indicator": "按报告期"}),
+            ("stock_financial_abstract_ths", {"symbol": c6, "indicator": "按单季度"}),
+            ("stock_financial_abstract_ths", {"symbol": c6, "indicator": "按年度"}),
             ("stock_financial_abstract_ths", {"symbol": c6}),
+            ("stock_financial_analysis_indicator", {"symbol": c6, "start_year": "2025"}),
             ("stock_financial_abstract", {"symbol": c6}),
-            ("stock_financial_analysis_indicator", {"symbol": c6}),
     ):
         fn = getattr(ak, fname, None)
         if fn is None:
@@ -1054,9 +1091,12 @@ def scan_deep_stock(code, name=""):
             continue
 
     # ── 4) ★★V11.5 股东结构（加备源）★★ ──
+    # ★V12.0：东财 gdhs 系列今天全挂，加同花顺主营/股东接口
     for fname, kw in (("stock_gdhs_detail_em", {"symbol": c6}),
                       ("stock_zh_a_gdhs_detail_em", {"symbol": c6}),
-                      ("stock_gdhs_em", {"symbol": c6})):
+                      ("stock_gdhs_em", {"symbol": c6}),
+                      ("stock_main_stock_holder", {"stock": c6}),
+                      ("stock_circulate_stock_holder", {"symbol": c6})):
         fn = getattr(ak, fname, None)
         if fn is None:
             continue
@@ -3886,12 +3926,13 @@ def _placement_from_announce():
 def _board_cons(board_name, kind="行业"):
     """取板块成分股。返回 [(代码,名称)]"""
     fns = []
+    # ★V12.0：同花顺优先（东财对海外服务器封锁）
     if kind == "行业":
-        fns = [("东财", "stock_board_industry_cons_em"),
-               ("同花顺", "stock_board_industry_cons_ths")]
+        fns = [("同花顺", "stock_board_industry_cons_ths"),
+               ("东财", "stock_board_industry_cons_em")]
     else:
-        fns = [("东财", "stock_board_concept_cons_em"),
-               ("同花顺", "stock_board_concept_cons_ths")]
+        fns = [("同花顺", "stock_board_concept_cons_ths"),
+               ("东财", "stock_board_concept_cons_em")]
     for tag, fname in fns:
         fn = getattr(ak, fname, None)
         if fn is None:
@@ -4296,6 +4337,12 @@ def scan_all_deep():
     w("    市盈率/换手/量比全没查，报告显示27.63元而实际163.46元。")
     w("  ★用户原话：『你什么都不查就推荐，我很害怕』")
     w("  ⚠️ 本表【无数据】的字段，不许在推荐里编一个数出来。")
+    w("  ★★V12.0诊断（8/13根因）：GitHub Actions服务器在海外，")
+    w("    【东财/新浪的个股详情类接口】对它封锁或超时 ——")
+    w("    快照/财务/股东/个股资金 今天全挂，而同花顺的板块类接口一次没挂。")
+    w("    → 已把个股类接口全部改为【同花顺优先】。")
+    w("    ⚠️ 若本表仍大面积【无数据】，说明同花顺也拿不到，")
+    w("       那就【只能靠用户从同花顺APP截图】，不是代码能修的。")
 
     targets = []
     for _t in WATCH_STOCKS:
@@ -6001,7 +6048,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V11.5 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V12.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6084,7 +6131,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V11.5完成 {prefix}_最新.txt")
+    print(f"\n✅ V12.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
