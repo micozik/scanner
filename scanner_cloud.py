@@ -860,6 +860,157 @@ def _sect_txt(sect_map, sect):
     return f"\n      └ 板块[{sect}] 无数据"
 
 
+def scan_deep_stock(code, name=""):
+    """★★★V10.1【个股深度体检】推荐前必须跑这个★★★
+
+    ★写这条的原因（2026-08-13，用户原话『你什么都不查就推荐，我很害怕』）：
+      我推香农芯创时，六项检查只做到一项：
+        代码核对❌(写成603322，实际300475) 个股资金流❌ 主力成本❌
+        当天公告⚠️ 同链对比✅ 当天涨幅❌(查的是错票的27.63，实际163.46)
+      财务(市盈率41.13/市值763亿) 技术(换手6.19%/量比1.21) —— 全部没查。
+    ★根因：报告里只有【板块级】数据，我一直在用板块判断推个股操作。
+      看的是森林，用户买的是树。
+
+    返回一个 dict，抓不到的字段为 None（★不许编★）
+    """
+    out = {"code": code, "name": name}
+    c6 = str(code)[-6:]
+
+    # ── 1) 实时快照：价格/涨跌/换手/量比/市盈/市值 ──
+    sp = get_spot()
+    if sp is not None:
+        try:
+            cc = pick_col(sp, ["代码", "code"])
+            r = sp[sp[cc].astype(str).str.contains(c6, na=False)]
+            if len(r) > 0:
+                r0 = r.iloc[0]
+                for key, cols in [
+                    ("真实名称", ["名称", "name"]),
+                    ("现价", ["最新价", "trade"]),
+                    ("涨跌幅", ["涨跌幅", "changepercent"]),
+                    ("成交额", ["成交额", "amount"]),
+                    ("换手率", ["换手率", "turnoverratio"]),
+                    ("量比", ["量比"]),
+                    ("市盈率", ["市盈率-动态", "市盈率", "pe"]),
+                    ("市净率", ["市净率", "pb"]),
+                    ("总市值", ["总市值", "mktcap"]),
+                    ("流通市值", ["流通市值", "nmc"]),
+                    ("振幅", ["振幅"]),
+                ]:
+                    col = pick_col(sp, cols)
+                    if col:
+                        v = r0[col]
+                        if key == "真实名称":
+                            out[key] = str(v).strip()
+                        else:
+                            v2 = pd.to_numeric(v, errors="coerce")
+                            out[key] = float(v2) if pd.notna(v2) else None
+        except Exception:
+            pass
+
+    # ── 2) 个股资金流：超大单/大单/中单/小单 + 多日 ──
+    for fname, kw in (("stock_individual_fund_flow", {"stock": c6}),
+                      ("stock_individual_fund_flow", {"stock": c6, "market": "sh" if c6[0] in "56" else "sz"})):
+        fn = getattr(ak, fname, None)
+        if fn is None:
+            continue
+        try:
+            f = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=20)
+            if f is None or len(f) == 0:
+                continue
+            last = f.iloc[-1]
+            for key, cols in [
+                ("主力净额", ["主力净流入-净额"]),
+                ("超大单净额", ["超大单净流入-净额"]),
+                ("大单净额", ["大单净流入-净额"]),
+                ("中单净额", ["中单净流入-净额"]),
+                ("小单净额", ["小单净流入-净额"]),
+            ]:
+                col = pick_col(f, cols)
+                if col:
+                    v = pd.to_numeric(last[col], errors="coerce")
+                    out[key] = float(v) if pd.notna(v) else None
+            # 近5日主力累计
+            try:
+                col = pick_col(f, ["主力净流入-净额"])
+                if col and len(f) >= 5:
+                    out["主力5日累计"] = float(pd.to_numeric(
+                        f[col].tail(5), errors="coerce").sum())
+                if col and len(f) >= 20:
+                    out["主力20日累计"] = float(pd.to_numeric(
+                        f[col].tail(20), errors="coerce").sum())
+            except Exception:
+                pass
+            break
+        except Exception:
+            continue
+
+    # ── 3) 技术位置：MA5/MA20/60日涨跌/缩量 ──
+    try:
+        k5, k20 = _hist_close(c6)
+        if k5:
+            out["MA5"] = k5
+        if k20:
+            out["MA20"] = k20
+    except Exception:
+        pass
+
+    return out
+
+
+def print_deep_stock(code, name=""):
+    """★V10.1 打印个股深度体检表。抓不到的写【无数据】，不许编"""
+    d = scan_deep_stock(code, name)
+    w(f"\n  ══════ 【个股深度体检】{name}({code}) ══════")
+    rn = d.get("真实名称")
+    if rn:
+        ok = (not name) or (rn == name) or (name in rn) or (rn in name)
+        w(f"  0️⃣ 代码核对：{code} → 实际名称【{rn}】 "
+          + ("✅一致" if ok else f"🔴🔴不符！你要的是【{name}】"))
+    else:
+        w(f"  0️⃣ 代码核对：🔴 {code} 在全市场【查无此股】→ 一票否决")
+        w("  ═══════════════════════════════════")
+        return d
+
+    def _f(k, unit="", div=1.0):
+        v = d.get(k)
+        if v is None:
+            return "【无数据】"
+        return f"{v/div:,.2f}{unit}"
+
+    w(f"  📊 行情：现价{_f('现价')} 今{_f('涨跌幅','%')} "
+      f"振幅{_f('振幅','%')} 成交{_f('成交额','亿',1e8)}")
+    w(f"  📊 估值：市盈率(动){_f('市盈率')} 市净率{_f('市净率')} "
+      f"总市值{_f('总市值','亿',1e8)} 流通{_f('流通市值','亿',1e8)}")
+    w(f"  📊 情绪：换手率{_f('换手率','%')} 量比{_f('量比')}")
+    ma5, ma20 = d.get("MA5"), d.get("MA20")
+    px = d.get("现价")
+    if ma5 and ma20 and px:
+        w(f"  📊 技术：MA5={ma5:.2f} MA20={ma20:.2f} → "
+          + ("站上MA5" if px >= ma5 else "跌破MA5")
+          + "，" + ("站上MA20" if px >= ma20 else "★仍在MA20下方(位置低)★"))
+    else:
+        w("  📊 技术：【无数据】")
+
+    z, dd, zz, xx = (d.get("超大单净额"), d.get("大单净额"),
+                     d.get("中单净额"), d.get("小单净额"))
+    if z is not None:
+        w(f"  💰 个股资金(今日)：超大单{z/1e4:+,.0f}万 大单{(dd or 0)/1e4:+,.0f}万 "
+          f"中单{(zz or 0)/1e4:+,.0f}万 小单{(xx or 0)/1e4:+,.0f}万")
+        if z < 0 and (zz or 0) > 0:
+            w("     🔴★超大单流出 + 中单接盘 = 主力在出货，不管当天涨跌★")
+        elif z > 0:
+            w("     ✅超大单净流入")
+        d5, d20 = d.get("主力5日累计"), d.get("主力20日累计")
+        if d5 is not None:
+            w(f"     主力5日累计{d5/1e8:+.2f}亿"
+              + (f" ｜20日累计{d20/1e8:+.2f}亿" if d20 is not None else ""))
+    else:
+        w("  💰 个股资金：【无数据】← ★这一项没有就不许给重仓建议★")
+    w("  ═══════════════════════════════════")
+    return d
+
+
 def scan_focus_stocks():
     w("\n★★★【重点盯盘个股·独立跟踪】★★★（每天全维度盯，不看截图）")
 
@@ -3432,6 +3583,47 @@ def _placement_from_announce():
     w("     完整历史需要 stock_qbzf_em 接口恢复。")
 
 
+def scan_all_deep():
+    """★★V10.1：对【所有持仓 + 候选池】逐只跑深度体检★★
+    ★用户原话：『你什么都不查就推荐，我很害怕』
+    ★从今天起，任何标的在被推荐前，这张表必须已经在报告里。
+      表里没有 = 我没数据 = 不许给买点、不许给价格、不许给仓位。
+    """
+    w("\n" + "=" * 60)
+    w("🔬🔬【个股深度体检】推荐前必查 —— 财务/技术/资金/代码 🔬🔬")
+    w("=" * 60)
+    w("  ★2026-08-13事故：我推香农芯创，六项检查只做到一项。")
+    w("    代码写成603322(实际300475)、个股资金没查、主力成本没查、")
+    w("    市盈率/换手/量比全没查，报告显示27.63元而实际163.46元。")
+    w("  ★用户原话：『你什么都不查就推荐，我很害怕』")
+    w("  ⚠️ 本表【无数据】的字段，不许在推荐里编一个数出来。")
+
+    targets = []
+    for _t in WATCH_STOCKS:
+        try:
+            _code, _name, _tag = _t[0], _t[1], _t[2]
+        except Exception:
+            continue
+        if _tag in ("持仓", "候选", "重点观察"):
+            targets.append((_code, _name, _tag))
+    if not targets:
+        w("  清单为空")
+        w("=" * 60)
+        return
+    # 持仓优先，候选其次
+    targets.sort(key=lambda x: {"持仓": 0, "候选": 1}.get(x[2], 2))
+    n_bad = 0
+    for _code, _name, _tag in targets[:24]:
+        w(f"\n  [{_tag}]")
+        _d = print_deep_stock(_code, _name)
+        _rn = _d.get("真实名称")
+        if not _rn or (_name and _rn != _name and _name not in _rn and _rn not in _name):
+            n_bad += 1
+    if n_bad:
+        w(f"\n  🔴🔴 有 {n_bad} 只【代码与名称不符或查无此股】→ 立刻改 我的清单.txt")
+    w("=" * 60)
+
+
 def scan_reco_checklist():
     """★★★V9.4【推荐前强制检查表】★★★
 
@@ -5080,7 +5272,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V10.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V10.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5126,6 +5318,7 @@ def main():
         safe_run("事件驱动雷达", scan_event_radar)
         safe_run("定增破发雷达", scan_placement_radar)
         safe_run("推荐前检查表", scan_reco_checklist)
+        safe_run("持仓/候选 深度体检", scan_all_deep)
     if not FAST:
         # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
         safe_run("我的持仓相关消息", scan_my_news)
@@ -5152,7 +5345,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V10.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V10.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
