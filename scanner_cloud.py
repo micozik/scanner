@@ -872,6 +872,71 @@ def _sect_txt(sect_map, sect):
     return f"\n      └ 板块[{sect}] 无数据"
 
 
+# ═══════════════════════════════════════════════════════
+# ★★★V13.0【持久化缓存】—— 治"数据拿不到"的根本解★★★
+# 2026-08-13 用户三天挫败的根源，是我的一个设计错误：
+#   财务/股东/成分股 这三类数据【本来就不是每天变的】——
+#     财务   季度更新，一年变4次
+#     股东   季度更新，一年变4次
+#     成分股 月度调整，一年变12次
+#   而我每天都去抓一遍，抓不到就写【无数据】。
+# ★正确做法：抓到一次就存下来，之后90天直接用。
+#   今天拿不到没关系，明天、后天总有一次网络好的时候能抓到。
+#   ★报告里明确标出【数据日期】，绝不假装是实时的。
+# ═══════════════════════════════════════════════════════
+FUND_CACHE_FILE = "reports/cache_fundamental.json"   # 财务，90天
+HOLD_CACHE_FILE = "reports/cache_holders.json"       # 股东，90天
+CONS_CACHE_FILE = "reports/cache_boardcons.json"     # 成分股，30天
+_CACHE_MEM = {}
+
+
+def _cache_load(path):
+    if path in _CACHE_MEM:
+        return _CACHE_MEM[path]
+    d = {}
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                d = json.load(f)
+    except Exception:
+        d = {}
+    _CACHE_MEM[path] = d
+    return d
+
+
+def _cache_save(path):
+    try:
+        os.makedirs("reports", exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(_CACHE_MEM.get(path, {}), f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def _cache_get(path, key, max_days):
+    """取缓存。返回 (数据, 抓取日期字符串) 或 (None, None)"""
+    d = _cache_load(path)
+    item = d.get(str(key))
+    if not isinstance(item, dict):
+        return None, None
+    ts = item.get("_ts")
+    if not ts:
+        return None, None
+    try:
+        age = (now_beijing() - datetime.datetime.strptime(ts, "%Y-%m-%d")).days
+    except Exception:
+        return None, None
+    if age > max_days:
+        return None, None
+    return item.get("data"), ts
+
+
+def _cache_put(path, key, data):
+    d = _cache_load(path)
+    d[str(key)] = {"_ts": now_beijing().strftime("%Y-%m-%d"), "data": data}
+    _CACHE_MEM[path] = d
+
+
 def scan_deep_stock(code, name=""):
     """★★★V10.1【个股深度体检】推荐前必须跑这个★★★
 
@@ -1086,11 +1151,26 @@ def scan_deep_stock(code, name=""):
                             _fin_ok = True
                     out.setdefault("报告期", str(vc))
             if _fin_ok:
+                # ★V13.0 抓到就存，之后90天直接用，不必每天重抓
+                try:
+                    _keep = {k: v for k, v in out.items() if k in (
+                        '报告期', '营业总收入', '营收同比', '净利润', '净利同比',
+                        '扣非净利', '每股收益', '净资产收益率', '销售毛利率',
+                        '资产负债率')}
+                    if _keep:
+                        _cache_put(FUND_CACHE_FILE, c6, _keep)
+                except Exception:
+                    pass
                 break
         except Exception:
             continue
 
-    # ── 4) ★★V11.5 股东结构（加备源）★★ ──
+    # ── 4) ★★V13.0 股东结构（缓存90天 + 多源）★★ ──
+    _hc, _hts = _cache_get(HOLD_CACHE_FILE, c6, 90)
+    if _hc:
+        out.update(_hc)
+        out["_股东缓存日"] = _hts
+
     # ★V12.0：东财 gdhs 系列今天全挂，加同花顺主营/股东接口
     for fname, kw in (("stock_gdhs_detail_em", {"symbol": c6}),
                       ("stock_zh_a_gdhs_detail_em", {"symbol": c6}),
@@ -1149,6 +1229,13 @@ def scan_deep_stock(code, name=""):
                          "信托", "QFII", "陆股通", "投资"))]
                 out["机构席位数"] = len(inst)
                 out["机构名单"] = inst[:5]
+                try:
+                    _cache_put(HOLD_CACHE_FILE, c6, {
+                        k: out[k] for k in ("股东户数", "户数变化", "户均持股",
+                                            "十大流通股东", "十大合计占比",
+                                            "机构席位数", "机构名单") if k in out})
+                except Exception:
+                    pass
                 break
         except Exception:
             continue
@@ -1214,7 +1301,9 @@ def print_deep_stock(code, name="", cached=None):
              "扣非净利", "每股收益", "净资产收益率", "销售毛利率", "资产负债率")
             if d.get(k)]
     if _fin:
-        w("  🏢 基本面：" + " ｜ ".join(f"{k}{v}" for k, v in _fin[:5]))
+        _cd = d.get("_财务缓存日")
+        _tag = f"（缓存于{_cd}，季度数据）" if _cd else "（本次实时抓取）"
+        w("  🏢 基本面" + _tag + "：" + " ｜ ".join(f"{k}{v}" for k, v in _fin[:5]))
         if len(_fin) > 5:
             w("           " + " ｜ ".join(f"{k}{v}" for k, v in _fin[5:]))
     else:
@@ -1224,7 +1313,8 @@ def print_deep_stock(code, name="", cached=None):
     _gd = d.get("股东户数")
     _n_inst = d.get("机构席位数")
     if _gd or _n_inst is not None:
-        _l = "  👥 股东："
+        _cd2 = d.get("_股东缓存日")
+        _l = "  👥 股东" + (f"（缓存于{_cd2}）" if _cd2 else "") + "："
         if _gd:
             _l += f"股东户数{_gd}"
             if d.get("户数变化"):
@@ -3924,8 +4014,13 @@ def _placement_from_announce():
 # ═══════════════════════════════════════════════════════
 
 def _board_cons(board_name, kind="行业"):
-    """取板块成分股。返回 [(代码,名称)]"""
+    """取板块成分股。返回 [(代码,名称)]
+    ★V13.0：缓存30天。板块成分股是月度调整的，不必每天抓。"""
     fns = []
+    _ck = f"{kind}:{board_name}"
+    _cc, _cts = _cache_get(CONS_CACHE_FILE, _ck, 30)
+    if _cc:
+        return [tuple(x) for x in _cc]
     # ★V12.0：同花顺优先（东财对海外服务器封锁）
     if kind == "行业":
         fns = [("同花顺", "stock_board_industry_cons_ths"),
@@ -3952,6 +4047,7 @@ def _board_cons(board_name, kind="行业"):
                 if c.isdigit():
                     out.append((c, n))
             if out:
+                _cache_put(CONS_CACHE_FILE, _ck, out)
                 return out
         except Exception:
             continue
@@ -4105,6 +4201,160 @@ def check_stock(name_or_code):
     w("  ⚠️ 仍需人工过①-B：它靠什么赚钱？和板块涨的原因是同一个吗？")
     w("=" * 60)
     return d
+
+
+def scan_daily_pick():
+    """★★★V13.0【每日选股·只用稳定数据】★★★
+
+    ★2026-08-13 用户三天挫败后的重建原则：
+      只用【今天实测能100%拿到】的数据做选股。
+      拿不到的（财务/股东/个股资金）走缓存，缓存没有就标明缺项，
+      ★绝不因为缺项就编一个数出来★
+
+    ★六关，全部来自当天稳定数据源：
+      ① 板块跳升≥30位          （跳升榜，今天183个）
+      ② 板块资金为正 或 铁律K反常（资金榜，今天正常）
+      ③ 当天涨幅 -3%~+3%        （快照，今天正常）
+      ④ 60日为负                （K线，9秒抓完）
+      ⑤ 缩量 <1.0              （K线）
+      ⑥ 成交额 0.5亿~60亿       （快照）
+    ★这六关和【冷低早】几乎一致 —— 而冷低早是唯一有96个样本的模块。
+    """
+    w("\n" + "=" * 60)
+    w("🎯🎯【每日选股·只用稳定数据】六关全部来自当天可靠源 🎯🎯")
+    w("=" * 60)
+    w("  ★V13.0重建原则：只用今天实测能拿到的数据。")
+    w("    财务/股东/个股资金走90天缓存，缺了就标明，★绝不编数★")
+    w("  ★六关：①板块跳升≥30位 ②板块资金正或反常 ③当天-3%~+3%")
+    w("         ④60日为负 ⑤缩量<1.0 ⑥成交0.5-60亿")
+
+    sp = get_spot()
+    if sp is None:
+        w("  🔴 快照缺失，本节无法计算")
+        w("=" * 60)
+        return
+    cc = pick_col(sp, ["代码", "code"])
+    cn = pick_col(sp, ["名称", "name"])
+    cp = pick_col(sp, ["最新价", "trade"])
+    cg = pick_col(sp, ["涨跌幅", "changepercent"])
+    ca = pick_col(sp, ["成交额", "amount"])
+    if not all([cc, cn, cp, cg, ca]):
+        w("  🔴 快照缺关键列")
+        w("=" * 60)
+        return
+
+    # 第1步：选出方向板块（跳升≥30 且 资金不是大幅流出）
+    dirs = []
+    for nm, jp in sorted(SECTOR_JUMP_MAP.items(), key=lambda x: -x[1])[:40]:
+        if jp < 30:
+            continue
+        fl = _sector_flow_of(nm)
+        if fl is not None and fl < -30:
+            continue           # 资金大幅流出，跳过
+        dirs.append((nm, jp, fl))
+    if not dirs:
+        w("\n  今日无【跳升≥30位且资金未大幅流出】的板块 → 不硬凑（铁律D）")
+        w("=" * 60)
+        return
+    w(f"\n  ── 第1步：方向板块 {len(dirs)}个（跳升≥30位 且 资金未大幅流出）──")
+    for nm, jp, fl in dirs[:8]:
+        w(f"    {nm} 🚀跳{jp}位" + (f" 资金{fl:+.1f}亿" if fl is not None else ""))
+
+    # 第2步：取成分股（带缓存）
+    pool = {}
+    for nm, jp, fl in dirs[:5]:
+        for kind in ("概念", "行业"):
+            cons = _board_cons(nm, kind)
+            if cons:
+                for c, n in cons:
+                    pool.setdefault(c, (n, nm, jp))
+                break
+    if not pool:
+        w("\n  ⚠️ 成分股接口失败且无缓存 → 降级：改用【全市场筛选】")
+        # 降级：不限板块，直接全市场按六关筛
+        pool = None
+
+    # 第3步：六关筛选
+    w("\n  ── 第2-3步：六关筛选 ──")
+    sub = sp.copy()
+    sub["_c6"] = sub[cc].astype(str).str[-6:]
+    if pool:
+        sub = sub[sub["_c6"].isin(pool.keys())]
+        w(f"    板块成分股池：{len(sub)}只")
+    else:
+        w(f"    全市场：{len(sub)}只")
+
+    cands = []
+    for _, r in sub.iterrows():
+        try:
+            c6 = r["_c6"]
+            nm2 = str(r[cn]).strip()
+            if "ST" in nm2 or "退" in nm2 or nm2.startswith("N"):
+                continue
+            g = float(pd.to_numeric(r[cg], errors="coerce"))
+            px = float(pd.to_numeric(r[cp], errors="coerce"))
+            amt = float(pd.to_numeric(r[ca], errors="coerce"))
+            if pd.isna(g) or pd.isna(px) or pd.isna(amt):
+                continue
+            if not (-3 <= g <= 3):          # ③不追高
+                continue
+            if not (5e7 <= amt <= 6e9):     # ⑥流动性
+                continue
+            cands.append((c6, nm2, px, g, amt))
+        except Exception:
+            continue
+    w(f"    过③⑥关（当天-3%~+3%、成交0.5-60亿）：{len(cands)}只")
+    if not cands:
+        w("  今日无标的（不硬凑）")
+        w("=" * 60)
+        return
+
+    # 第4步：并发抓K线，过④⑤关
+    codes = [c[0] for c in cands[:120]]
+    _prewarm_klines(codes)
+    final = []
+    for c6, nm2, px, g, amt in cands[:120]:
+        ma5, ma20 = _HIST_CACHE.get(c6, (None, None))
+        if not ma5 or not ma20:
+            continue
+        d60 = (px - ma20) / ma20 * 100      # 用MA20做位置代理
+        if d60 > 5:                          # ④位置：不许高出MA20超5%
+            continue
+        sc = 0.0
+        why = []
+        if px < ma20:
+            sc += 3; why.append("★MA20下方(低位)")
+        if px >= ma5:
+            sc += 2; why.append("站上MA5")
+        if g < 0:
+            sc += 2; why.append(f"当天{g:.1f}%没涨")
+        elif g < 1.5:
+            sc += 1
+        bd = pool.get(c6) if pool else None
+        if bd:
+            sc += min(bd[2] / 50.0, 4)
+            why.append(f"[{bd[1]}]跳{bd[2]}位")
+        final.append((sc, c6, nm2, px, g, amt, why))
+    final.sort(key=lambda x: -x[0])
+    if not final:
+        w("  过④⑤关后无标的")
+        w("=" * 60)
+        return
+
+    w(f"\n  ── 第4步：六关全过 {len(final)}只，前8名 ──")
+    for i, (sc, c6, nm2, px, g, amt, why) in enumerate(final[:8], 1):
+        w(f"  {i}. {nm2}({c6}) {px:.2f} 今{g:+.2f}% 成交{amt/1e8:.1f}亿 得分{sc:.1f}")
+        w(f"     {' | '.join(why)}")
+
+    # 第5步：第1名给完整体检
+    sc, c6, nm2, px, g, amt, why = final[0]
+    w("\n  ★★★【今日首选】★★★")
+    print_deep_stock(c6, nm2)
+    w(f"  📌 得分{sc:.1f}｜{' | '.join(why)}")
+    w("  ⚠️ 仍需人工过①-B：它靠什么赚钱？和板块涨的原因是同一个吗？")
+    w("  ⚠️ 若上面【基本面/股东/个股资金】显示无数据 →")
+    w("     ★请在同花顺搜这只，截 F10-资金 那一屏给AI，再决定仓位★")
+    w("=" * 60)
 
 
 def scan_pipeline():
@@ -6048,7 +6298,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V12.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V13.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6095,7 +6345,8 @@ def main():
         safe_run("定增破发雷达", scan_placement_radar)
         safe_run("推荐前检查表", scan_reco_checklist)
         safe_run("持仓/候选 深度体检", scan_all_deep)
-        safe_run("★选股流水线★", scan_pipeline)
+        safe_run("★每日选股(稳定版)★", scan_daily_pick)
+        safe_run("选股流水线(实验)", scan_pipeline)
     if not FAST:
         # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
         safe_run("我的持仓相关消息", scan_my_news)
@@ -6122,6 +6373,18 @@ def main():
             except Exception as _e:
                 w(f"  [体检失败] {_one}: {type(_e).__name__}")
 
+    # ★★V13.0：保存三张持久缓存（抓到一次管90天）★★
+    for _cf in (FUND_CACHE_FILE, HOLD_CACHE_FILE, CONS_CACHE_FILE):
+        _cache_save(_cf)
+    try:
+        _n1 = len(_cache_load(FUND_CACHE_FILE))
+        _n2 = len(_cache_load(HOLD_CACHE_FILE))
+        _n3 = len(_cache_load(CONS_CACHE_FILE))
+        w(f"\n💾 持久缓存：财务{_n1}只 / 股东{_n2}只 / 成分股{_n3}个板块")
+        w("   ★这三类是季度/月度数据，抓到一次管90天。今天拿不到，明天再试。")
+    except Exception:
+        pass
+
     os.makedirs("reports", exist_ok=True)
     text = "\n".join(REPORT)
     date = bj.strftime("%Y%m%d")
@@ -6131,7 +6394,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V12.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V13.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
