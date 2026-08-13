@@ -31,6 +31,7 @@ CONCEPT_FILE = "reports/top_concepts.json"
 WATCH_FILE = "我的清单.txt"
 
 # ★★V8.0 全局缓存：供跨模块使用★★
+TODAY_VERIFIED_CHAINS = []   # ★V11.0 今日有✅验证信号的链名
 SECTOR_JUMP_MAP = {}   # ★V9.7 {板块名: 排名跳升位数}。正=上升，是【领先指标】
 FAST_MODE = False      # ★V8.9 快扫模式开关
 SECTOR_FLOW_MAP = {}   # {板块名: 主力净额(亿)} 由 scan_sector_flow 填充
@@ -2435,6 +2436,25 @@ def scan_catalyst_heat(uniq_news):
     w("=" * 60)
 
 
+def _safe_news_one(name, fn):
+    """★V11.0 并发抓单个新闻源，失败返回空"""
+    try:
+        df = with_retry(fn, tries=1, wait=1, timeout=25)
+        if df is None or len(df) == 0:
+            return name, []
+        c_title = pick_col(df, ["标题", "内容", "新闻", "摘要"])
+        c_time = pick_col(df, ["发布时间", "时间", "日期"])
+        rows = []
+        for _, r in df.iterrows():
+            t = str(r[c_title]).strip() if c_title else ""
+            tm = str(r[c_time])[:16] if c_time else ""
+            if t and t != "nan":
+                rows.append((tm, t))
+        return name, rows
+    except Exception:
+        return name, []
+
+
 def scan_news():
     w("\n【九、新闻电报流 + 关键词雷达】全谱信息面")
 
@@ -2447,8 +2467,32 @@ def scan_news():
         ("富途", lambda: ak.stock_info_global_futu()),
     ]
 
+    # ★★V11.0 提速①：新闻6源【并发】抓取（原来串行，每源等2秒=12秒起）
     allnews, ok = [], []
-    for name, fn in sources:
+    try:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        _res = {}
+        with ThreadPoolExecutor(max_workers=6) as _ex:
+            _fut = {_ex.submit(_safe_news_one, nm, f): nm for nm, f in sources}
+            for _f in as_completed(_fut, timeout=70):
+                try:
+                    _nm, _rows = _f.result()
+                    if _rows:
+                        _res[_nm] = _rows
+                except Exception:
+                    pass
+        for _nm, _rows in _res.items():
+            allnews += _rows
+            ok.append(f"{_nm}({len(_rows)})")
+        if allnews:
+            w(f"  ⚡并发抓取完成：{len(sources)}源 → {len(allnews)}条")
+    except Exception as _e:
+        w(f"  [并发失败，改串行] {type(_e).__name__}")
+        allnews, ok = [], []
+    if allnews:
+        pass
+    else:
+      for name, fn in sources:
         try:
             items = _fetch_news(fn)
             if items:
@@ -3583,6 +3627,219 @@ def _placement_from_announce():
     w("     完整历史需要 stock_qbzf_em 接口恢复。")
 
 
+# ═══════════════════════════════════════════════════════
+# ★★★V11.0【选股流水线】—— 用户2026-08-13设计★★★
+# 用户原话：『第一步看新闻，看美股，分析板块，然后从板块里面找出股票的
+#   所有信息，分析完后结合市场信息/指标/资金/技术/股东结构/基本面/
+#   美股大趋势，选出一只股』
+#
+# ★为什么必须反过来：
+#   旧流程 = 我先想到一只票 → 再去找数据支持 → 找不到就编
+#     8/13事故：我"想起"香农芯创，凭记忆写603322（实际300475），
+#     报告显示27.63元、实际163.46元，用户按错价格下单。
+#   新流程 = 先定方向 → 从板块成分股里挖票 → 每只全维度体检 → 排序
+#     ★代码来自系统，不是我的记忆 → 从根上杜绝写错代码
+#     ★没有全维度数据的票，根本进不了候选 → 从根上杜绝"没查就推"
+# ═══════════════════════════════════════════════════════
+
+def _board_cons(board_name, kind="行业"):
+    """取板块成分股。返回 [(代码,名称)]"""
+    fns = []
+    if kind == "行业":
+        fns = [("东财", "stock_board_industry_cons_em"),
+               ("同花顺", "stock_board_industry_cons_ths")]
+    else:
+        fns = [("东财", "stock_board_concept_cons_em"),
+               ("同花顺", "stock_board_concept_cons_ths")]
+    for tag, fname in fns:
+        fn = getattr(ak, fname, None)
+        if fn is None:
+            continue
+        try:
+            df = with_retry(lambda: fn(symbol=board_name), tries=1, wait=1, timeout=20)
+            if df is None or len(df) == 0:
+                continue
+            cc = pick_col(df, ["代码", "股票代码", "code"])
+            cn = pick_col(df, ["名称", "股票简称", "name"])
+            if not cc:
+                continue
+            out = []
+            for _, r in df.iterrows():
+                c = str(r[cc])[-6:]
+                n = str(r[cn]).strip() if cn else ""
+                if c.isdigit():
+                    out.append((c, n))
+            if out:
+                return out
+        except Exception:
+            continue
+    return []
+
+
+def scan_pipeline():
+    """★★★V11.0 选股流水线：新闻→美股→板块→成分股→全维度→选一只★★★"""
+    w("\n" + "=" * 60)
+    w("🏭🏭【选股流水线】方向→板块→成分股→全维度体检→选出一只 🏭🏭")
+    w("=" * 60)
+    w("  ★用户2026-08-13设计：『先看新闻、看美股、分析板块，")
+    w("    然后从板块里找出股票的所有信息，结合指标/资金/技术/")
+    w("    股东结构/基本面/美股大趋势，选出一只股』")
+    w("  ★为什么反过来：旧流程是我先想到票再找数据，找不到就编。")
+    w("    8/13我把香农芯创写成603322(实际300475)，价差6倍。")
+    w("    ★新流程的代码来自系统，不是我的记忆。")
+
+    # ── 第1步：方向（来自热力图 + 推演验证信号 + 跳升榜）──
+    w("\n  ── 第1步：今日方向（新闻催化 × 验证信号 × 排名跳升）──")
+    dirs = {}          # {板块名: 得分}
+    for nm, sc in (globals().get("TODAY_HEAT_TOP3") or [])[:3]:
+        dirs[nm] = dirs.get(nm, 0) + 3
+        w(f"    热力图前3：{nm} (+3)")
+    for nm, jp in sorted(SECTOR_JUMP_MAP.items(), key=lambda x: -x[1])[:8]:
+        if jp >= 100:
+            dirs[nm] = dirs.get(nm, 0) + 4
+        elif jp >= 50:
+            dirs[nm] = dirs.get(nm, 0) + 3
+        elif jp >= 30:
+            dirs[nm] = dirs.get(nm, 0) + 2
+    _dv = globals().get("TODAY_VERIFIED_CHAINS") or []
+    for nm in _dv[:3]:
+        dirs[nm] = dirs.get(nm, 0) + 5
+        w(f"    ✅有验证信号的链：{nm} (+5)")
+    if not dirs:
+        w("    ⚠️ 无方向数据（热力图/跳升榜/推演均无输出）→ 流水线跳过")
+        w("=" * 60)
+        return
+    top_dirs = sorted(dirs.items(), key=lambda x: -x[1])[:3]
+    w(f"\n  ★方向前3：" + " ｜ ".join(f"{n}({v}分)" for n, v in top_dirs))
+
+    # ── 第2步：取这些板块的成分股 ──
+    w("\n  ── 第2步：从这些板块取成分股 ──")
+    pool = {}
+    for nm, _v in top_dirs:
+        for kind in ("行业", "概念"):
+            cons = _board_cons(nm, kind)
+            if cons:
+                w(f"    [{kind}]{nm}：{len(cons)}只成分股")
+                for c, n in cons:
+                    pool.setdefault(c, (n, nm))
+                break
+    if not pool:
+        w("    ⚠️ 成分股接口全部失败 → 降级：改用【冷低早+选股器】的现成名单")
+        w("=" * 60)
+        return
+    w(f"    合计去重 {len(pool)} 只")
+
+    # ── 第3步：用快照先粗筛（位置好+不追高+有量） ──
+    sp = get_spot()
+    if sp is None:
+        w("    🔴 快照缺失，流水线无法继续")
+        w("=" * 60)
+        return
+    cc = pick_col(sp, ["代码", "code"])
+    cn = pick_col(sp, ["名称", "name"])
+    cp = pick_col(sp, ["最新价", "trade"])
+    cg = pick_col(sp, ["涨跌幅", "changepercent"])
+    ca = pick_col(sp, ["成交额", "amount"])
+    ct = pick_col(sp, ["换手率", "turnoverratio"])
+    ce = pick_col(sp, ["市盈率-动态", "市盈率", "pe"])
+    sp2 = sp.copy()
+    sp2["_c6"] = sp2[cc].astype(str).str[-6:]
+    sub = sp2[sp2["_c6"].isin(pool.keys())]
+    w(f"\n  ── 第3步：快照粗筛（{len(sub)}只有行情）──")
+    cands = []
+    for _, r in sub.iterrows():
+        try:
+            c6 = r["_c6"]
+            nm = str(r[cn]).strip()
+            if "ST" in nm or "退" in nm:
+                continue
+            g = pd.to_numeric(r[cg], errors="coerce")
+            px = pd.to_numeric(r[cp], errors="coerce")
+            amt = pd.to_numeric(r[ca], errors="coerce")
+            if pd.isna(g) or pd.isna(px) or pd.isna(amt):
+                continue
+            # ★不追高：当天涨幅 -3% ~ +5%
+            if not (-3 <= float(g) <= 5):
+                continue
+            # ★有流动性但不爆炒：成交额 5千万 ~ 60亿
+            if not (5e7 <= float(amt) <= 6e9):
+                continue
+            pe = pd.to_numeric(r[ce], errors="coerce") if ce else None
+            to = pd.to_numeric(r[ct], errors="coerce") if ct else None
+            cands.append({"code": c6, "name": nm, "px": float(px),
+                          "chg": float(g), "amt": float(amt),
+                          "pe": float(pe) if pe is not None and pd.notna(pe) else None,
+                          "to": float(to) if to is not None and pd.notna(to) else None,
+                          "board": pool[c6][1]})
+        except Exception:
+            continue
+    if not cands:
+        w("    ⚠️ 粗筛后无标的（可能全部已大涨或成交异常）")
+        w("=" * 60)
+        return
+    # 涨幅小的优先
+    cands.sort(key=lambda x: x["chg"])
+    w(f"    过滤后 {len(cands)} 只（当天-3%~+5%、成交0.5-60亿、排除ST）")
+
+    # ── 第4步：对前12只跑全维度体检 ──
+    w("\n  ── 第4步：全维度体检（技术/资金/估值）──")
+    scored = []
+    for c in cands[:12]:
+        d = scan_deep_stock(c["code"], c["name"])
+        sc, why = 0.0, []
+        # 位置：站上MA5但仍在MA20下方 = 刚起来
+        ma5, ma20, px = d.get("MA5"), d.get("MA20"), c["px"]
+        if ma5 and ma20:
+            if px >= ma5 and px < ma20:
+                sc += 4; why.append("站上MA5仍在MA20下(启动位)")
+            elif px >= ma5 and px >= ma20:
+                sc += 2; why.append("双线之上")
+            else:
+                sc -= 2; why.append("跌破MA5")
+        # 资金：超大单
+        z = d.get("超大单净额")
+        if z is not None:
+            if z > 0:
+                sc += 4; why.append(f"超大单+{z/1e4:.0f}万")
+            else:
+                zz = d.get("中单净额") or 0
+                if zz > 0:
+                    sc -= 4; why.append(f"🔴超大单{z/1e4:.0f}万中单接盘")
+                else:
+                    sc -= 1; why.append(f"超大单{z/1e4:.0f}万")
+        d5 = d.get("主力5日累计")
+        if d5 is not None and d5 > 0:
+            sc += 2; why.append(f"主力5日+{d5/1e8:.2f}亿")
+        # 位置分：当天涨幅越小越好
+        sc += (2 if c["chg"] < 0 else (1.5 if c["chg"] < 2 else 0))
+        # 估值：市盈率0-60加分，>120扣分
+        if c["pe"] is not None:
+            if 0 < c["pe"] <= 60:
+                sc += 1.5; why.append(f"PE{c['pe']:.0f}")
+            elif c["pe"] > 120:
+                sc -= 1.5; why.append(f"⚠️PE{c['pe']:.0f}偏高")
+        # 换手：3-15%健康
+        if c["to"] is not None and 3 <= c["to"] <= 15:
+            sc += 1; why.append(f"换手{c['to']:.1f}%")
+        scored.append((sc, c, d, why))
+    scored.sort(key=lambda x: -x[0])
+
+    # ── 第5步：输出前5，第1名给完整决策卡 ──
+    w("\n  ── 第5步：排序结果 ──")
+    for i, (sc, c, d, why) in enumerate(scored[:5], 1):
+        w(f"  {i}. {c['name']}({c['code']}) {c['px']:.2f} 今{c['chg']:+.2f}% "
+          f"[{c['board']}] 得分{sc:.1f}")
+        w(f"     {' | '.join(why) if why else '无加分项'}")
+    if scored:
+        sc, c, d, why = scored[0]
+        w("\n  ★★★【流水线选出】★★★")
+        print_deep_stock(c["code"], c["name"])
+        w(f"  📌 方向来源：{c['board']}（今日方向前3）")
+        w(f"  📌 得分{sc:.1f}｜代码来自板块成分股接口，非AI记忆★")
+        w("  ⚠️ 仍需人工过①-B：它靠什么赚钱？和板块涨的原因是同一个吗？")
+    w("=" * 60)
+
+
 def scan_all_deep():
     """★★V10.1：对【所有持仓 + 候选池】逐只跑深度体检★★
     ★用户原话：『你什么都不查就推荐，我很害怕』
@@ -3613,7 +3870,11 @@ def scan_all_deep():
     # 持仓优先，候选其次
     targets.sort(key=lambda x: {"持仓": 0, "候选": 1}.get(x[2], 2))
     n_bad = 0
-    for _code, _name, _tag in targets[:24]:
+    # ★V11.0提速：持仓全跑，候选只跑前6只（体检要抓个股资金流，每只1-2秒）
+    _hold = [t for t in targets if t[2] == "持仓"]
+    _other = [t for t in targets if t[2] != "持仓"][:6]
+    targets = _hold + _other
+    for _code, _name, _tag in targets:
         w(f"\n  [{_tag}]")
         _d = print_deep_stock(_code, _name)
         _rn = _d.get("真实名称")
@@ -4581,6 +4842,11 @@ def scan_deduction(uniq_news, heat_top=None):
     results.sort(key=lambda x: -x[0])
 
     w("\n  ★推演价值排行（上游事实×验证信号×市场未发现度）：")
+    try:
+        globals()["TODAY_VERIFIED_CHAINS"] = [
+            r[1]["name"] for r in results[:5] if len(r[3]) > 0]
+    except Exception:
+        pass
     for i, (sc, ch, trig, ver, found, core_hits, up_hits) in enumerate(results[:8], 1):
         mk = "⚠️市场已发现" if found else "✅市场还没发现"
         w(f"    {i}. {ch['name']}：{sc}分（★核心{len(core_hits)} 泛词{len(up_hits)} "
@@ -5272,7 +5538,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V10.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V11.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5319,6 +5585,7 @@ def main():
         safe_run("定增破发雷达", scan_placement_radar)
         safe_run("推荐前检查表", scan_reco_checklist)
         safe_run("持仓/候选 深度体检", scan_all_deep)
+        safe_run("★选股流水线★", scan_pipeline)
     if not FAST:
         # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
         safe_run("我的持仓相关消息", scan_my_news)
@@ -5345,7 +5612,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V10.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V11.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
