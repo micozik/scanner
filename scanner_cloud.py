@@ -615,6 +615,51 @@ def _load_watchlist():
                     recs.append((buyd, code, name, cost, typ, period, broke))
         if not holds:
             return False
+        # ★★★V10.0 代码真伪校验（8/13买错票事故）★★★
+        # 事故：我把香农芯创的代码写成 603322，实际是 300475。
+        #   报告连续三天显示"香农芯创 27.63元"—— 那是【别的票】的价格。
+        #   用户按我的建议下单，163.462元买入，与报告价差6倍。
+        # ★根因：我凭记忆写代码，系统按错代码去查价，
+        #   而【名称】和【价格】不匹配这件事，没有任何一道闸门在检查。
+        # ★修法：载入时用快照核对【代码查到的名字】是否等于清单里的名字。
+        #   对不上 = 立刻红字警报，不许静默继续。
+        try:
+            _sp = get_spot()
+            if _sp is not None:
+                _cc = pick_col(_sp, ["代码", "code"])
+                _cn = pick_col(_sp, ["名称", "name"])
+                if _cc and _cn:
+                    _cs = _sp[_cc].astype(str)
+                    _bad = []
+                    for _h in holds:
+                        _code, _name = _h[0], _h[1]
+                        if not _code or len(str(_code)) < 6:
+                            continue
+                        _r = _sp[_cs.str.contains(str(_code)[-6:], na=False)]
+                        if len(_r) == 0:
+                            _bad.append((_code, _name, "★代码在全市场查无此股★"))
+                            continue
+                        _real = str(_r.iloc[0][_cn]).strip()
+                        _want = str(_name).strip()
+                        # ETF名称各源写法不一，只比前两字
+                        if "ETF" in _want.upper():
+                            if _want[:2] and _want[:2] not in _real:
+                                _bad.append((_code, _name, f"实际名称是【{_real}】"))
+                        elif _real != _want and _want not in _real and _real not in _want:
+                            _bad.append((_code, _name, f"实际名称是【{_real}】"))
+                    if _bad:
+                        w("")
+                        w("🔴🔴🔴【代码与名称不符 · 严重警报】🔴🔴🔴")
+                        for _c, _n, _msg in _bad:
+                            w(f"  🔴 清单写『{_n}({_c})』，但 {_msg}")
+                        w("  ★★这会导致报告里的价格/涨跌/技术指标全部是【别的票】的★★")
+                        w("  ★2026-08-13事故：香农芯创被我写成603322(实际300475)，")
+                        w("    报告连续三天显示27.63元，实际163.46元，差6倍。")
+                        w("    用户按错价格下单。")
+                        w("  ⚠️ 立刻改 我的清单.txt，改对之前本报告的相关数据不可用")
+                        w("")
+        except Exception as _e:
+            w(f"  [代码校验跳过] {type(_e).__name__}")
         globals()["WATCH_STOCKS"] = holds
         if recs:
             recs.sort(key=lambda x: x[0], reverse=True)
@@ -3411,6 +3456,17 @@ def scan_reco_checklist():
     w("    佰维26%仓位：超大单-1.49亿中单接盘、20日-47.7亿、")
     w("      主力平均成本243.98、当天12条公告 —— 全是用户截图我才看到")
     w("")
+    w("  ┌─ 0️⃣ ★★代码核对（V10.0新增，8/13买错票事故）★★ ────")
+    w("  │  🔴 推荐任何标的前，第一件事是核对【代码】和【名称】对不对")
+    w("  │  🔴 不许凭记忆写代码。必须来自本报告【重点盯盘】那一节，")
+    w("  │     或明确说『代码我不确定，你搜一下名字确认』")
+    w("  │  ⚠️ 2026-08-13：我把香农芯创写成603322(实际300475)，")
+    w("  │     报告连续三天显示27.63元，实际163.46元，差6倍。")
+    w("  │     用户按我给的价格下单，买入价与预期完全不符。")
+    w("  │  ★这不是判断错，是【给了不存在的代码】——比判断错严重得多")
+    w("  │  ★检查方法：报告的【重点盯盘】里有没有这只？")
+    w("  │     没有 = 我没有它的真实数据 = 不许给买点和价格")
+    w("  └────────────────────────────────────")
     w("  ┌─ 1️⃣ 个股资金流（不是板块资金！）─────────────")
     w("  │  · 超大单/大单/中单/小单 分别多少")
     w("  │  · 3日 / 5日 / 20日 净流入")
@@ -3437,6 +3493,7 @@ def scan_reco_checklist():
     w("  │  · 最佳：当天 -3% ~ +2%，且60日为负")
     w("  └────────────────────────────────────")
     w("")
+    w("  ⚠️ 0️⃣代码核对不通过 = 🔴一票否决，不管其余五项多好")
     w("  ★★仓位由【过了几项】决定，不由分散决定★★")
     w("    五项全过 + 有验证信号 + 位置低 → 25-30%")
     w("    过三四项                      → 11%")
@@ -5023,7 +5080,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V9.9 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V10.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -5095,7 +5152,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V9.9完成 {prefix}_最新.txt")
+    print(f"\n✅ V10.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
