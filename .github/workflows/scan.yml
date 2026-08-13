@@ -1,23 +1,34 @@
 name: A股自动扫描
 
+# ★★V11.4 修复 8/13 exit 128★★
+# 症状：扫描跑完(17m11s)但"提交报告"失败 exit code 128
+# 根因：多个 workflow 并发提交时 git push 冲突。
+#   手动跑 + 定时任务同时结束 → 第二个 push 被拒（non-fast-forward）
+# 修法：push 失败自动重试3次，每次先 pull --rebase 再推。
+#   ★报告已经跑出来了，不能因为推不上去就全白跑★
+
 permissions:
   contents: write
+
+concurrency:
+  group: scan-a
+  cancel-in-progress: false
 
 on:
   workflow_dispatch:
     inputs:
       check:
-        description: '★即时体检★ 填股票名字或代码（多只用逗号分隔，如：香农芯创,德明利）留空则不查'
+        description: '★即时体检★ 填股票名字或代码（多只用逗号分隔）留空则不查'
         required: false
         default: ''
   schedule:
-    - cron: '25 1 * * 1-5'    # 北京 09:25
-    - cron: '25 2 * * 1-5'    # 北京 10:25
-    - cron: '25 3 * * 1-5'    # 北京 11:25
-    - cron: '0 5 * * 1-5'     # 北京 13:00
-    - cron: '0 6 * * 1-5'     # 北京 14:00
-    - cron: '55 6 * * 1-5'    # 北京 14:55
-    - cron: '30 7 * * 1-5'    # 北京 15:30 盘后
+    - cron: '25 1 * * 1-5'
+    - cron: '25 2 * * 1-5'
+    - cron: '25 3 * * 1-5'
+    - cron: '0 5 * * 1-5'
+    - cron: '0 6 * * 1-5'
+    - cron: '55 6 * * 1-5'
+    - cron: '30 7 * * 1-5'
     - cron: '15 1 * * 6,0'
     - cron: '15 5 * * 6,0'
     - cron: '15 9 * * 6,0'
@@ -40,12 +51,26 @@ jobs:
         env:
           CHECK: ${{ github.event.inputs.check }}
         run: python scanner_cloud.py
-      - name: 提交报告
+      - name: 提交报告（失败自动重试3次）
         run: |
           git config user.name  "scanner-bot"
           git config user.email "scanner-bot@users.noreply.github.com"
           git add reports/
-          git diff --staged --quiet && echo "无变化" && exit 0
+          if git diff --staged --quiet; then
+            echo "报告无变化，跳过提交"
+            exit 0
+          fi
           git commit -m "scan $(date -u '+%Y-%m-%d %H:%M') UTC"
-          git pull --rebase --autostash || true
-          git push
+          for i in 1 2 3; do
+            echo "── 推送尝试 $i/3 ──"
+            git fetch origin main || true
+            git rebase origin/main || git rebase --abort || true
+            if git push origin HEAD:main; then
+              echo "✅ 推送成功"
+              exit 0
+            fi
+            echo "⚠️ 推送失败，10秒后重试"
+            sleep 10
+          done
+          echo "🔴 三次推送均失败"
+          exit 1
