@@ -338,12 +338,23 @@ def get_spot():
     # 报告里上个实例早就写过："东财对海外服务器封锁"。
     # GitHub Actions 在海外 → 东财/新浪的个股详情类接口被封或超时。
     # ★不是代码逻辑问题，是【源选错了】。全部改同花顺优先。
-    sources = [
-        ("同花顺", lambda: ak.stock_zh_a_spot_ths()),
-        ("东财-实时", lambda: ak.stock_zh_a_spot_em()),
-        ("新浪", lambda: ak.stock_zh_a_spot()),
-        ("东财-涨跌幅榜", lambda: ak.stock_zh_a_spot_em()),
+    # ★★V15.3：只保留【当前akshare版本真实存在且能通】的源★★
+    # 8/14实测三行红字的真相：
+    #   同花顺 AttributeError = stock_zh_a_spot_ths 在这个版本里★根本不存在★
+    #   东财   ConnectionError = 海外服务器被封
+    #   新浪   ✅成功（所以现价/涨跌/成交额都有）
+    # ★不存在的函数每次都要走一遍异常，纯浪费。用 hasattr 先过滤。
+    _cand = [
+        ("新浪", "stock_zh_a_spot"),
+        ("东财", "stock_zh_a_spot_em"),
+        ("同花顺", "stock_zh_a_spot_ths"),
     ]
+    sources = []
+    for _nm, _fn in _cand:
+        if hasattr(ak, _fn):
+            sources.append((_nm, (lambda f=_fn: getattr(ak, f)())))
+        else:
+            w(f"  （跳过 {_nm}：本版akshare无 {_fn}）")
     for nm, fn in sources:
         try:
             df = with_retry(fn, tries=2, wait=3, timeout=120, critical=True)
@@ -4567,10 +4578,19 @@ def scan_daily_pick():
     # 第3步：六关筛选
     w("\n  ── 第2-3步：六关筛选 ──")
     sub = sp.copy()
+    # ★★V15.3 修复 ValueError: DataFrame is ambiguous★★
+    # 根因：新浪快照有【重复列名】→ r[col] 返回 Series 而不是标量
+    #   → pd.isna(Series) 返回数组 → if 判断报 "truth value ambiguous"
+    # 修法：先去掉重复列，保证每次取到的是标量。
+    try:
+        sub = sub.loc[:, ~sub.columns.duplicated()]
+    except Exception:
+        pass
     sub["_c6"] = sub[cc].astype(str).str[-6:]
     # ★V15.1：pool 必须用 isinstance 判断，不能用 if pool（DataFrame会报错）
-    if isinstance(pool, dict) and pool:
-        sub = sub[sub["_c6"].isin(pool.keys())]
+    # ★V15.3：pool 可能是 dict / None，绝不能直接 if pool
+    if isinstance(pool, dict) and len(pool) > 0:
+        sub = sub[sub["_c6"].isin(list(pool.keys()))]
         w(f"    板块成分股池：{len(sub)}只")
     else:
         w(f"    全市场：{len(sub)}只")
@@ -4582,11 +4602,15 @@ def scan_daily_pick():
             nm2 = str(r[cn]).strip()
             if "ST" in nm2 or "退" in nm2 or nm2.startswith("N"):
                 continue
-            g = float(pd.to_numeric(r[cg], errors="coerce"))
-            px = float(pd.to_numeric(r[cp], errors="coerce"))
-            amt = float(pd.to_numeric(r[ca], errors="coerce"))
+            def _sc(v):
+                """★V15.3：强制取标量。列名重复时 r[col] 会是 Series"""
+                if hasattr(v, "iloc"):
+                    v = v.iloc[0] if len(v) else None
+                return pd.to_numeric(v, errors="coerce")
+            g = _sc(r[cg]); px = _sc(r[cp]); amt = _sc(r[ca])
             if pd.isna(g) or pd.isna(px) or pd.isna(amt):
                 continue
+            g = float(g); px = float(px); amt = float(amt)
             if not (-3 <= g <= 3):          # ③不追高
                 continue
             if not (5e7 <= amt <= 6e9):     # ⑥流动性
@@ -4608,8 +4632,14 @@ def scan_daily_pick():
     _prewarm_klines(codes)
     final = []
     for c6, nm2, px, g, amt in cands[:120]:
-        ma5, ma20 = _HIST_CACHE.get(c6, (None, None))
-        if not ma5 or not ma20:
+        _kv = _HIST_CACHE.get(c6, (None, None))
+        try:
+            ma5, ma20 = _kv[0], _kv[1]
+            ma5 = float(ma5) if ma5 is not None else None
+            ma20 = float(ma20) if ma20 is not None else None
+        except Exception:
+            continue
+        if ma5 is None or ma20 is None or ma20 <= 0:
             continue
         d60 = (px - ma20) / ma20 * 100      # 用MA20做位置代理
         if d60 > 5:                          # ④位置：不许高出MA20超5%
@@ -6598,7 +6628,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V15.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V15.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6696,7 +6726,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V15.2完成 {prefix}_最新.txt")
+    print(f"\n✅ V15.3完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
