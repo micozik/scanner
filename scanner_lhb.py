@@ -591,7 +591,15 @@ def scan_jg():
                     "blocked": _forced_agree is False,
                 })
             if _arch:
+                # ★★V3.8：用【数据日期】做key，不是运行日期★★
+                # 8/14实测：11点跑时今日龙虎榜未发布，回溯到8/13数据，
+                #   又按"今天"存了一遍 → 同一批信号被记两次，回测样本污染。
+                #   下单指令回测里 8/14 和 8/13 两行完全一样就是这个bug。
+                # ★use_date 已经是数据的真实日期，直接用它做key即可，
+                #   重复跑同一天只会覆盖，不会新增。
                 _d = _bt_load(INST_HIST_FILE)
+                if use_date in _d:
+                    w(f"  ↩️ {use_date} 已存档过，本次覆盖（不重复计入回测）")
                 _d[use_date] = _arch
                 _bt_save(INST_HIST_FILE, _d)
                 w(f"  📊 已记入【机构成绩单】{len(_arch)}只 → 累计追踪机构对错")
@@ -738,7 +746,16 @@ def gen_order(ambush, jg_rows=None):
     if archive:
         try:
             d = _bt_load(ORDER_HIST_FILE)
-            d[now_beijing().strftime("%Y-%m-%d")] = archive
+            # ★★V3.8：用【龙虎榜数据的真实日期】做key，不用运行日期★★
+            # 8/14实测：11点跑时今日数据未发布，回溯到8/13，
+            #   又按"今天"存了一遍 → 回测里8/14和8/13两行完全一样。
+            _dk = LHB_NET_MAP.get("_date") or now_beijing().strftime("%Y%m%d")
+            _dk = str(_dk)
+            if len(_dk) == 8:
+                _dk = f"{_dk[:4]}-{_dk[4:6]}-{_dk[6:]}"
+            if _dk in d:
+                w(f"\n  ↩️ {_dk} 的指令已存档过，本次覆盖（不重复计入回测）")
+            d[_dk] = archive
             _bt_save(ORDER_HIST_FILE, d)
             w(f"\n  📌 已存档{len(archive)}条指令 → 3日后自动回看命中率")
         except Exception:
@@ -920,7 +937,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.7 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V3.8 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -977,7 +994,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.7完成")
+    print("\n✅ 龙虎榜扫描V3.8完成")
 
 
 if __name__ == "__main__":
