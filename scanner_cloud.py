@@ -4412,6 +4412,87 @@ def check_stock(name_or_code):
     return d
 
 
+def scan_pre_launch():
+    """★★★V15.2【预启动雷达】找『还在跌但催化在增』的板块★★★
+
+    ★用户2026-08-14：『你有没有去挖掘新机会，还没启动的板块，将会启动的』
+    ★这是铁律K的板块版：正常的板块（涨+催化多）不含信息，
+      反常的才含 —— 板块在跌，但新闻催化在变多，说明有人在悄悄布局。
+
+    ★8/14实例（我今天漏掉的）：
+      人工智能 -0.59% 但新闻净+4  ← 在跌，催化在增
+      期货概念 -0.79% 但新闻净+4
+      猪肉    -1.74% 但新闻净+2  ← 跌最多，但有催化
+      MLCC概念 +1.37% 🚀跳368位但3日累计-0.7% ← 钱刚进，价格没动
+    """
+    w("\n" + "=" * 60)
+    w("🌱🌱【预启动雷达】还在跌/没涨，但催化在增 = 下一个启动的 🌱🌱")
+    w("=" * 60)
+    w("  ★用户2026-08-14：『挖掘还没启动、将会启动的板块』")
+    w("  ★铁律K的板块版：涨+催化多=正常，不含信息；")
+    w("    ★跌/没涨 + 催化在增 = 反常 = 有人在悄悄布局★")
+
+    rows = globals().get("_CROSS_RESULTS") or []
+    if not rows:
+        w("  ⚠️ 需先跑【全板块交叉】，本次无数据")
+        w("=" * 60)
+        return
+
+    cands = []
+    for r in rows:
+        try:
+            sc, kind, nm, chg, net = r[0], r[1], r[2], r[3], r[4]
+            if net is None or net < 1:          # 至少2条净利多
+                continue
+            c = float(chg) if chg is not None and pd.notna(chg) else 0.0
+            if c > 2.0:                          # ★已经涨超2%的排除（已启动）
+                continue
+            jp = _rank_jump_of(nm)
+            fl = _sector_flow_of(nm)
+            # 打分：跌得越多+催化越多+跳升越大+资金越好 = 越优先
+            s2 = net * 2
+            if c < -1:
+                s2 += 5
+            elif c < 0:
+                s2 += 3
+            elif c < 1:
+                s2 += 1
+            if jp is not None:
+                if jp >= 100:
+                    s2 += 4
+                elif jp >= 30:
+                    s2 += 2
+            if fl is not None and fl > 0:
+                s2 += 2
+            elif fl is not None and fl < -20:
+                s2 -= 2
+            cands.append((s2, kind, nm, c, net, jp, fl))
+        except Exception:
+            continue
+    if not cands:
+        w("  今日无【跌/没涨但催化在增】的板块")
+        w("=" * 60)
+        return
+    cands.sort(key=lambda x: -x[0])
+    w(f"\n  ★★命中 {len(cands)} 个，前10★★\n")
+    for i, (s2, kind, nm, c, net, jp, fl) in enumerate(cands[:10], 1):
+        tag = "🔥🔥★跌着有催化★" if c < -1 else ("🔥★没涨有催化★" if c < 1 else "⚪微涨")
+        w(f"  {i:2d}. [{kind}]{nm} {c:+.2f}% 催化净+{net} 得分{s2:.0f} {tag}")
+        _ex = []
+        if jp is not None and jp >= 30:
+            _ex.append(f"🚀跳{jp}位")
+        if fl is not None:
+            _ex.append(f"资金{fl:+.1f}亿")
+        if _ex:
+            w(f"      {' | '.join(_ex)}")
+    w("\n  ── 怎么用 ──")
+    w("  1. ★跌着有催化★ 是最值钱的：所有人都在卖，而新闻在变好")
+    w("  2. 必须过①-B：这些催化和板块的赚钱方式是同一个吗？")
+    w("  3. 从该板块挑：今天跌最多 + 60日低位 + 缩量 的个股")
+    w("  4. ⚠️也可能是【催化是假的/已被证伪】—— 必须读具体新闻，不许只看数字")
+    w("=" * 60)
+
+
 def scan_daily_pick():
     """★★★V13.0【每日选股·只用稳定数据】★★★
 
@@ -5685,6 +5766,7 @@ def scan_all_sector_cross(uniq_news):
         if len(_dedup) != len(results):
             w(f"  （已合并同名板块 {len(results)-len(_dedup)} 条，防止一个概念占多个坑）")
             results = _dedup
+        globals()["_CROSS_RESULTS"] = results      # ★V15.2 供预启动雷达
         w("\n  ★★【有催化 且 位置好 且 钱在进】前15（净利多×2 + 位置分 + 资金分）：")
         w("    位置分：跌着有催化=3 | 微涨<1.5%=2 | 涨1.5-4%=1 | 涨>4%=-1")
         w("    ★V9.7跳升分(领先指标，权重最高)：跳100位↑=+10 | 50位↑=+7 | 30位↑=+5 | 10位↑=+2 | 退30位↓=-3")
@@ -6516,7 +6598,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V15.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V15.2 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6564,6 +6646,7 @@ def main():
         safe_run("定增破发雷达", scan_placement_radar)
         safe_run("推荐前检查表", scan_reco_checklist)
         safe_run("持仓/候选 深度体检", scan_all_deep)
+        safe_run("🌱预启动雷达", scan_pre_launch)
         safe_run("★每日选股(稳定版)★", scan_daily_pick)
         safe_run("选股流水线(实验)", scan_pipeline)
     if not FAST:
@@ -6613,7 +6696,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V15.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V15.2完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
