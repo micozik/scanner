@@ -5087,8 +5087,17 @@ def scan_all_deep():
     # ★不砍任何数据，只把"排队等"改成"同时等"。
     #   56次串行(8分钟) → 8线程并发(约1分钟)
     _hold = [t for t in targets if t[2] == "持仓"]
-    # ★V15.1提速：候选8只→4只。持仓必须全跑，候选只看最相关的
-    _other = [t for t in targets if t[2] != "持仓"][:4]
+    # ★★V17.1：候选池全跑，不再截断★★
+    # 8/14事故：用户按我要求加了7只CPO/半导体候选，跑完却一只没体检——
+    #   因为我上次为提速加了 [:4]，7只全被砍掉了。
+    # ★用户原话：『你想查那一只股票就让我帮你添加，实时获取信息，
+    #   才是一个好系统』——清单是【AI的查询入口】，不是持仓记录。
+    #   截断候选 = 把用户主动加的查询请求扔掉。
+    # ★体检是并发的（12线程，12只15秒），30只也就30-40秒，能承受。
+    _other = [t for t in targets if t[2] != "持仓"]
+    if len(_other) > 30:
+        w(f"  ⚠️ 候选{len(_other)}只，只跑前30只（并发上限）")
+        _other = _other[:30]
     targets = _hold + _other
     _cache = {}
     try:
@@ -6773,7 +6782,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V17.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V17.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6871,7 +6880,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V17.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V17.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
