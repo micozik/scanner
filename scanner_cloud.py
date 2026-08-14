@@ -2262,10 +2262,115 @@ def scan_cold_low():
             w("    （V9.1起，只有【板块确实跌超1.5%】才否决；行业未知改为放行）")
         else:
             w(f"  ※ 最终{passed}只过关。⑦催化日期 ⑧止损由你我集中分析定。")
+        # ★★★V16.0：冷低早 + ①-B驱动筛（补上你朋友方法缺失的那一环）★★★
+        _cold_chain_filter(hits)
 
         # ★存档 + 5日回测（验证这个筛选器到底行不行）
         _cold_archive_and_backtest(hits, spot, c_code, c_name, c_price)
     safe_run("冷低早筛选", _do)
+
+
+def _cold_chain_filter(hits):
+    """★★★V16.0【冷低早 × ①-B驱动筛】★★★
+
+    ★2026-08-14 用户揭示的关键事实：
+      冷低早是【用户和他朋友的实战方法】，不是AI加的。
+      记分卡上：冷低早96样本89%胜率，而AI加的热力图33%、事件雷达15%。
+      ★系统里唯一有效的模块，是用户的方法。
+
+    ★但它只做了朋友完整方法的【第②步】：
+      朋友买凯盛科技(+300%)的三步：
+        ①谷歌说玻璃可做芯片载板  ← 链条判断（①-B）
+        ②玻璃基板这一环还没涨    ← 位置  ← ★冷低早只有这一步★
+        ③埋伏
+      ★所以冷低早胜率89%，但平均只有+3.08% —— 缺的就是第①步。
+      8/14实证：它筛出了卓胜微，技术形态完美，
+        但卓胜微真实驱动=手机出货，而今天主线是存储涨价，
+        存储涨价→手机成本↑→对它是【利空】。形态对，驱动反。
+
+    ★本模块补第①步：查每只票所属驱动链今天有没有【验证信号】
+      有验证信号 = 形态+驱动双成立 = 最高优先级
+      无验证信号 = 只有形态 = 标注"驱动待确认"，不许重仓
+    """
+    if not hits:
+        return
+    w("\n  ★★★【①-B 驱动筛】补上『形态好但驱动对不对』这一环 ★★★")
+    w("    ★冷低早只看形态（低位+缩量+涨日放量），不看驱动。")
+    w("      朋友买凯盛3倍靠的是第①步『谷歌说玻璃可做载板』，")
+    w("      冷低早只有第②步『这一环还没涨』→ 所以胜率89%但只赚+3%。")
+
+    # 今天有验证信号的驱动链
+    ver_chains = globals().get("TODAY_VERIFIED_CHAINS") or []
+    # 今天跳升≥100位的板块（钱刚进）
+    hot_jump = {k for k, v in SECTOR_JUMP_MAP.items() if v >= 100}
+    # 今天资金流入前列的行业
+    hot_flow = {k for k, v in SECTOR_FLOW_MAP.items() if v >= 5}
+
+    if not ver_chains:
+        w("    ⚠️ 今日无任何驱动链带✅验证信号 → 全部标为『驱动待确认』")
+
+    w(f"    今日有验证信号的链：{('、'.join(ver_chains)) if ver_chains else '无'}")
+    w(f"    今日跳升≥100位的板块：{len(hot_jump)}个 ｜ 资金≥5亿的行业：{len(hot_flow)}个")
+    w("")
+
+    for h in hits:
+        try:
+            nm = h.get("name", "")
+            cd = h.get("code", "")
+        except Exception:
+            continue
+        # 查它属于哪条链（用 CHAIN_MAP 或板块名模糊匹配）
+        chain = None
+        try:
+            for _cn, _codes in (globals().get("CHAIN_MAP") or {}).items():
+                if cd in _codes or nm in str(_codes):
+                    chain = _cn
+                    break
+        except Exception:
+            pass
+        ind = None
+        try:
+            # ★V16.0：行业来自 industry_map.json 缓存（不是不存在的 IND_MAP）
+            _im, _age = _load_ind_cache()
+            ind = (_im or {}).get(cd)
+        except Exception:
+            pass
+
+        marks, score = [], 0
+        if chain and any(chain[:3] in c for c in ver_chains):
+            marks.append(f"✅驱动链[{chain}]今日有验证信号")
+            score += 5
+        elif chain:
+            marks.append(f"⚠️驱动链[{chain}]今日无验证信号")
+        else:
+            marks.append("❔驱动链未识别（CHAIN_MAP里没有它）")
+
+        if ind:
+            if any(ind in k or k in ind for k in hot_jump):
+                marks.append(f"🚀所属[{ind}]今日跳升≥100位")
+                score += 3
+            if any(ind in k or k in ind for k in hot_flow):
+                marks.append(f"💰所属[{ind}]资金≥5亿")
+                score += 2
+        else:
+            marks.append("❔行业未识别")
+
+        if score >= 5:
+            tag = "🟢🟢【形态+驱动 双成立】最高优先级"
+        elif score >= 2:
+            tag = "🟡【形态成立，驱动部分成立】小仓试探"
+        else:
+            tag = "⚪【只有形态，驱动待确认】不许重仓"
+        w(f"    ◆ {nm}({cd}) {tag}")
+        for m in marks:
+            w(f"        {m}")
+
+    w("")
+    w("    ── 怎么用 ──")
+    w("    🟢🟢 双成立 = 朋友买凯盛科技那种形态，可以重仓")
+    w("    🟡  部分成立 = 小仓试探，等驱动确认再加")
+    w("    ⚪  只有形态 = ★这就是卓胜微那种坑★，形态完美但驱动可能相反")
+    w("    ⚠️ AI必须逐只答『它靠什么赚钱』，答不出的一律按⚪处理")
 
 
 def _cold_archive_and_backtest(hits, spot, c_code, c_name, c_price):
@@ -6628,7 +6733,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V15.3 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V16.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6726,7 +6831,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V15.3完成 {prefix}_最新.txt")
+    print(f"\n✅ V16.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
