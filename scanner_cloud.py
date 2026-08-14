@@ -1392,6 +1392,29 @@ def scan_deep_stock(code, name=""):
         except Exception:
             continue
 
+    # ★★V15.1：三类数据的成败必须登记，否则可信度评分是假的★★
+    # 8/14实测：评分显示100/100，但财务/股东/资金全是【无数据】——
+    #   因为只在快照成功时调了 dh()，失败的根本没进分母。
+    try:
+        if not out.get("营业总收入") and not out.get("净利润"):
+            dh(f"财务·{c6}", "fail", "4接口全挂且无缓存")
+        elif out.get("_财务缓存日"):
+            dh(f"财务·{c6}", "degraded", f"用缓存({out['_财务缓存日']})")
+        else:
+            dh(f"财务·{c6}", "ok", "实时抓取")
+        if out.get("机构席位数") is None and not out.get("股东户数"):
+            dh(f"股东·{c6}", "fail", "接口全挂且无缓存")
+        elif out.get("_股东缓存日"):
+            dh(f"股东·{c6}", "degraded", f"用缓存({out['_股东缓存日']})")
+        else:
+            dh(f"股东·{c6}", "ok", "实时抓取")
+        if out.get("超大单净额") is None:
+            dh(f"个股资金·{c6}", "fail", "3接口全挂")
+        else:
+            dh(f"个股资金·{c6}", "ok", "")
+    except Exception:
+        pass
+
     # ── 5) 技术位置：MA5/MA20/60日涨跌/缩量 ──
     try:
         k5, k20 = _hist_close(c6)
@@ -1517,7 +1540,8 @@ def _prewarm_klines(codes):
     try:
         from concurrent.futures import ThreadPoolExecutor, as_completed
         t0 = time.time()
-        with ThreadPoolExecutor(max_workers=8) as ex:
+        # ★V15.1：并发数 8→12（GitHub Actions 单核但IO密集，可以更高）
+        with ThreadPoolExecutor(max_workers=12) as ex:
             fut = {ex.submit(_hist_close_raw, c): c for c in todo}
             for f in as_completed(fut, timeout=200):
                 c = fut[f]
@@ -4463,7 +4487,8 @@ def scan_daily_pick():
     w("\n  ── 第2-3步：六关筛选 ──")
     sub = sp.copy()
     sub["_c6"] = sub[cc].astype(str).str[-6:]
-    if pool:
+    # ★V15.1：pool 必须用 isinstance 判断，不能用 if pool（DataFrame会报错）
+    if isinstance(pool, dict) and pool:
         sub = sub[sub["_c6"].isin(pool.keys())]
         w(f"    板块成分股池：{len(sub)}只")
     else:
@@ -4496,6 +4521,9 @@ def scan_daily_pick():
 
     # 第4步：并发抓K线，过④⑤关
     codes = [c[0] for c in cands[:120]]
+    # ★V15.1提速：全市场2134只太多，只对【前60只涨幅最小的】抓K线
+    #   8/14实测：113只K线抓了45秒。60只约25秒，够用。
+    codes = codes[:60]
     _prewarm_klines(codes)
     final = []
     for c6, nm2, px, g, amt in cands[:120]:
@@ -4515,7 +4543,10 @@ def scan_daily_pick():
             sc += 2; why.append(f"当天{g:.1f}%没涨")
         elif g < 1.5:
             sc += 1
-        bd = pool.get(c6) if pool else None
+        # ★V15.1修复：pool 可能是 None（降级模式），也可能是 dict
+        #   原写法 `pool.get(c6) if pool else None` 在 pool 是 DataFrame 时报
+        #   ValueError: The truth value of a DataFrame is ambiguous
+        bd = pool.get(c6) if isinstance(pool, dict) else None
         if bd:
             sc += min(bd[2] / 50.0, 4)
             why.append(f"[{bd[1]}]跳{bd[2]}位")
@@ -4800,13 +4831,14 @@ def scan_all_deep():
     # ★不砍任何数据，只把"排队等"改成"同时等"。
     #   56次串行(8分钟) → 8线程并发(约1分钟)
     _hold = [t for t in targets if t[2] == "持仓"]
-    _other = [t for t in targets if t[2] != "持仓"][:8]
+    # ★V15.1提速：候选8只→4只。持仓必须全跑，候选只看最相关的
+    _other = [t for t in targets if t[2] != "持仓"][:4]
     targets = _hold + _other
     _cache = {}
     try:
         from concurrent.futures import ThreadPoolExecutor, as_completed
         _t0 = time.time()
-        with ThreadPoolExecutor(max_workers=8) as _ex:
+        with ThreadPoolExecutor(max_workers=12) as _ex:
             _fut = {_ex.submit(scan_deep_stock, c, n): (c, n, tg)
                     for c, n, tg in targets}
             for _f in as_completed(_fut, timeout=300):
@@ -6484,7 +6516,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V15.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V15.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6581,7 +6613,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V15.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V15.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
