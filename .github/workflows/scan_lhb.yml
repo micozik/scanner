@@ -1,37 +1,52 @@
 name: 龙虎榜扫描
 
-on:
-  schedule:
-    - cron: '45 10 * * 1-5'
-    - cron: '30 12 * * 1-5'
-  workflow_dispatch:
-
-concurrency:
-  group: lhb
-  cancel-in-progress: false
-
 permissions:
   contents: write
+
+concurrency:
+  group: scan-lhb
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: '★历史回溯★ 填天数(如 60)一次性拉过去N个交易日补足样本，留空则不回溯'
+        required: false
+        default: ''
+  schedule:
+    - cron: '45 10 * * 1-5'    # 北京 18:45（龙虎榜18:35发布）
 
 jobs:
   lhb:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install akshare pandas
-      - run: python scanner_lhb.py
-      - name: 提交龙虎榜
+      - name: 安装依赖
         run: |
-          git config user.name "lhb-bot"
-          git config user.email "lhb-bot@users.noreply.github.com"
+          python -m pip install --upgrade pip
+          pip install akshare pandas requests lxml beautifulsoup4
+      - name: 运行龙虎榜扫描
+        env:
+          BACKFILL: ${{ github.event.inputs.backfill }}
+        run: python scanner_lhb.py
+      - name: 提交报告（失败重试3次）
+        run: |
+          git config user.name  "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
           git add reports/
-          if git diff --cached --quiet; then echo "无改动"; exit 0; fi
-          git commit -m "龙虎榜 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
+          if git diff --staged --quiet; then
+            echo "无变化"; exit 0
+          fi
+          git commit -m "lhb $(date -u '+%Y-%m-%d %H:%M') UTC"
           for i in 1 2 3; do
-            git pull --rebase --autostash origin main && git push && break
-            sleep 3
+            git fetch origin main || true
+            git rebase origin/main || git rebase --abort || true
+            if git push origin HEAD:main; then echo "✅ 推送成功"; exit 0; fi
+            sleep 10
           done
+          exit 1
