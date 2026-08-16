@@ -811,7 +811,7 @@ def backfill_history(days=60):
     for ds in dates:
         try:
             df = with_retry(lambda _d=ds: ak.stock_lhb_detail_em(
-                start_date=_d, end_date=_d), tries=1, wait=1, timeout=25)
+                start_date=_d, end_date=_d), tries=2, wait=2, timeout=25)
             if df is None or len(df) == 0:
                 continue
             c_code = pick_col(df, ["代码", "股票代码"])
@@ -835,6 +835,7 @@ def backfill_history(days=60):
                     pct = float(pct) if pd.notna(pct) else 0.0
                     net = pd.to_numeric(r[c_net], errors="coerce") if c_net else None
                     net_yi = float(net) / 1e8 if pd.notna(net) else 0.0
+                    # ★V4.1：回溯样本标注，与每日增量分开统计
                     arch.append({
                         "code": cd,
                         "name": str(r[c_name]) if c_name else "",
@@ -853,6 +854,9 @@ def backfill_history(days=60):
                 d[ds] = arch
                 ok_days += 1
                 n_new += len(arch)
+                if ok_days % 10 == 0:
+                    w(f"    ...已回溯 {ok_days} 天 / {n_new} 个样本")
+                    _bt_save(INST_HIST_FILE, d)   # 中途存盘，防超时丢失
         except Exception:
             continue
     _bt_save(INST_HIST_FILE, d)
@@ -1040,7 +1044,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V4.0 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V4.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -1076,11 +1080,29 @@ def main():
         backtest_order()
     except Exception as e:
         w(f"  [报空] 指令回测：{type(e).__name__}: {str(e)[:60]}")
-    # ★★V4.0：环境变量 BACKFILL=天数 → 一次性回溯历史样本★★
+    # ★★★V4.1：样本不够就【自动回溯】，不依赖人记得填参数★★★
+    # 用户2026-08-16：『那个历史回溯怎么办？』
+    # ★我上一版让它依赖环境变量 BACKFILL —— 等于要用户记得填一个框。
+    #   这是错的设计：系统该自己发现"样本不够"然后自己去补。
+    # 规则：机构成绩单存档 < 25个交易日 → 自动回溯60天
+    #      已回溯过的日期会跳过，不会重复拉，也不会污染样本
     _bf = os.environ.get("BACKFILL", "").strip()
+    try:
+        _have_days = len(_bt_load(INST_HIST_FILE))
+    except Exception:
+        _have_days = 0
     if _bf.isdigit():
+        _days = int(_bf)
+        w(f"\n  📌 手动指定回溯 {_days} 天")
+    elif _have_days < 25:
+        _days = 60
+        w(f"\n  📌 机构成绩单仅 {_have_days} 天存档（<25天）→ ★自动回溯60天★")
+        w("     ★不用手动填参数。样本够了就不再回溯。")
+    else:
+        _days = 0
+    if _days > 0:
         try:
-            backfill_history(int(_bf))
+            backfill_history(_days)
         except Exception as e:
             w(f"  [回溯失败] {type(e).__name__}: {str(e)[:60]}")
 
@@ -1105,7 +1127,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V4.0完成")
+    print("\n✅ 龙虎榜扫描V4.1完成")
 
 
 if __name__ == "__main__":
