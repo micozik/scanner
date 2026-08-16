@@ -763,6 +763,107 @@ def gen_order(ambush, jg_rows=None):
     w("=" * 60)
 
 
+def backfill_history(days=60):
+    """★★★V4.0【历史回溯】—— 一次性把样本补到几百个★★★
+
+    ★用户2026-08-14：『你现在不去添加15个样本？』
+      ★他是对的。我一直在等样本『自然积累』——每天攒10个，
+        要15天才够。但龙虎榜是【历史数据】，过去60天的全在那儿，
+        stock_lhb_detail_em 支持日期范围，一次就能拉完。
+      ★这是我的思维惯性：把『等』当成了『积累』。
+
+    做法：
+      ① 拉过去N个交易日的龙虎榜明细
+      ② 每一天取出机构净买的票 + 当日收盘价
+      ③ 用【3日后】的价格算涨跌
+      ④ 按 买跌/买涨停/买微涨/金额大小 分组统计
+    ★结果直接写进 INST_HIST_FILE，与每日增量合并。
+    """
+    w("\n" + "=" * 60)
+    w(f"⏪⏪【历史回溯】一次性拉过去{days}个交易日的龙虎榜 ⏪⏪")
+    w("=" * 60)
+    w("  ★用户2026-08-14：『你现在不去添加15个样本？』")
+    w("  ★龙虎榜是历史数据，不必等『自然积累』——过去60天全在那儿。")
+
+    d = _bt_load(INST_HIST_FILE)
+    have = set(d.keys())
+    w(f"  已有存档 {len(have)} 天")
+
+    # 生成日期列表（跳过周末）
+    today = now_beijing()
+    dates = []
+    for i in range(1, days * 2):
+        dt = today - datetime.timedelta(days=i)
+        if dt.weekday() >= 5:
+            continue
+        ds = dt.strftime("%Y%m%d")
+        if ds not in have:
+            dates.append(ds)
+        if len(dates) >= days:
+            break
+    if not dates:
+        w("  ✅ 过去交易日已全部回溯过，无需重复")
+        w("=" * 60)
+        return
+    w(f"  待回溯 {len(dates)} 天：{dates[-1]} ~ {dates[0]}")
+
+    ok_days, n_new = 0, 0
+    for ds in dates:
+        try:
+            df = with_retry(lambda _d=ds: ak.stock_lhb_detail_em(
+                start_date=_d, end_date=_d), tries=1, wait=1, timeout=25)
+            if df is None or len(df) == 0:
+                continue
+            c_code = pick_col(df, ["代码", "股票代码"])
+            c_name = pick_col(df, ["名称", "股票名称"])
+            c_pct = pick_col(df, ["涨跌幅"])
+            c_net = pick_col(df, ["龙虎榜净买额", "净买额"])
+            c_close = pick_col(df, ["收盘价", "收盘"])
+            if not (c_code and c_close):
+                continue
+            arch, seen = [], set()
+            for _, r in df.iterrows():
+                try:
+                    cd = str(r[c_code])[-6:]
+                    if cd in seen:
+                        continue
+                    seen.add(cd)
+                    px = pd.to_numeric(r[c_close], errors="coerce")
+                    if pd.isna(px) or float(px) <= 0:
+                        continue
+                    pct = pd.to_numeric(r[c_pct], errors="coerce") if c_pct else None
+                    pct = float(pct) if pd.notna(pct) else 0.0
+                    net = pd.to_numeric(r[c_net], errors="coerce") if c_net else None
+                    net_yi = float(net) / 1e8 if pd.notna(net) else 0.0
+                    arch.append({
+                        "code": cd,
+                        "name": str(r[c_name]) if c_name else "",
+                        "pct": pct,
+                        "inst": net_yi,
+                        "lhb": net_yi,
+                        "price": float(px),
+                        "kind": ("买跌" if pct < 0 else
+                                 ("买涨停" if pct >= 9.5 else "买微涨")),
+                        "agree": True,
+                        "backfill": True,
+                    })
+                except Exception:
+                    continue
+            if arch:
+                d[ds] = arch
+                ok_days += 1
+                n_new += len(arch)
+        except Exception:
+            continue
+    _bt_save(INST_HIST_FILE, d)
+    w(f"  ✅ 回溯完成：新增 {ok_days} 天 / {n_new} 个样本")
+    w(f"  ✅ 累计存档 {len(d)} 天")
+    w("  ⚠️ 回溯样本用【龙虎榜全榜净买】代替机构净买（历史明细无机构拆分）")
+    w("     → 它测的是『龙虎榜上榜后3日涨不涨』，比机构信号更宽")
+    w("     ★这是近似，但足够回答『买跌 vs 买涨停 谁更强』这个核心问题")
+    w("=" * 60)
+
+
 def backtest_institution():
     """★★★V3.4【机构成绩单】机构到底对不对 —— 用户命题★★★
 
@@ -816,7 +917,7 @@ def backtest_institution():
 
     today = now_beijing()
     # 桶：[命中数, 样本数, 累计收益]
-    buckets = {"全部": [0, 0, 0.0], "买跌": [0, 0, 0.0],
+    buckets = {"★历史回溯样本": [0, 0, 0.0], "全部": [0, 0, 0.0], "买跌": [0, 0, 0.0],
                "买涨停": [0, 0, 0.0], "买微涨": [0, 0, 0.0],
                "方向一致": [0, 0, 0.0], "符号相反": [0, 0, 0.0],
                "净买≥1亿": [0, 0, 0.0], "净买<1亿": [0, 0, 0.0]}
@@ -852,6 +953,8 @@ def backtest_institution():
             elif it.get("agree") is False:
                 _add("符号相反")
             _add("净买≥1亿" if float(it.get("inst", 0)) >= 1 else "净买<1亿")
+            if it.get("backfill"):
+                _add("★历史回溯样本")
             rows.append((day, gap, it.get("name"), it.get("kind"), chg))
 
     days = sorted(d.keys(), reverse=True)
@@ -937,7 +1040,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V3.8 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V4.0 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -973,6 +1076,14 @@ def main():
         backtest_order()
     except Exception as e:
         w(f"  [报空] 指令回测：{type(e).__name__}: {str(e)[:60]}")
+    # ★★V4.0：环境变量 BACKFILL=天数 → 一次性回溯历史样本★★
+    _bf = os.environ.get("BACKFILL", "").strip()
+    if _bf.isdigit():
+        try:
+            backfill_history(int(_bf))
+        except Exception as e:
+            w(f"  [回溯失败] {type(e).__name__}: {str(e)[:60]}")
+
     try:
         backtest_institution()
     except Exception as e:
@@ -994,7 +1105,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V3.8完成")
+    print("\n✅ 龙虎榜扫描V4.0完成")
 
 
 if __name__ == "__main__":
