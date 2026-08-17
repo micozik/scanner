@@ -966,17 +966,24 @@ def scan_my_news():
     在全量新闻+公告里，按【持仓股票名】精确匹配。
     治：661条新闻里我的票被提到了，但我按板块关键词扫，看不见个股级消息。"""
     w("\n" + "=" * 60)
-    w("📰📰【我的持仓·相关消息】新闻+公告按股票名精确匹配 📰📰")
+    w("📰📰【我的持仓+候选·相关消息】新闻+公告按股票名精确匹配 📰📰")
     w("=" * 60)
-    names = [(c, n) for c, n, tag, *_r in WATCH_STOCKS if tag == "持仓"]
+    # ★★V19.1：从【只扫持仓】扩展到【持仓+候选+观察】★★
+    # 2026-08-17用户问『有没有缺什么』时发现的缺口：
+    #   洁美科技在候选池，当天出了两条重大公告
+    #   （净利+39.87%、追加4.28亿扩产MLCC离型膜），
+    #   但本节只扫持仓 → 这两条硬催化我完全看不到。
+    # ★候选池就是【我准备买的票】，它出利好利空比持仓更需要知道。
+    names = [(c, n, tag) for c, n, tag, *_r in WATCH_STOCKS
+             if tag in ("持仓", "候选", "重点观察")]
     if not names:
-        w("  无持仓")
+        w("  清单为空")
         w("=" * 60)
         return
     ann = globals().get("TODAY_ANNOUNCE", {}) or {}
     news = globals().get("TODAY_NEWS", []) or []
     hit_any = False
-    for code, name in names:
+    for code, name, _tag in names:
         # ★★V8.1 匹配收紧：ETF 不做名称片段模糊匹配★★
         # 8/10翻车：「创新药ETF」取前两字「创新」→ 匹配到
         #   "创新发展行动方案"、"外送电量创新高"、"二氧化钛反倾销"（含"创新"？否，含"延期"）
@@ -1010,7 +1017,8 @@ def scan_my_news():
         if not nhits and not ahit:
             continue
         hit_any = True
-        w(f"\n  ◆ {name}({code})")
+        _tg = {"持仓": "🔵持仓", "候选": "🟡候选", "重点观察": "⚪观察"}.get(_tag, _tag)
+        w(f"\n  ◆ [{_tg}] {name}({code})")
         if ahit:
             w(f"    📢公告：{str(ahit)[:70]}")
         for tm, t, mark in nhits[:6]:
@@ -1254,10 +1262,17 @@ def scan_deep_stock(code, name=""):
 
     # ── 2) 个股资金流：超大单/大单/中单/小单 + 多日 ──
     # ★V12.0：先试同花顺个股资金（东财的 stock_individual_fund_flow 今天全挂）
+    # ★★V19.1：个股资金流再加3个源★★
+    # 2026-08-17：32只票全部【无数据】，因为只有"兜底(涨停封板+龙虎榜)"，
+    #   而持仓一只都不在涨停名单里 → 推荐检查表1️⃣2️⃣两项永远填不出。
+    # ★这两项是8/12佰维事故的核心（超大单-1.49亿中单接盘我不知道，给了26%仓位）
     _mkt = "sh" if c6[0] in "56" else ("bj" if c6[0] in "489" else "sz")
-    for fname, kw in (("stock_fund_flow_individual", {"symbol": "即时"}),
-                      ("stock_individual_fund_flow", {"stock": c6, "market": _mkt}),
-                      ("stock_individual_fund_flow", {"stock": c6})):
+    for fname, kw in (("stock_individual_fund_flow", {"stock": c6, "market": _mkt}),
+                      ("stock_individual_fund_flow", {"stock": c6}),
+                      ("stock_fund_flow_individual", {"symbol": "即时"}),
+                      ("stock_individual_fund_flow_rank", {"indicator": "今日"}),
+                      ("stock_fund_flow_individual", {"symbol": "3日排行"}),
+                      ("stock_zh_a_hist_min_em", {"symbol": c6, "period": "1"})):
         fn = getattr(ak, fname, None)
         if fn is None:
             continue
@@ -1266,6 +1281,29 @@ def scan_deep_stock(code, name=""):
             if f is None or len(f) == 0:
                 continue
             # ★V12.0：同花顺返回全市场表，要先按代码筛出这一只
+            # ★V19.1：全市场排行表按代码筛出这一只
+            if fname == "stock_individual_fund_flow_rank":
+                cc3 = pick_col(f, ["代码", "股票代码"])
+                if not cc3:
+                    continue
+                f = f[f[cc3].astype(str).str[-6:] == c6]
+                if len(f) == 0:
+                    continue
+                r0 = f.iloc[0]
+                for key, cols in [
+                        ("主力净额", ["今日主力净流入-净额", "主力净流入-净额"]),
+                        ("超大单净额", ["今日超大单净流入-净额", "超大单净流入-净额"]),
+                        ("大单净额", ["今日大单净流入-净额", "大单净流入-净额"]),
+                        ("中单净额", ["今日中单净流入-净额", "中单净流入-净额"]),
+                        ("小单净额", ["今日小单净流入-净额", "小单净流入-净额"])]:
+                    col = pick_col(f, cols)
+                    if col:
+                        v = pd.to_numeric(r0[col], errors="coerce")
+                        if pd.notna(v):
+                            out[key] = float(v)
+                if out.get("主力净额") is not None:
+                    break
+                continue
             if fname == "stock_fund_flow_individual":
                 cc2 = pick_col(f, ["股票代码", "代码"])
                 if not cc2:
@@ -6925,7 +6963,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V19.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V19.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7034,7 +7072,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V19.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V19.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
