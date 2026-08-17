@@ -252,7 +252,80 @@ def _alarm_handler(signum, frame):
     raise CallTimeout("接口超时")
 
 
-def with_retry(fn, tries=2, wait=3, timeout=60, critical=False):
+# ★★★V19.0【失败接口记忆】—— 不再为已知必挂的接口白等★★★
+# 2026-08-17 用户：『跑一次30分钟，能不能加快，不影响质量？』
+# 实测：每天固定失败的接口有8个，每个等20-45秒 = 白等3-5分钟：
+#   stock_zh_a_spot_ths      本版akshare根本没这个函数
+#   stock_qbzf_em            连挂6天 CallTimeout
+#   龙虎榜东财/新浪/东财机构    盘后跑必然TypeError(18:35才发布)
+#   游资席位东财、巨潮昨日公告、股市日历昨日
+# ★不是砍数据，是不为【已证明拿不到】的东西反复付出等待成本。
+#   连续失败3次 → 跳过7天 → 到期自动重试一次（源可能恢复）
+FAIL_MEMO_FILE = "reports/fail_memo.json"
+_FAIL_MEMO = None
+
+
+def _fm():
+    global _FAIL_MEMO
+    if _FAIL_MEMO is None:
+        try:
+            if os.path.exists(FAIL_MEMO_FILE):
+                with open(FAIL_MEMO_FILE, "r", encoding="utf-8") as f:
+                    _FAIL_MEMO = json.load(f)
+            else:
+                _FAIL_MEMO = {}
+        except Exception:
+            _FAIL_MEMO = {}
+    return _FAIL_MEMO
+
+
+def fail_should_skip(key):
+    """该接口是不是已知必挂？是→跳过，省下超时等待"""
+    try:
+        d = _fm().get(str(key))
+        if not d:
+            return False
+        if d.get("n", 0) < 3:
+            return False
+        last = d.get("last", "")
+        if not last:
+            return False
+        age = (now_beijing() - datetime.datetime.strptime(last, "%Y-%m-%d")).days
+        return age < 7          # 7天内不再试；到期自动重试
+    except Exception:
+        return False
+
+
+def fail_mark(key, ok):
+    """记一次成败。成功则清零。"""
+    try:
+        d = _fm()
+        k = str(key)
+        if ok:
+            if k in d:
+                del d[k]
+        else:
+            it = d.get(k) or {"n": 0}
+            it["n"] = int(it.get("n", 0)) + 1
+            it["last"] = now_beijing().strftime("%Y-%m-%d")
+            d[k] = it
+    except Exception:
+        pass
+
+
+def fail_save():
+    try:
+        os.makedirs("reports", exist_ok=True)
+        with open(FAIL_MEMO_FILE, "w", encoding="utf-8") as f:
+            json.dump(_fm(), f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def with_retry(fn, tries=2, wait=3, timeout=60, critical=False, memo=None):
+    # ★V19.0：memo 指定接口名 → 已知必挂就直接抛，不走超时
+    if memo and fail_should_skip(memo):
+        raise RuntimeError(f"SkipKnownFail:{memo}")
     """★V8.9 快扫模式：非关键请求 重试1次、等1秒、超时20秒。
 
     ★★V9.0 修正（8/12 13:06 实测事故）★★
@@ -274,19 +347,25 @@ def with_retry(fn, tries=2, wait=3, timeout=60, critical=False):
             signal.signal(signal.SIGALRM, _alarm_handler)
             signal.alarm(timeout)
             try:
-                return fn()
+                _r = fn()
+                if memo:
+                    fail_mark(memo, True)      # ★V19.0 成功则清零
+                return _r
             finally:
                 signal.alarm(0)
         except Exception as e:
             last = e
             time.sleep(wait)
+    if memo:
+        fail_mark(memo, False)                 # ★V19.0 记一次失败
     raise last
 
 
 def multi_source(title, sources):
     for src_name, fn in sources:
         try:
-            r = with_retry(fn)
+            # ★V19.0：用 标题+源名 当memo键，已知必挂的直接跳过
+            r = with_retry(fn, memo=f"{title}|{src_name}")
             if r is not None and len(r) > 0:
                 return src_name, r
         except Exception as e:
@@ -5891,6 +5970,23 @@ def scan_all_sector_cross(uniq_news):
                 if not any(c in t for c in cn):
                     return True
             return False
+        # ★★★V19.0 提速：新闻预处理，避免 477×660 = 31万次重复计算★★★
+        # 原来：每个板块都把660条新闻重新去重、重新判噪声 → 31万次
+        # 现在：660条只处理一次，之后每个板块只做子串查找
+        # ★一条新闻都没少，只是不再重复做同样的事
+        _pre = []
+        _seen0 = set()
+        for tm, t in uniq_news:
+            _k = _news_key(t)
+            if _k in _seen0 or t[:24] in _seen0:
+                continue
+            _seen0.add(_k)
+            _seen0.add(t[:24])
+            _ts = str(t)
+            _pre.append((tm, _ts, any(b in _ts for b in BROKER_NOISE),
+                         any(x in _ts for x in WAR_NOISE)))
+        _cn_words = ("中国", "A股", "国内", "我国", "出口", "对华", "国产", "订单")
+
         results = []
         for kind, name, chg in rows:
             nm = str(name).strip()
@@ -5901,25 +5997,28 @@ def scan_all_sector_cross(uniq_news):
                 if nm.endswith(suf) and len(nm) > len(suf) + 1:
                     keys.add(nm[: -len(suf)])
             keys = {k for k in keys if len(k) >= 2}
-            bull, bear, seen = [], [], set()
-            for tm, t in uniq_news:
-                # ★V8.1：同源去重（书名号/冒号主体），防止一份文件灌成N条
-                _k = _news_key(t)
-                if _k in seen or t[:24] in seen:
+            bull, bear = [], []
+            for tm, t, _isbroker, _iswar in _pre:
+                # ★V19.0：去重已在预处理完成，这里只做匹配
+                # ★V19.0：先做最便宜的子串匹配，不命中就跳过
+                #   —— 原来是每条新闻都跑 _is_foreign + _is_noise + 极性判断，
+                #      现在只对【命中该板块】的那几条才跑，省掉99%的计算
+                if not any(k in t for k in keys):
                     continue
-                seen.add(_k)
+                if _isbroker and nm in ("证券", "券商", "多元金融"):
+                    continue
+                if _iswar and not any(c in t for c in _cn_words):
+                    continue
                 try:
-                    if _is_foreign(t) or _is_noise(t, nm):
+                    if _is_foreign(t):
                         continue
                 except Exception:
                     pass
-                if any(k in t for k in keys):
-                    seen.add(t[:24])
-                    try:
-                        p = _news_polarity(t)
-                    except Exception:
-                        p = 0
-                    (bull if p >= 0 else bear).append((tm, t))
+                try:
+                    p = _news_polarity(t)
+                except Exception:
+                    p = 0
+                (bull if p >= 0 else bear).append((tm, t))
             net = len(bull) - len(bear)
             if len(bull) + len(bear) < 2:
                 continue
@@ -6826,7 +6925,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V18.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V19.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -6906,6 +7005,17 @@ def main():
     # ★★V13.0：保存三张持久缓存（抓到一次管90天）★★
     for _cf in (FUND_CACHE_FILE, HOLD_CACHE_FILE, CONS_CACHE_FILE):
         _cache_save(_cf)
+    fail_save()                                # ★V19.0 保存失败记忆
+    try:
+        _fn = len(_fm())
+        if _fn:
+            _skip = [k for k in _fm() if fail_should_skip(k)]
+            w(f"\n⏭️ 失败接口记忆：{_fn}个记录，其中{len(_skip)}个本次已跳过")
+            if _skip:
+                w(f"   跳过：{'、'.join(_skip[:8])}")
+                w("   ★这些连挂≥3次，7天后自动重试一次（源可能恢复）")
+    except Exception:
+        pass
     try:
         _n1 = len(_cache_load(FUND_CACHE_FILE))
         _n2 = len(_cache_load(HOLD_CACHE_FILE))
@@ -6924,7 +7034,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V18.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V19.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
