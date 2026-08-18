@@ -4853,6 +4853,200 @@ def check_stock(name_or_code):
     return d
 
 
+def scan_hidden_chain():
+    """★★★V23.0【今日隐形主线】跨板块聚类 —— 板块榜看不见的链★★★
+
+    ★2026-08-18 用户追问『搞不好好机会出现你没有用心发掘呢？』时发现的根因：
+      当天 中石科技(电子化学品·20%涨停3连板)、金禄电子(元件·+11.06%机构0.67亿)、
+           博敏电子(元件·10%涨停2连板)、斯迪克(其他电子·+4.79%)
+      —— 四只是同一条链【PCB/载板/封装材料】，
+         但分属【三个不同板块】，任何板块榜都不会把它们放一起。
+      ★而当天新闻里有『PCB上游涨价潮扩大，南亚塑料上调CCL及PP报价』
+        + 金禄电子公告『清远PCB扩建线Q3投产，适配AI和算力』
+      ★这条链当天没进任何板块榜前列 → AI完全没识别出来。
+
+    ★根因：板块是【交易所的分类】，链是【产业逻辑】。
+      系统一直按板块看，市场按链在动。加规则没用，规则也是按板块写的。
+
+    做法：
+      ① 把今天的强势票全拉出来（涨停池+龙虎榜+机构席位+候选池+涨幅榜）
+      ② 用【今日新闻的关键词】反查它们的公告/新闻
+      ③ 同一关键词命中≥3只 → 判定为【今日隐形主线】
+      ④ 重点标出：分属≥2个不同板块的（板块榜必然看不见）
+    """
+    w("\n" + "=" * 60)
+    w("🔍🔍【今日隐形主线】跨板块聚类 · 板块榜看不见的链 🔍🔍")
+    w("=" * 60)
+    w("  ★2026-08-18教训：中石科技(电子化学品)、金禄电子(元件)、")
+    w("    博敏电子(元件)、斯迪克(其他电子) —— 同一条PCB/载板链，")
+    w("    分属3个板块，任何板块榜都不会把它们放一起 → AI完全没发现。")
+    w("  ★板块是交易所的分类，链是产业逻辑。按板块看必然漏。")
+
+    # ── 强势票池 ──
+    pool = {}          # {代码: (名称, 涨幅, 来源, 板块)}
+    # ★V23.0：涨停池/龙虎榜的全局表若不存在，用公告名单+快照兜底
+    for _gv, _src in (("TODAY_ZT_LIST", "涨停"), ("TODAY_LHB_LIST", "龙虎榜")):
+        try:
+            for it in (globals().get(_gv) or []):
+                if isinstance(it, (tuple, list)) and len(it) >= 2:
+                    _c = str(it[0])[-6:] if str(it[0])[-6:].isdigit() else str(it[1])[-6:]
+                    _n = it[1] if str(it[0])[-6:].isdigit() else it[0]
+                    pool.setdefault(_c, (_n, None, _src, ""))
+                elif isinstance(it, dict):
+                    _c = str(it.get("code", ""))[-6:]
+                    if _c:
+                        pool.setdefault(_c, (it.get("name", ""), it.get("pct"), _src, ""))
+        except Exception:
+            pass
+    # ★所有当天有公告的票也进池（公告本身就是强信号）
+    try:
+        for it in (globals().get("TODAY_ANNOUNCE_RAW") or []):
+            if isinstance(it, (tuple, list)) and len(it) >= 3:
+                _c = str(it[1])[-6:]
+                if _c.isdigit():
+                    pool.setdefault(_c, (str(it[0]), None, "有公告", ""))
+    except Exception:
+        pass
+    for t in WATCH_STOCKS:
+        try:
+            if t[2] in ("候选", "持仓"):
+                pool.setdefault(str(t[0])[-6:], (t[1], None, t[2], t[5]))
+        except Exception:
+            pass
+    # 快照涨幅榜前60
+    sp = get_spot()
+    if sp is not None:
+        try:
+            cc = pick_col(sp, ["代码", "code"])
+            cn = pick_col(sp, ["名称", "name"])
+            cg = pick_col(sp, ["涨跌幅", "changepercent"])
+            t2 = sp.copy()
+            t2["_g"] = pd.to_numeric(t2[cg], errors="coerce")
+            t2 = t2.dropna(subset=["_g"]).sort_values("_g", ascending=False).head(60)
+            for _, r in t2.iterrows():
+                c6 = str(r[cc])[-6:]
+                nm = str(r[cn]).strip()
+                if "ST" in nm or "退" in nm:
+                    continue
+                pool.setdefault(c6, (nm, float(r["_g"]), "涨幅榜", ""))
+        except Exception:
+            pass
+    if not pool:
+        w("  ⚠️ 强势票池为空")
+        w("=" * 60)
+        return
+    w(f"\n  强势票池：{len(pool)}只（涨停+龙虎榜+候选+涨幅榜前60）")
+
+    # ── 从今日新闻提取产业关键词 ──
+    news = globals().get("TODAY_NEWS", []) or []
+    ann = globals().get("TODAY_ANNOUNCE_RAW", []) or []
+    # 产业名词候选（2-6字，出现在涨价/扩产/量产/订单语境里的）
+    KEY_SEEDS = [
+        "PCB", "覆铜板", "CCL", "载板", "封装基板", "先进封装", "IC载板",
+        "存储", "DRAM", "NAND", "HBM", "内存", "闪存",
+        "光模块", "CPO", "硅光", "光芯片", "InP", "磷化铟", "光纤",
+        "MLCC", "电容", "电感", "被动元件", "离型膜",
+        "液冷", "冷板", "散热", "氟化液",
+        "机器人", "谐波", "丝杠", "灵巧手", "无框电机",
+        "固态电池", "钠电", "硅碳", "复合集流体",
+        "稀土", "永磁", "钨", "锗", "镓", "铟", "铜箔",
+        "光刻", "光刻胶", "刻蚀", "薄膜沉积", "量测",
+        "算力", "服务器", "交换机", "AI芯片", "GPU",
+        "种业", "转基因", "玉米", "化肥", "农药", "饲料",
+        "创新药", "CXO", "ADC", "减肥药", "GLP-1",
+        "核电", "特高压", "储能", "光伏", "钙钛矿",
+        "PET铜箔", "碳纤维", "玻璃基板", "超导",
+    ]
+    # 哪些关键词今天在新闻里被提到，且带涨价/扩产/订单语境
+    HOT_CTX = ["涨价", "上调", "扩产", "扩建", "量产", "订单", "中标",
+               "投产", "缺货", "紧缺", "供不应求", "创新高", "预增", "翻倍"]
+    hot_keys = {}
+    for tm, t in news[:400]:
+        ts = str(t)
+        has_ctx = any(c in ts for c in HOT_CTX)
+        for k in KEY_SEEDS:
+            if k in ts:
+                if k not in hot_keys:
+                    hot_keys[k] = {"n": 0, "hot": 0, "news": []}
+                hot_keys[k]["n"] += 1
+                if has_ctx:
+                    hot_keys[k]["hot"] += 1
+                    if len(hot_keys[k]["news"]) < 3:
+                        hot_keys[k]["news"].append((tm, ts[:60]))
+    hot = {k: v for k, v in hot_keys.items() if v["hot"] >= 1}
+    if not hot:
+        w("  今日新闻中无【产业关键词 + 涨价/扩产/订单语境】的组合")
+        w("=" * 60)
+        return
+    w(f"  今日热关键词：{len(hot)}个（带涨价/扩产/订单语境）")
+
+    # ── 用公告反查：哪些强势票的公告里有这些关键词 ──
+    chain_hit = {}     # {关键词: [(代码,名称,涨幅,板块)]}
+    ann_map = {}
+    try:
+        for it in ann:
+            # ★TODAY_ANNOUNCE_RAW 结构是 (名称, 代码, 公告标题)
+            if isinstance(it, (tuple, list)) and len(it) >= 3:
+                c = str(it[1])[-6:]
+                if c:
+                    ann_map.setdefault(c, []).append(str(it[2]))
+            elif isinstance(it, dict):
+                c = str(it.get("code", ""))[-6:]
+                if c:
+                    ann_map.setdefault(c, []).append(str(it.get("title", "")))
+    except Exception:
+        pass
+    # ★V23.0：板块从行业对照表补齐，否则"分属N个板块"永远是0
+    try:
+        _im, _ = _load_ind_cache()
+    except Exception:
+        _im = {}
+    for c6, (nm, g, src, sect) in list(pool.items()):
+        if not sect:
+            sect = (_im or {}).get(c6, "")
+            pool[c6] = (nm, g, src, sect)
+        txt = " ".join(ann_map.get(c6, []))
+        # 名称本身也参与匹配（如"斯迪克"匹配不到，但"洁美科技"公告里有离型膜）
+        for k in hot:
+            if k in txt:
+                chain_hit.setdefault(k, []).append((c6, nm, g, sect))
+
+    # ── 同一关键词≥3只，且分属≥2个板块 = 隐形主线 ──
+    found = []
+    for k, lst in chain_hit.items():
+        if len(lst) < 3:
+            continue
+        sects = {x[3] for x in lst if x[3]}
+        found.append((len(lst), len(sects), k, lst))
+    found.sort(key=lambda x: (-x[1], -x[0]))
+
+    if not found:
+        w("\n  ⚠️ 今日无【同一关键词命中≥3只强势票】的隐形主线")
+        w("     → 可能是：①今天确实没有跨板块的链在动")
+        w("               ②公告源覆盖不足（本次公告条数见【公告雷达】）")
+        w("     ★不硬凑（铁律D）")
+        w("=" * 60)
+        return
+
+    w(f"\n  ★★命中 {len(found)} 条隐形主线★★\n")
+    for i, (n, nsect, k, lst) in enumerate(found[:6], 1):
+        flag = "🔥🔥★跨板块，板块榜看不见★" if nsect >= 2 else "🔥"
+        w(f"  {i}. 【{k}】{n}只 / 分属{nsect}个板块 {flag}")
+        for c6, nm, g, sect in sorted(lst, key=lambda x: -(x[2] or 0))[:6]:
+            gs = f"{g:+.2f}%" if g is not None else ""
+            w(f"       {nm}({c6}) {gs} [{sect or '板块未知'}]")
+        for tm, t in hot[k]["news"][:2]:
+            w(f"       ▸催化 {t}")
+        w("")
+
+    w("  ── 怎么用 ──")
+    w("  🔥🔥跨≥2板块的最值钱：板块榜必然看不见，市场也还没给它命名")
+    w("  ★从这条链里挑：涨幅最小 + 成交最小 + 板块不动的那只")
+    w("    （板块不动它却涨 = 个股级驱动 = 真有东西）")
+    w("  ⚠️ 仍需过①-B：这个关键词和它的赚钱方式是同一个吗？")
+    w("=" * 60)
+
+
 def scan_rotation():
     """★★★V21.0【板块轮动器】只在真反常时开口，默认沉默★★★
 
@@ -7259,7 +7453,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V22.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V23.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7307,6 +7501,7 @@ def main():
         safe_run("定增破发雷达", scan_placement_radar)
         safe_run("推荐前检查表", scan_reco_checklist)
         safe_run("持仓/候选 深度体检", scan_all_deep)
+        safe_run("🔍今日隐形主线", scan_hidden_chain)
         safe_run("🔄板块轮动器", scan_rotation)
         safe_run("🌱预启动雷达", scan_pre_launch)
         safe_run("★每日选股(稳定版)★", scan_daily_pick)
@@ -7370,7 +7565,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V22.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V23.0完成 {prefix}_最新.txt")
 
 
 class _HardTimeout(Exception):
