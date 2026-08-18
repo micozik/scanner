@@ -378,12 +378,52 @@ def multi_source(title, sources):
     return None, None
 
 
+class _ModTimeout(Exception):
+    pass
+
+
+def _mod_alarm(signum, frame):
+    raise _ModTimeout()
+
+
+_RUN_T0 = [None]
+
+
 def safe_run(title, func):
+    """★★V22.1：每个模块单独硬超时 + 全局预算★★
+    8/18实测：跑29分58秒被GitHub杀掉。
+    ★根因：全局预算只在模块【之间】检查，管不住"一个模块内部卡死"。
+      现在每个模块进来就上闹钟，90秒不出来就掐掉，跳到下一个。
+    ★另外 time.sleep(2) × 25个模块 = 白等50秒，改成0.3秒。
+    """
+    if _RUN_T0[0] is None:
+        _RUN_T0[0] = time.time()
+    _used = time.time() - _RUN_T0[0]
+    _budget = int(os.environ.get("HARD_LIMIT", "780"))
+    if _used > _budget:
+        w(f"  ⏱️【{title}】全局预算({_budget}秒)已用尽，跳过。本节缺失")
+        return
+    _lim = int(os.environ.get("MOD_LIMIT", "90"))
+    _armed = False
+    try:
+        signal.signal(signal.SIGALRM, _mod_alarm)
+        signal.alarm(_lim)
+        _armed = True
+    except Exception:
+        pass
     try:
         func()
+    except _ModTimeout:
+        w(f"  ⏱️【{title}】超过{_lim}秒被掐断，本节数据缺失")
     except Exception as e:
         w(f"  [报空] {title}：{type(e).__name__}: {str(e)[:90]}")
-    time.sleep(2)
+    finally:
+        if _armed:
+            try:
+                signal.alarm(0)
+            except Exception:
+                pass
+    time.sleep(0.3)
 
 
 ETF_DF = None
@@ -7219,7 +7259,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V22.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V22.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7240,8 +7280,8 @@ def main():
         scan_breadth()
         scan_spot()
         scan_cold_low()
-        scan_board_rank()
-        scan_sector_flow()
+        safe_run("板块全景榜", scan_board_rank)
+        safe_run("板块资金流", scan_sector_flow)
         if not intraday:
             scan_zt_pool()
             scan_lhb()
@@ -7330,7 +7370,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V22.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V22.1完成 {prefix}_最新.txt")
 
 
 class _HardTimeout(Exception):
