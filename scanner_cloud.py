@@ -4933,16 +4933,24 @@ def scan_rotation():
     w("=" * 60)
 
 
+_FLOW_HIST_MEM = None
+
+
 def _load_flow_hist():
-    """★V21.0 板块资金历史（用于判断连续几天流出）"""
+    """★V21.0 板块资金历史。★V21.1：加内存缓存，别每次读盘"""
+    global _FLOW_HIST_MEM
+    if _FLOW_HIST_MEM is not None:
+        return _FLOW_HIST_MEM
     f = "reports/sector_flow_hist.json"
     try:
         if os.path.exists(f):
             with open(f, "r", encoding="utf-8") as fp:
-                return json.load(fp)
+                _FLOW_HIST_MEM = json.load(fp)
+                return _FLOW_HIST_MEM
     except Exception:
         pass
-    return {}
+    _FLOW_HIST_MEM = {}
+    return _FLOW_HIST_MEM
 
 
 def _save_flow_hist():
@@ -5178,7 +5186,7 @@ def scan_daily_pick():
     codes = [c[0] for c in cands[:120]]
     # ★V15.1提速：全市场2134只太多，只对【前60只涨幅最小的】抓K线
     #   8/14实测：113只K线抓了45秒。60只约25秒，够用。
-    codes = codes[:60]
+    codes = codes[:40]      # ★V21.1 60→40，省时间
     _prewarm_klines(codes)
     final = []
     for c6, nm2, px, g, amt in cands[:120]:
@@ -5500,9 +5508,12 @@ def scan_all_deep():
     #   截断候选 = 把用户主动加的查询请求扔掉。
     # ★体检是并发的（12线程，12只15秒），30只也就30-40秒，能承受。
     _other = [t for t in targets if t[2] != "持仓"]
-    if len(_other) > 30:
-        w(f"  ⚠️ 候选{len(_other)}只，只跑前30只（并发上限）")
-        _other = _other[:30]
+    # ★V21.1：候选30→15。8/18实测46分钟超时，体检是第二大耗时。
+    #   持仓全跑不动，候选砍一半 —— 候选缺数据只影响"能不能推"，
+    #   持仓缺数据影响"该不该卖"，后者更要紧。
+    if len(_other) > 15:
+        w(f"  ⚠️ 候选{len(_other)}只，只跑前15只（时间预算）")
+        _other = _other[:15]
     targets = _hold + _other
     _cache = {}
     try:
@@ -7207,7 +7218,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V21.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V21.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7318,7 +7329,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V21.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V21.1完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
