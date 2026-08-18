@@ -16,6 +16,7 @@ V1.7新增：
 """
 
 import os
+import sys
 import json
 import time
 import signal
@@ -7218,7 +7219,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V21.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V22.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7329,8 +7330,65 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V21.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V22.0完成 {prefix}_最新.txt")
+
+
+class _HardTimeout(Exception):
+    pass
+
+
+def _hard_alarm(signum, frame):
+    raise _HardTimeout()
+
+
+def _emergency_write(reason):
+    """★★V22.0：无论发生什么，都要把已经跑出来的内容写成报告★★
+    8/18事故：跑26分40秒被判失败，exit 1，报告完全没生成 → 当天全瞎。
+    ★没报告 = 比报告不全严重100倍。宁可只有一半，也不能是空的。
+    """
+    try:
+        bj = now_beijing()
+        weekend = bj.weekday() >= 5
+        intraday = (not weekend) and (9 <= bj.hour < 15)
+        prefix = "盘中" if intraday else ("周末" if weekend else "盘后")
+        REPORT.insert(0, "")
+        REPORT.insert(0, f"⚠️⚠️ 本报告为【应急输出】：{reason}")
+        REPORT.insert(0, "⚠️⚠️ 部分模块未跑完，缺失的节次请以下一次扫描为准")
+        REPORT.insert(0, "=" * 60)
+        os.makedirs("reports", exist_ok=True)
+        text = "\n".join(REPORT)
+        for fn in (f"reports/{prefix}_最新.txt",
+                   f"reports/{prefix}_{bj.strftime('%Y%m%d_%H%M')}.txt"):
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(text)
+        print(f"⚠️ 应急报告已写出（{len(REPORT)}行）：{reason}")
+    except Exception as e:
+        print(f"🔴 应急写报告也失败：{e}")
 
 
 if __name__ == "__main__":
-    main()
+    # ★★★V22.0 硬超时：13分钟到点强制收尾★★★
+    # 8/18实测：V21.1的12分钟预算只在 safe_run 里检查，
+    #   而 scan_index/scan_stocks/scan_news 等是直接调用的，不受控 → 跑了26分40秒。
+    # ★现在用 signal.alarm 给整个 main 设硬闸，到点抛异常，
+    #   在 except 里把已有内容写成报告 —— 保证一定有产出。
+    _HARD_LIMIT = int(os.environ.get("HARD_LIMIT", "780"))   # 13分钟
+    try:
+        signal.signal(signal.SIGALRM, _hard_alarm)
+        signal.alarm(_HARD_LIMIT)
+    except Exception:
+        pass
+    try:
+        main()
+        try:
+            signal.alarm(0)
+        except Exception:
+            pass
+    except _HardTimeout:
+        _emergency_write(f"全局硬超时（{_HARD_LIMIT}秒），后续模块已跳过")
+    except Exception as _e:
+        import traceback
+        traceback.print_exc()
+        _emergency_write(f"运行异常 {type(_e).__name__}: {str(_e)[:80]}")
+    # ★永远 exit 0：报告写出来了就算成功，不要因为某个模块挂了就整体失败
+    sys.exit(0)
