@@ -125,6 +125,7 @@ def _sane_check(name, value, lo, hi, unit=""):
 TODAY_VERIFIED_CHAINS = []   # ★V11.0 今日有✅验证信号的链名
 SECTOR_JUMP_MAP = {}   # ★V9.7 {板块名: 排名跳升位数}。正=上升，是【领先指标】
 FAST_MODE = False      # ★V8.9 快扫模式开关
+SECTOR_CHG_MAP = {}    # ★V21.0 {板块名: 今日涨跌幅}
 SECTOR_FLOW_MAP = {}   # {板块名: 主力净额(亿)} 由 scan_sector_flow 填充
 TODAY_NEWS = []        # [(时间, 标题)] 由 scan_news 填充，供【我的持仓相关消息】用
 
@@ -2715,6 +2716,8 @@ def _fmt_tag(hist, name, today, rank_now, pct_now):
         #   排名跳升才是领先的(CRO今天从358跳到第1，昨天它还在358名、资金为负)
         try:
             SECTOR_JUMP_MAP[str(name)] = int(prev) - int(rank_now)
+            if pct_now is not None:
+                SECTOR_CHG_MAP[str(name)] = float(pct_now)   # ★V21.0
         except Exception:
             pass
         if prev - rank_now >= 8:
@@ -2839,6 +2842,14 @@ def scan_sector_flow():
             SECTOR_FLOW_MAP.clear()
             for _, rr in df.iterrows():
                 SECTOR_FLOW_MAP[str(rr[c_name])] = float(rr[c_flow])
+                try:      # ★V21.0 同时记录涨跌幅
+                    _cc2 = pick_col(fdf, ["涨跌幅", "行业-涨跌幅"])
+                    if _cc2:
+                        _v2 = pd.to_numeric(rr[_cc2], errors="coerce")
+                        if pd.notna(_v2):
+                            SECTOR_CHG_MAP.setdefault(str(rr[c_name]), float(_v2))
+                except Exception:
+                    pass
         except Exception:
             pass
         w(f"  ◆ 行业净流入前10（源：{src}）：")
@@ -4799,6 +4810,167 @@ def check_stock(name_or_code):
     w("  ⚠️ 仍需人工过①-B：它靠什么赚钱？和板块涨的原因是同一个吗？")
     w("=" * 60)
     return d
+
+
+def scan_rotation():
+    """★★★V21.0【板块轮动器】只在真反常时开口，默认沉默★★★
+
+    ★用户2026-08-18原话：
+      『如果昨天我把中恒卖了，同时又买入了一支今天涨的股票，
+        这才是完美的操作。为什么你从来不会这样去想事情——
+        让我卖掉一只，赶紧去买另外一只，原因是我持有的那个板块
+        已经不行，但另外的板块开始有动作。』
+      『但你不要为了做这个动作而做，而是真的发现问题才做。
+        明明有好机会你也没抓住，还让我卖掉本来不错的股票，那就麻烦了。』
+
+    ★所以本模块【默认输出"今日无信号"】，三条同时成立才给配对：
+      ① 持仓板块：连续≥2天资金净流出 且 板块同时在跌
+      ② 目标板块：跳升≥30位 且 资金流入 且 涨幅<2%（还没涨）
+      ③ 两者不在同一条驱动链（不是左手倒右手）
+    ★缺一条 → 沉默。宁可不说，不许硬凑。
+    """
+    w("\n" + "=" * 60)
+    w("🔄🔄【板块轮动器】手上的在退 + 别处在起 = 才换 🔄🔄")
+    w("=" * 60)
+    w("  ★用户2026-08-18：『让我卖掉一只赶紧买另一只，")
+    w("    原因是我持有的板块已经不行，但另外的板块开始有动作』")
+    w("  ⚠️ 但用户同时警告：『不要为了做这个动作而做』")
+    w("     → 本模块【默认沉默】，三条同时成立才开口")
+
+    # ── 我持仓的板块 ──
+    hold_sect = {}
+    for t in WATCH_STOCKS:
+        try:
+            if t[2] != "持仓":
+                continue
+            hold_sect.setdefault(t[5], []).append((t[1], t[7]))
+        except Exception:
+            continue
+    if not hold_sect:
+        w("  无持仓")
+        w("=" * 60)
+        return
+
+    # ── ① 找【正在退】的持仓板块 ──
+    hist = _load_flow_hist()          # {日期: {板块: 资金}}
+    days = sorted(hist.keys(), reverse=True)[:3]
+    retreating = []
+    for sect, stocks in hold_sect.items():
+        fl = _sector_flow_of(sect)
+        chg = _sector_chg_of(sect)
+        if fl is None or chg is None:
+            continue
+        # 连续两天流出？
+        n_out = 0
+        for d in days:
+            v = (hist.get(d) or {}).get(sect)
+            if v is not None and v < 0:
+                n_out += 1
+            else:
+                break
+        cond_a = (n_out >= 2 or fl < -30)      # 连2天流出 或 单日大额流出
+        cond_b = (chg < -0.5)                  # 板块同时在跌
+        if cond_a and cond_b:
+            retreating.append((sect, fl, chg, n_out, stocks))
+
+    if not retreating:
+        w("\n  ✅ 持仓板块【没有一个】同时满足『连2天资金流出 且 板块在跌』")
+        w("     → 今日无轮动信号，★持仓不动★")
+        w("     ⚠️ 只有一天流出、或板块还在涨 —— 都不算退")
+        w("=" * 60)
+        return
+
+    w(f"\n  🔻 正在退的持仓板块（{len(retreating)}个）：")
+    for sect, fl, chg, n_out, stocks in retreating:
+        w(f"    {sect} {chg:+.2f}% 资金{fl:+.1f}亿 连{n_out}天流出")
+        w(f"      涉及持仓：{'、'.join(x[0] for x in stocks)}")
+
+    # ── ② 找【正在起】的板块 ──
+    rising = []
+    for nm, jp in sorted(SECTOR_JUMP_MAP.items(), key=lambda x: -x[1])[:30]:
+        if jp < 30:
+            continue
+        fl = _sector_flow_of(nm)
+        chg = _sector_chg_of(nm)
+        if fl is None or fl <= 0:
+            continue
+        if chg is None or chg >= 2.0:      # 已经涨超2% = 追高
+            continue
+        rising.append((nm, jp, fl, chg))
+    if not rising:
+        w("\n  ⚠️ 有板块在退，但【没有一个】板块同时满足")
+        w("     『跳升≥30位 + 资金流入 + 涨幅<2%』")
+        w("     → 只减不换。★卖了没地方去，就别卖★")
+        w("=" * 60)
+        return
+
+    rising.sort(key=lambda x: -(x[1] / 20 + x[2]))
+    w(f"\n  🔺 正在起的板块（{len(rising)}个，前5）：")
+    for nm, jp, fl, chg in rising[:5]:
+        w(f"    {nm} {chg:+.2f}% 🚀跳{jp}位 资金{fl:+.1f}亿")
+
+    # ── ③ 配对，排除同链 ──
+    w("\n  ★★【轮动建议】★★")
+    n_pair = 0
+    for sect, fl, chg, n_out, stocks in retreating:
+        for nm, jp, fl2, chg2 in rising[:3]:
+            # 同链排除
+            same = False
+            for _s, _c in [(sect, x[1]) for x in stocks]:
+                if _c and nm and (_c[:2] in nm or nm[:2] in _c):
+                    same = True
+            if same:
+                continue
+            n_pair += 1
+            w(f"\n  {n_pair}. 卖【{sect}】里的 {'、'.join(x[0] for x in stocks)}")
+            w(f"     → 买【{nm}】")
+            w(f"     退的理由：{chg:+.2f}% 资金{fl:+.1f}亿 连{n_out}天流出")
+            w(f"     起的理由：{chg2:+.2f}% 🚀跳{jp}位 资金{fl2:+.1f}亿（还没涨）")
+            w(f"     ⚠️ 仍需人工过①-B：新板块涨的原因，和标的赚钱方式是同一个吗？")
+            break
+    if n_pair == 0:
+        w("  ⚠️ 退的和起的在同一条驱动链上 = 左手倒右手，无意义 → 不换")
+    w("=" * 60)
+
+
+def _load_flow_hist():
+    """★V21.0 板块资金历史（用于判断连续几天流出）"""
+    f = "reports/sector_flow_hist.json"
+    try:
+        if os.path.exists(f):
+            with open(f, "r", encoding="utf-8") as fp:
+                return json.load(fp)
+    except Exception:
+        pass
+    return {}
+
+
+def _save_flow_hist():
+    """每天存一次当日板块资金，供明天判断连续性"""
+    f = "reports/sector_flow_hist.json"
+    try:
+        d = _load_flow_hist()
+        d[now_beijing().strftime("%Y-%m-%d")] = {
+            k: float(v) for k, v in SECTOR_FLOW_MAP.items()}
+        ks = sorted(d.keys(), reverse=True)[:30]
+        d = {k: d[k] for k in ks}
+        os.makedirs("reports", exist_ok=True)
+        with open(f, "w", encoding="utf-8") as fp:
+            json.dump(d, fp, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def _sector_chg_of(name):
+    """★V21.0 板块名 → 今日涨跌幅"""
+    m = globals().get("SECTOR_CHG_MAP") or {}
+    if name in m:
+        return m[name]
+    n = str(name).rstrip("概念行业板块产业指数ⅡⅢ")
+    for k, v in m.items():
+        if n and (n in k or k in n):
+            return v
+    return None
 
 
 def scan_pre_launch():
@@ -7035,7 +7207,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V20.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V21.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7083,6 +7255,7 @@ def main():
         safe_run("定增破发雷达", scan_placement_radar)
         safe_run("推荐前检查表", scan_reco_checklist)
         safe_run("持仓/候选 深度体检", scan_all_deep)
+        safe_run("🔄板块轮动器", scan_rotation)
         safe_run("🌱预启动雷达", scan_pre_launch)
         safe_run("★每日选股(稳定版)★", scan_daily_pick)
         safe_run("选股流水线(实验)", scan_pipeline)
@@ -7116,6 +7289,7 @@ def main():
     for _cf in (FUND_CACHE_FILE, HOLD_CACHE_FILE, CONS_CACHE_FILE):
         _cache_save(_cf)
     fail_save()                                # ★V19.0 保存失败记忆
+    _save_flow_hist()                          # ★V21.0 存板块资金历史
     try:
         _fn = len(_fm())
         if _fn:
@@ -7144,7 +7318,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V20.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V21.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
