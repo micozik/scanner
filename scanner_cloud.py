@@ -261,6 +261,9 @@ def _alarm_handler(signum, frame):
 #   游资席位东财、巨潮昨日公告、股市日历昨日
 # ★不是砍数据，是不为【已证明拿不到】的东西反复付出等待成本。
 #   连续失败3次 → 跳过7天 → 到期自动重试一次（源可能恢复）
+_TODAY_UP_RATIO = None     # ★V20.0 今日上涨占比
+_TODAY_ZT_TOTAL = 0        # ★V20.0 今日涨停数（供风险分算炸板率）
+_TODAY_ZT_BROKEN = 0       # ★V20.0 今日有炸板记录的只数
 FAIL_MEMO_FILE = "reports/fail_memo.json"
 _FAIL_MEMO = None
 
@@ -686,6 +689,7 @@ def scan_tomorrow_gate():
             act = float(str(m.get("活跃度", "0")).replace("%", ""))
             ratio = up / (up + dn) * 100 if (up + dn) else 0
             w(f"  今日：涨{up:.0f} 跌{dn:.0f} 上涨占比{ratio:.1f}% | 跌停{dt:.0f}只 | 活跃度{act:.1f}%")
+            globals()["_TODAY_UP_RATIO"] = float(ratio)   # ★V20.0 供风险分算广度透支
             if ratio < 40:
                 score += 2
                 reasons.append(f"广度恶化(占比{ratio:.0f}%)")
@@ -786,12 +790,77 @@ def scan_tomorrow_gate():
         w("    美债收益率飙升+股债双杀 = 市场认为『行动过晚』= 利空成长股")
         w("    美债收益率回落+股涨 = 真鸽派 = 利好成长股")
 
+        # ★★★V20.0 三个新维度（2026-08-18 用户追问催生）★★★
+        # 用户：『你昨天能嗅到今天跌的气息吗？如果不能，为什么做不到？』
+        # 8/17报告显示风险分0/12【明日健康可开仓】，8/18就跌了3597只。
+        # ★但8/17的报告里其实有三条预警，只是旧风险分不看它们：
+        #   ①涨停110只里43只炸板 = 炸板率39%（健康行情<20%）
+        #   ②埋伏池连续5天为空 = 全场追涨接力，无人在跌的票上埋伏
+        #   ③涨4067跌1000 = 单日普涨广度透支，这种极值难持续
+        # ★这三条都是【情绪透支】的信号，而旧风险分只看资金和指数。
+        #   资金和指数是【当天的事实】，情绪透支是【明天的预兆】。
+
+        # ①炸板率
+        try:
+            _zt = globals().get("_TODAY_ZT_TOTAL") or 0
+            _zb = globals().get("_TODAY_ZT_BROKEN") or 0
+            if _zt >= 20:
+                _rate = _zb / _zt * 100
+                w(f"  炸板率：{_zb}/{_zt} = {_rate:.0f}%")
+                if _rate >= 45:
+                    score += 3
+                    reasons.append(f"🔴炸板率{_rate:.0f}%(情绪透支)")
+                elif _rate >= 35:
+                    score += 2
+                    reasons.append(f"炸板率{_rate:.0f}%偏高")
+                elif _rate >= 25:
+                    score += 1
+                    reasons.append(f"炸板率{_rate:.0f}%")
+        except Exception:
+            pass
+
+        # ②埋伏池连续为空的天数
+        try:
+            _ah = _bt_load(AMBUSH_HIST_FILE)
+            _empty = 0
+            for _d in sorted([k for k in _ah if k != "_acc"], reverse=True)[:8]:
+                _v = _ah.get(_d)
+                if isinstance(_v, list) and len(_v) == 0:
+                    _empty += 1
+                elif isinstance(_v, list) and len(_v) > 0:
+                    break
+            if _empty >= 5:
+                score += 2
+                reasons.append(f"🔴埋伏池连空{_empty}天(全场追涨)")
+            elif _empty >= 3:
+                score += 1
+                reasons.append(f"埋伏池连空{_empty}天")
+            if _empty:
+                w(f"  埋伏池连续为空：{_empty}天 ← 无人在跌的票上埋伏")
+        except Exception:
+            pass
+
+        # ③广度透支：上涨占比>78% 或 <22% 都是极值，难持续
+        try:
+            _br = globals().get("_TODAY_UP_RATIO")
+            if _br is not None:
+                if _br > 78:
+                    score += 1
+                    reasons.append(f"广度透支(涨{_br:.0f}%)")
+                elif _br < 22:
+                    score += 1
+                    reasons.append(f"广度极低(涨{_br:.0f}%)")
+        except Exception:
+            pass
+
         global LAST_RISK_SCORE
         LAST_RISK_SCORE = score
-        w(f"\n  🚨 风险分：{score}/12　{'｜'.join(reasons) if reasons else '无警报'}")
-        if score >= 7:
+        w(f"\n  🚨 风险分：{score}/16　{'｜'.join(reasons) if reasons else '无警报'}")
+        w("     ★V20.0新增：炸板率(3) + 埋伏池连空(2) + 广度透支(1)")
+        w("     ⚠️8/17这三项本该给5分，旧模型只算0分 → 判成『明日健康』")
+        if score >= 9:
             w("  >>> 【明日高危】一票不碰，盈利仓主动减半锁利，破位无条件走")
-        elif score >= 4:
+        elif score >= 5:
             w("  >>> 【明日偏弱】不开新仓，只减不加")
         elif score >= 2:
             w("  >>> 【明日中性】仅最高确定性半仓")
@@ -1982,6 +2051,9 @@ def scan_intraday_hotmoney():
                     nf = int((zt[z_fail] > 0).sum())
                     w(f"    ⚠️ 有炸板记录的{nf}只/{len(zt)}只 → " +
                       ("情绪不稳" if nf > len(zt) * 0.3 else "封板扎实"))
+                    # ★V20.0：存全局，供风险分算【炸板率】
+                    globals()["_TODAY_ZT_TOTAL"] = len(zt)
+                    globals()["_TODAY_ZT_BROKEN"] = nf
         except Exception as e:
             w(f"    [跳过] 涨停池：{type(e).__name__}")
     safe_run("盘中游资雷达", _do)
@@ -6963,7 +7035,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V19.1 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V20.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7072,7 +7144,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V19.1完成 {prefix}_最新.txt")
+    print(f"\n✅ V20.0完成 {prefix}_最新.txt")
 
 
 if __name__ == "__main__":
