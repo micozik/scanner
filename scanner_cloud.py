@@ -4853,6 +4853,95 @@ def check_stock(name_or_code):
     return d
 
 
+RECO_TRACK_FILE = "reports/reco_track.json"
+
+
+def _reco_load():
+    try:
+        if os.path.exists(RECO_TRACK_FILE):
+            with open(RECO_TRACK_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def scan_reco_track():
+    """★★★V25.0【推荐跟踪表】昨天推过的，今天必须给出价格★★★
+
+    ★2026-08-20 事故：8/19我推双环传动(002472)，8/20报告里查不到它，
+      我就说『它不在今天冷低早名单里』→ 改推拓普集团。
+      ★用户原话：『这不是你刚才说的吗？你现在说了的话当没有，
+        我好害怕，这样的系统怎么可能有用』
+    ★根因两条：
+      ① 推荐过的票没有自动进跟踪表 → 第二天在报告里查不到
+      ② 我用【冷低早筛选器】的名单变化，否掉了【产业逻辑】
+         而同一份报告里冷低早自己的回测写着：
+         『5日胜率3/7，平均-1.18%，这个筛选器当前参数在这种行情下无效』
+    ★铁律Z：★筛选器只管形态，产业逻辑才管方向。
+      产业逻辑成立 + 位置可接受 = 就能买，
+      不需要它每天出现在筛选器名单里。★
+    """
+    w("\n" + "=" * 60)
+    w("📌📌【推荐跟踪表】我推过的票，今天怎么样了 📌📌")
+    w("=" * 60)
+    w("  ★铁律Z（2026-08-20）：筛选器只管形态，产业逻辑才管方向。")
+    w("    不许因为『今天不在筛选器名单里』就否掉昨天的推荐。")
+    w("    冷低早自己的回测：5日胜率3/7、平均-1.18% → 它本身就不可靠。")
+
+    d = _reco_load()
+    if not d:
+        w("  （跟踪表为空。AI每次推荐后，把标的写进 reports/reco_track.json）")
+        w("  格式：{\"002472\": {\"name\":\"双环传动\",\"date\":\"2026-08-19\",")
+        w("         \"price\":36.05,\"chain\":\"机器人减速器\",\"bought\":false}}")
+        w("=" * 60)
+        return
+
+    sp = get_spot()
+    if sp is None:
+        w("  🔴 快照缺失，无法取现价")
+        w("=" * 60)
+        return
+    cc = pick_col(sp, ["代码", "code"])
+    cn = pick_col(sp, ["名称", "name"])
+    cp = pick_col(sp, ["最新价", "trade"])
+    cg = pick_col(sp, ["涨跌幅", "changepercent"])
+    sp2 = sp.copy()
+    try:
+        sp2 = sp2.loc[:, ~sp2.columns.duplicated()]
+    except Exception:
+        pass
+    sp2["_c6"] = sp2[cc].astype(str).str[-6:]
+
+    w("")
+    for c6, it in sorted(d.items(), key=lambda x: x[1].get("date", ""), reverse=True):
+        try:
+            r = sp2[sp2["_c6"] == str(c6)[-6:]]
+            nm = it.get("name", "")
+            p0 = it.get("price")
+            dt = it.get("date", "")
+            ch = it.get("chain", "")
+            bo = "✅买了" if it.get("bought") else "❌没买"
+            if len(r) == 0:
+                w(f"  ◆ {nm}({c6}) 推荐于{dt} @{p0} [{ch}] {bo}")
+                w(f"     ⚠️今日快照查不到 → 可能停牌，不是『不该买』")
+                continue
+            r0 = r.iloc[0]
+            px = float(pd.to_numeric(r0[cp], errors="coerce"))
+            g = float(pd.to_numeric(r0[cg], errors="coerce"))
+            ret = (px / float(p0) - 1) * 100 if p0 else 0
+            mark = "🟢" if ret > 0 else ("🔴" if ret < -3 else "⚪")
+            w(f"  {mark} {nm}({c6}) 推荐@{p0} → 现价{px:.2f} "
+              f"★累计{ret:+.2f}%★ 今日{g:+.2f}% [{ch}] {bo}")
+        except Exception:
+            continue
+    w("")
+    w("  ⚠️ 这张表是AI战绩的铁证，推了就记，不管用户买没买。")
+    w("     用户2026-08-18：『只要你推荐了，就是你做出的选择，")
+    w("       必须记下来用来改进』")
+    w("=" * 60)
+
+
 def scan_hidden_chain():
     """★★★V23.0【今日隐形主线】跨板块聚类 —— 板块榜看不见的链★★★
 
@@ -7397,6 +7486,18 @@ def scan_decision_card():
     w("     天数只有绑定驱动类型才有意义：")
     w("     产业周期(存储/AI算力/国产替代)连30天都不算高潮")
     w("     单一事件(IPO/发布会)连3天就到顶")
+    w("  ⚠️★★铁律Z（V25.0 · 2026-08-20用户当场抓到）★★")
+    w("     ★筛选器只管【形态】，产业逻辑才管【方向】★")
+    w("     8/20事故：我8/19推双环传动，8/20它不在冷低早名单里，")
+    w("       我就改推别的 → 用户：『你现在说了的话当没有，我好害怕』")
+    w("     ★而同一份报告里，冷低早自己的回测写着：")
+    w("       5日胜率3/7、平均-1.18%、『这个筛选器当前参数在这种行情下无效』")
+    w("     ★用一个已知失效的筛选器，去否掉一个成立的产业逻辑 = 本末倒置")
+    w("     【正确做法】产业逻辑成立(①-B答得出) + 位置可接受(未追高) = 可以买")
+    w("       不需要它每天出现在筛选器名单里")
+    w("     【推荐后必须做】把标的写进 reports/reco_track.json，")
+    w("       第二天【推荐跟踪表】会自动给出现价和累计涨跌 —— 不许再『查不到』")
+    w("")
     w("  ⚠️ 铁律L：★推荐前必须先答①-B『真实驱动是什么』★")
     w("     答不出『它靠什么赚钱、需求来自哪』= 不许推荐")
     w("     行业分类只是标签，驱动才是本质")
@@ -7469,7 +7570,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V24.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V25.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7523,6 +7624,7 @@ def main():
         safe_run("持仓/候选 深度体检", scan_all_deep)     # 决策必需
         safe_run("异动无解释", scan_unexplained)
         safe_run("定增破发雷达", scan_placement_radar)
+        safe_run("📌推荐跟踪表", scan_reco_track)
         safe_run("🔍今日隐形主线", scan_hidden_chain)
         safe_run("🔄板块轮动器", scan_rotation)
         safe_run("🌱预启动雷达", scan_pre_launch)
@@ -7586,7 +7688,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V24.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V25.0完成 {prefix}_最新.txt")
 
 
 class _HardTimeout(Exception):
