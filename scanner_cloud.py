@@ -5751,6 +5751,22 @@ def scan_all_deep():
         _other = _other[:15]
     targets = _hold + _other
     _cache = {}
+    # ★★V24.0：深度体检快速失败★★
+    # 8/20实测：22只×4类接口=88次请求，个股资金/财务/股东连续8天全部拿不到，
+    #   但每次还要走一遍超时 → 光这一节就吃掉几百秒预算。
+    # ★先探1只，全空就整批跳过，把预算让给能出结果的模块。
+    try:
+        _probe = scan_deep_stock(targets[0][0], targets[0][1]) if targets else {}
+        _got = sum(1 for k in ("超大单净额", "营业总收入", "机构席位数",
+                               "市盈率", "换手率") if _probe.get(k) is not None)
+        if _got == 0:
+            w("  ⏭️ 探测首只：5类关键字段全部拿不到 → 整批跳过，省下预算")
+            w("     ★个股资金/财务/股东在GitHub海外服务器上拿不到（连续8天）")
+            w("     ★这几项靠用户从同花顺APP截图，不是代码能修的")
+            w("=" * 60)
+            return
+    except Exception:
+        pass
     try:
         from concurrent.futures import ThreadPoolExecutor, as_completed
         _t0 = time.time()
@@ -7453,7 +7469,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V23.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V24.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7490,22 +7506,27 @@ def main():
             scan_news()
 
     # ★★V7.0：这5个模块不再依赖新闻源成败，独立运行★★
-    safe_run("止盈体系", scan_take_profit)          # ★快扫也保留：止盈是命
+    scan_take_profit()          # ★V24.0：止盈是命，不走预算检查          # ★快扫也保留：止盈是命
     if not weekend and not FAST:
         safe_run("启动日雷达", scan_launch_radar)
         safe_run("个股级选股器", scan_stock_picker)
+        # ★★★V24.0 模块重排：能赚钱的排前面，参考性的排后面★★★
+        # 8/20实测：780秒用尽，17个模块被跳过，其中包括
+        #   【公告扫描】【事件雷达】【深度体检】【隐形主线】【轮动器】
+        #   【预启动雷达】【每日选股】【推荐台账】—— 全是决策必需的。
+        # 而被保留下来的却有【推荐前检查表】【决策卡】这些纯文本模板。
+        # ★纯文本模板不需要抓数据，几毫秒就完，但它们排在前面白占位置。
+        # ★重排原则：抓数据的模块按【决策价值】排序，
+        #   纯文本模板全部移到最后（它们不占预算）。
         safe_run("公告扫描", scan_announcements)
+        safe_run("事件驱动雷达", scan_event_radar)      # 依赖公告，紧跟其后
+        safe_run("持仓/候选 深度体检", scan_all_deep)     # 决策必需
         safe_run("异动无解释", scan_unexplained)
-        # ★★V8.3 事件驱动雷达：必须在公告扫描之后（依赖 TODAY_ANNOUNCE_RAW）★★
-        safe_run("事件驱动雷达", scan_event_radar)
         safe_run("定增破发雷达", scan_placement_radar)
-        safe_run("推荐前检查表", scan_reco_checklist)
-        safe_run("持仓/候选 深度体检", scan_all_deep)
         safe_run("🔍今日隐形主线", scan_hidden_chain)
         safe_run("🔄板块轮动器", scan_rotation)
         safe_run("🌱预启动雷达", scan_pre_launch)
         safe_run("★每日选股(稳定版)★", scan_daily_pick)
-        safe_run("选股流水线(实验)", scan_pipeline)
     if not FAST:
         # ★★V8.0：持仓个股级消息（新闻+公告按股票名精确匹配）★★
         safe_run("我的持仓相关消息", scan_my_news)
@@ -7565,7 +7586,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V23.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V24.0完成 {prefix}_最新.txt")
 
 
 class _HardTimeout(Exception):
