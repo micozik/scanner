@@ -37,7 +37,7 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,7 +50,7 @@ jobs:
       - name: 运行扫描
         env:
           CHECK: ${{ github.event.inputs.check }}
-          HARD_LIMIT: '780'
+          HARD_LIMIT: '1020'
         run: python scanner_cloud.py
 
       - name: 提交报告
