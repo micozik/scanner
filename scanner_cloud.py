@@ -389,6 +389,15 @@ def _mod_alarm(signum, frame):
 _RUN_T0 = [None]
 
 
+# ★★V26.0：这几个模块不受预算限制★★
+# 8/20实测：780秒在【全板块交叉】前就用尽，20个模块被跳过，
+#   其中包括【止盈体系】(告诉用户哪只该减) 和【推荐跟踪表】。
+# ★这两个是决策的命，而且它们很快（纯计算，不抓网络）
+#   —— 被"抓数据的慢模块"挤掉，是排序错误。
+_NEVER_SKIP = ("止盈体系", "📌推荐跟踪表", "风险监测", "仓位建议",
+               "推荐台账", "规则记分卡")
+
+
 def safe_run(title, func):
     """★★V22.1：每个模块单独硬超时 + 全局预算★★
     8/18实测：跑29分58秒被GitHub杀掉。
@@ -399,8 +408,8 @@ def safe_run(title, func):
     if _RUN_T0[0] is None:
         _RUN_T0[0] = time.time()
     _used = time.time() - _RUN_T0[0]
-    _budget = int(os.environ.get("HARD_LIMIT", "780"))
-    if _used > _budget:
+    _budget = int(os.environ.get("HARD_LIMIT", "1020"))
+    if _used > _budget and not any(k in title for k in _NEVER_SKIP):
         w(f"  ⏱️【{title}】全局预算({_budget}秒)已用尽，跳过。本节缺失")
         return
     _lim = int(os.environ.get("MOD_LIMIT", "90"))
@@ -3420,9 +3429,11 @@ def scan_news():
     try:
         from concurrent.futures import ThreadPoolExecutor, as_completed
         _res = {}
+        # ★V26.0：新闻并发超时 70→45秒。6源里总有1-2个慢的，
+        #   等它们不值得 —— 已有4源就够660条了。
         with ThreadPoolExecutor(max_workers=6) as _ex:
             _fut = {_ex.submit(_safe_news_one, nm, f): nm for nm, f in sources}
-            for _f in as_completed(_fut, timeout=70):
+            for _f in as_completed(_fut, timeout=45):
                 try:
                     _nm, _rows = _f.result()
                     if _rows:
@@ -7570,7 +7581,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V25.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V26.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7688,7 +7699,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V25.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V26.0完成 {prefix}_最新.txt")
 
 
 class _HardTimeout(Exception):
@@ -7730,7 +7741,7 @@ if __name__ == "__main__":
     #   而 scan_index/scan_stocks/scan_news 等是直接调用的，不受控 → 跑了26分40秒。
     # ★现在用 signal.alarm 给整个 main 设硬闸，到点抛异常，
     #   在 except 里把已有内容写成报告 —— 保证一定有产出。
-    _HARD_LIMIT = int(os.environ.get("HARD_LIMIT", "780"))   # 13分钟
+    _HARD_LIMIT = int(os.environ.get("HARD_LIMIT", "1020"))   # 13分钟
     try:
         signal.signal(signal.SIGALRM, _hard_alarm)
         signal.alarm(_HARD_LIMIT)
