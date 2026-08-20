@@ -435,9 +435,89 @@ def _spot_from_news():
     return m
 
 
+NEWS_PRICE_CHECK = {
+    # 关键词 → (对标ticker列表, 方向)  用于交叉校验价格数据是否可信
+    "费城半导体指数跌": (["NVDA", "TSM", "AMD", "AVGO", "MU", "AMAT", "LRCX"], -1),
+    "费半跌": (["NVDA", "TSM", "AMD", "AVGO", "MU"], -1),
+    "存储板块低开低走": (["MU", "STX", "WDC", "SNDK"], -1),
+    "存储板块跌": (["MU", "STX", "WDC", "SNDK"], -1),
+    "闪迪跌": (["SNDK"], -1),
+    "美光跌": (["MU"], -1),
+    "英伟达跌": (["NVDA"], -1),
+    "纳指收跌": (["NVDA", "MSFT", "AMZN", "META", "GOOGL"], -1),
+    "AI概念板块大幅回落": (["NVDA", "AVGO", "MU"], -1),
+    "费城半导体指数涨": (["NVDA", "TSM", "AMD", "AVGO", "MU"], 1),
+    "存储板块高开高走": (["MU", "STX", "WDC", "SNDK"], 1),
+    "闪迪涨": (["SNDK"], 1),
+    "美光涨": (["MU"], 1),
+}
+
+
+def _cross_check_price_vs_news(spot_map):
+    """★★★V4.0【价格 × 新闻 交叉校验】★★★
+
+    ★2026-08-19 事故：报告【重点个股】显示
+        闪迪+8.88% 西数+5.35% 应材+5.55% 美光+4.13%
+      但同一份报告的新闻里白纸黑字写着：
+        [21:57] 费城半导体指数跌5%
+        [22:49] 存储板块低开低走，SK海力士-7.4%、闪迪-8%
+        [02:12] 存储板块跌幅扩大，★闪迪跌超10%★
+        [04:00] 纳指收跌超1%，存储、光通信等AI概念大幅回落
+    ★而【持仓夜盘影响】用错误价格算出「佰维/香农强偏多+5.08%，
+      明日可考虑加仓」—— 方向完全反了。
+    ★根因：单只逐个抓拿到的可能是【盘前/盘后/上一交易日】的价，
+      而新闻是【当场发生的事实】。
+    ★铁律：新闻和价格矛盾时，★以新闻为准★，并把价格标为不可信。
+    """
+    news = globals().get("TODAY_US_NEWS", []) or []
+    if not news or not spot_map:
+        return None
+    conflicts = []
+    for kw, (tks, direction) in NEWS_PRICE_CHECK.items():
+        hit_news = [t for _tm, t in news if kw in str(t)]
+        if not hit_news:
+            continue
+        for tk in tks:
+            v = spot_map.get(tk.upper())
+            if not v:
+                continue
+            pct = v[1] if isinstance(v, (tuple, list)) and len(v) > 1 else None
+            if pct is None:
+                continue
+            # 新闻说跌，价格却涨>1%（或反之）→ 冲突
+            if direction < 0 and pct > 1.0:
+                conflicts.append((kw, tk, pct, hit_news[0][:44]))
+            elif direction > 0 and pct < -1.0:
+                conflicts.append((kw, tk, pct, hit_news[0][:44]))
+    if not conflicts:
+        return None
+    return conflicts
+
+
 def scan_stocks():
     w("\n【二、重点个股】（芯片/算力/存储/中概 + 伯克希尔）")
     spot_map = _build_us_spot()
+
+    # ★★V4.0：先做价格×新闻交叉校验★★
+    _cf = _cross_check_price_vs_news(spot_map)
+    if _cf:
+        w("")
+        w("  🔴🔴🔴【价格与新闻矛盾 · 严重警报】🔴🔴🔴")
+        w("  ★2026-08-19事故：报告显示闪迪+8.88%，")
+        w("    而新闻写着『闪迪跌超10%』『费半跌5%』『纳指收跌超1%』")
+        w("    → 系统据此算出『强偏多，明日可考虑加仓』，方向完全反了")
+        w("")
+        for kw, tk, pct, nt in _cf[:10]:
+            w(f"  🔴 新闻说【{kw}】，但 {tk} 价格显示 {pct:+.2f}%")
+            w(f"     ▸原文：{nt}")
+        w("")
+        w("  ★★结论：★以新闻为准，价格数据本次不可信★★")
+        w("     下面的【持仓夜盘影响】方向可能完全相反，不许据此加仓")
+        w("     ⚠️ 价格可能是盘前/盘后/上一交易日的，新闻才是当场事实")
+        globals()["US_PRICE_UNRELIABLE"] = True
+        w("")
+    else:
+        globals()["US_PRICE_UNRELIABLE"] = False
 
     def _one(tk):
         # ★★V3.3：优先用实时行情，日K只做兜底★★
@@ -503,12 +583,74 @@ def scan_stocks():
 
 # ========== ★★V3.0 核心新增：持仓夜盘影响 ==========
 
+def _news_direction_check():
+    """★★★V4.0【价格vs新闻 交叉校验】★★★
+
+    ★2026-08-19 事故：报告里价格显示【闪迪+8.88% 西数+5.35% 应材+5.55%】，
+      而同一份报告的新闻明写：
+        [21:57] 费城半导体指数跌5%
+        [22:49] 存储板块低开低走，SK海力士-7.4%、闪迪-8%
+        [02:12] 存储板块跌幅扩大，★闪迪跌超10%★
+        [04:00] 纳指收跌超1%，存储、光通信等AI概念大幅回落
+      → 【持仓夜盘影响】用错误价格算出"佰维/香农强偏多+5.08%，明日可考虑加仓"
+      → ★方向完全反了★。用户持仓35%在存储链上，当天A股半导体-6%。
+
+    ★根因：单只逐个抓拿到的可能是【盘前/盘后/上一交易日】的价格，
+      而新闻是实时的。价格有滞后，新闻没有。
+    ★铁律：★价格与新闻方向冲突时，以新闻为准★，并印红字警告。
+
+    返回 {ticker: 新闻里的涨跌幅}，用于覆盖错误价格
+    """
+    import re as _re
+    news = globals().get("TODAY_US_NEWS", []) or []
+    if not news:
+        return {}
+    # 从新闻里抠出明确的涨跌
+    pat = _re.compile(r"(涨|跌|上涨|下跌|涨幅扩大至|跌幅扩大至|飙升|大涨|重挫|暴跌|收跌|收涨)"
+                      r"\s*(?:超|约|至|逾)?\s*([0-9]+(?:\.[0-9]+)?)\s*%")
+    hits = {}
+    for _tm, t in news:
+        ts = str(t)
+        for nm, tk in NEWS_NAME2TK.items():
+            if nm not in ts:
+                continue
+            m = pat.search(ts)
+            if not m:
+                continue
+            v = float(m.group(2))
+            if m.group(1) in ("跌", "下跌", "跌幅扩大至", "重挫", "暴跌", "收跌"):
+                v = -v
+            prev = hits.get(tk)
+            if prev is None or abs(v) > abs(prev):
+                hits[tk] = v
+            break
+    # 指数级信号（费半跌X% → 整个半导体链）
+    sox = None
+    for _tm, t in news:
+        ts = str(t)
+        if "费城半导体" in ts or "费半" in ts:
+            m = pat.search(ts)
+            if m:
+                v = float(m.group(2))
+                if m.group(1) in ("跌", "下跌", "跌幅扩大至", "重挫", "暴跌", "收跌"):
+                    v = -v
+                if sox is None or abs(v) > abs(sox):
+                    sox = v
+    if sox is not None:
+        hits["_SOX"] = sox
+    return hits
+
+
 def scan_holdings_impact():
     """把『美股涨了→A股哪个板块→我哪只票』这条链搬进代码。
     ★用【真实涨跌幅】不用【新闻情绪】：新闻极性是猜的，个股涨跌是事实。
     ★这是招商轮船(运油≠卖油)、卓胜微(手机≠存储)两次翻车的正面防线。"""
     w("\n" + "=" * 60)
     w("🎯🎯【持仓夜盘影响】今夜美股，直接点名你的票 🎯🎯")
+    if globals().get("US_PRICE_UNRELIABLE"):
+        w("  🔴🔴 本节数据【不可信】：价格与新闻矛盾（见上方警报）")
+        w("     ★方向可能完全相反，★严禁★据此加仓或减仓")
+        w("     ★请以【三、美股/全球新闻】里的实际报道为准")
     w("=" * 60)
     if not US_QUOTE:
         w("  ⚠️ 个股行情全失败 → 无法计算，本节跳过（不影响其它模块）")
@@ -815,7 +957,7 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V3.5 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V4.0 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
     w("★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑")
     w("★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的")
@@ -865,7 +1007,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描V3.5完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V4.0完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
