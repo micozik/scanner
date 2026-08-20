@@ -388,6 +388,33 @@ def scan_lhb():
         w(f"    ※ 共{len(ambush)}只。次日验证：所属板块是否启动、是否放量。")
     else:
         w("    今日无『跌着被买』标的 → 全场追涨接力，次日谨慎")
+    # ★★★V4.2：埋伏池【空的那天也要存档】★★★
+    # 8/20发现：V20.0的风险分有一条『埋伏池连续为空≥3天 → +1~2分』，
+    #   但空的那天根本没写进 ambush_history.json，
+    #   所以 A股扫描器读出来永远是0天 → 这条风险维度形同虚设。
+    # ★埋伏池连空 = 全场只有人追涨、没人在跌的票上埋伏 = 情绪透支，
+    #   这是我们唯一能【提前一天】感知的指标，不能让它失效。
+    try:
+        _d = _bt_load(AMBUSH_HIST_FILE)
+        _dk = LHB_NET_MAP.get("_date") or now_beijing().strftime("%Y%m%d")
+        _dk = str(_dk)
+        if len(_dk) == 8:
+            _dk = f"{_dk[:4]}-{_dk[4:6]}-{_dk[6:]}"
+        _d[_dk] = [{"name": nm, "code": cd, "pct": pct, "net": net}
+                   for nm, cd, pct, net in (ambush or [])]
+        _bt_save(AMBUSH_HIST_FILE, _d)
+        _empty = 0
+        for _k in sorted([k for k in _d if k != "_acc"], reverse=True)[:8]:
+            _v = _d.get(_k)
+            if isinstance(_v, list) and len(_v) == 0:
+                _empty += 1
+            else:
+                break
+        if _empty >= 2:
+            w(f"  ⚠️ 埋伏池已连续 {_empty} 天为空 → 全场追涨，无人埋伏")
+            w("     ★这是情绪透支的信号，A股扫描器的风险分会自动+1~2分")
+    except Exception as _e:
+        w(f"  [埋伏存档失败] {type(_e).__name__}")
     if chase:
         w(f"  ⚠️ 追高型{len(chase)}只（涨停被买，次日易炸板）：" +
           "、".join(n for n, _, _, _ in chase[:10]))
@@ -618,6 +645,73 @@ def scan_jg():
 
 # ========== 四、下单指令（带闸门） ==========
 
+def _group_winrate():
+    """★★V4.2：从机构成绩单实时算各组胜率，供下单指令用★★
+
+    ★2026-08-20 用户抓到的矛盾：
+      系统给了唯一一条下单指令【哈药股份 +0.22% 机构净买10.65亿】，
+      触发条件是『微涨<3%但机构净买≥1亿』。
+      但同一份报告的成绩单写着：
+        买跌   47.3% 平均+6.75%   ← 最好
+        买涨停 39.0% 平均+2.90%
+        ★买微涨 30.0% 平均-1.00%  ← 最差，唯一负收益
+      ★规则在推荐一类【已被5285个样本证明会亏钱】的信号。
+    ★修法：触发前先查这一组的实时胜率，<45%直接不触发。
+      规则不该由我写死，该由数据决定。
+    返回 {组名: (胜率, 平均收益, 样本数)}
+    """
+    out = {}
+    try:
+        d = _bt_load(INST_HIST_FILE)
+        sp = None
+        try:
+            sp = ak.stock_zh_a_spot_em()
+        except Exception:
+            try:
+                sp = ak.stock_zh_a_spot()
+            except Exception:
+                sp = None
+        if sp is None or len(sp) == 0:
+            return out
+        cc = pick_col(sp, ["代码", "code"])
+        cp = pick_col(sp, ["最新价", "trade"])
+        if not (cc and cp):
+            return out
+        px = {}
+        for _, r in sp.iterrows():
+            try:
+                px[str(r[cc])[-6:]] = float(pd.to_numeric(r[cp], errors="coerce"))
+            except Exception:
+                continue
+        buckets = {}
+        for _dt, arr in d.items():
+            if not isinstance(arr, list):
+                continue
+            for it in arr:
+                try:
+                    c = str(it.get("code", ""))[-6:]
+                    p0 = float(it.get("price") or 0)
+                    if not c or p0 <= 0 or c not in px:
+                        continue
+                    ret = (px[c] / p0 - 1) * 100
+                    k = it.get("kind") or ""
+                    if not k:
+                        continue
+                    b = buckets.setdefault(k, [0, 0, 0.0])
+                    b[1] += 1
+                    b[2] += ret
+                    if ret > 3:
+                        b[0] += 1
+                except Exception:
+                    continue
+        for k, (h, n, sm) in buckets.items():
+            if n >= 30:
+                out[k] = (h / n * 100, sm / n, n)
+    except Exception:
+        pass
+    return out
+
+
 def gen_order(ambush, jg_rows=None):
     """★把埋伏信号变成可执行的买点+止损+仓位（治转化率0%）
     ★V3.0：保留铁律H(必须给标的)，同时补上铁律L(必须答驱动)与⑧(集中度)。
@@ -636,9 +730,34 @@ def gen_order(ambush, jg_rows=None):
     w("     ⚠️ 铁律I原文：只认『机构专用席位买【跌】的票』。")
     w("        微涨被机构买 = 参考级，不构成埋伏信号。")
 
+    # ★★V4.2：先查各组实时胜率，<45%的组【直接不触发】★★
+    _wr = _group_winrate()
+    if _wr:
+        w("\n  ★★【触发前先查历史胜率】(样本≥30才算)★★")
+        for _k in ("买跌", "买涨停", "买微涨"):
+            if _k in _wr:
+                _r, _a, _n = _wr[_k]
+                _ok = "✅可触发" if _r >= 45 else "🔴胜率<45%，本组停用"
+                w(f"    {_k}：{_r:.1f}% 平均{_a:+.2f}% ({_n}样本) {_ok}")
+        w("    ★规则不该由AI写死，该由数据决定。")
+        w("      2026-08-20：系统推荐哈药股份(微涨被买10.65亿)，")
+        w("      而买微涨组5285样本胜率仅30.0%、平均-1.00% —— 唯一负收益的组。")
+    else:
+        w("\n  ⚠️ 胜率数据不足（各组样本<30），本次仍按原规则触发")
+
+    def _grp_ok(kind_name):
+        """该组历史胜率够不够格触发"""
+        if kind_name not in _wr:
+            return True, ""
+        r, a, n = _wr[kind_name]
+        if r < 45:
+            return False, f"该组历史胜率{r:.1f}%<45%(平均{a:+.2f}%, {n}样本)"
+        return True, f"该组历史胜率{r:.1f}%"
+
     orders = []
     seen_code = set()
     no_amt = 0
+    _blocked_by_wr = []
     for item in (ambush or []):
         try:
             nm, cd, pct, net = item[0], item[1], item[2], item[3]
@@ -649,6 +768,10 @@ def gen_order(ambush, jg_rows=None):
             no_amt += 1
             continue
         if amt < 1.0 or (pct is not None and pct >= 0):
+            continue
+        _ok, _why = _grp_ok("买跌")
+        if not _ok:
+            _blocked_by_wr.append((nm, cd, "买跌", _why))
             continue
         orders.append((amt, nm, cd, pct, "跌着被买"))
         if cd:
@@ -665,9 +788,19 @@ def gen_order(ambush, jg_rows=None):
             continue
         if cd and cd in seen_code:
             continue
+        _ok, _why = _grp_ok("买微涨")
+        if not _ok:
+            _blocked_by_wr.append((nm, cd, "买微涨", _why))
+            continue
         orders.append((amt, nm, cd, pct, "微涨被机构重金买入"))
         if cd:
             seen_code.add(cd)
+
+    if _blocked_by_wr:
+        w(f"\n  🚫 因【历史胜率不达标】被拦下 {len(_blocked_by_wr)} 只：")
+        for _n, _c, _k, _w in _blocked_by_wr[:8]:
+            w(f"     {_n}({_c}) 属【{_k}】组 —— {_w}")
+        w("     ★不是它不好，是这一类信号历史上就不赚钱。")
 
     if no_amt:
         w(f"\n  🔴 埋伏池有{no_amt}只【无净买额数据】被跳过（数据源缺该列）")
@@ -1044,7 +1177,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V4.1 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V4.2 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -1127,7 +1260,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V4.1完成")
+    print("\n✅ 龙虎榜扫描V4.2完成")
 
 
 if __name__ == "__main__":
