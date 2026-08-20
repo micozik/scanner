@@ -49,7 +49,11 @@ import pandas as pd
 
 REPORT = []
 ORDER_HIST_FILE = "reports/order_history.json"
-INST_HIST_FILE = "reports/institution_history.json"   # ★V3.4 机构成绩单
+INST_HIST_FILE = "reports/institution_history.json"
+# ★★V4.3：AMBUSH_HIST_FILE 之前只在 scanner_cloud 里定义，
+#   scanner_lhb 用到它却没定义 → 每天报 [埋伏存档失败] NameError，
+#   导致【埋伏池连空N天】这个风险维度永远算不出来。
+AMBUSH_HIST_FILE = "reports/ambush_history.json"   # ★V3.4 机构成绩单
 
 # ★★V3.2 全局：{代码: 龙虎榜净买额(亿)}，由 scan_lhb 填充，scan_jg 交叉校验用
 # key "_date" 存数据日期，用于确认两份数据是同一天
@@ -663,14 +667,24 @@ def _group_winrate():
     out = {}
     try:
         d = _bt_load(INST_HIST_FILE)
-        sp = None
-        try:
-            sp = ak.stock_zh_a_spot_em()
-        except Exception:
+        # ★★V4.3：快照抓到后存全局，机构成绩单复用同一份★★
+        # 2026-08-21：同一份报告里两套胜率打架
+        #   新闸门：买跌24.5%(1650样本) ｜ 成绩单：买跌46.9%(277样本)
+        # 根因：成绩单那边"结算快照·东财失败(ConnectionError)"，
+        #   只结算了979个样本；而本函数自己抓到了，算了4944个。
+        # ★同一个问题算出两个答案 = 系统在自己骗自己。
+        # 修法：本函数抓到的快照存进 _SETTLE_SPOT，成绩单优先用它。
+        sp = globals().get("_SETTLE_SPOT")
+        if sp is None:
             try:
-                sp = ak.stock_zh_a_spot()
+                sp = ak.stock_zh_a_spot_em()
             except Exception:
-                sp = None
+                try:
+                    sp = ak.stock_zh_a_spot()
+                except Exception:
+                    sp = None
+            if sp is not None and len(sp) > 0:
+                globals()["_SETTLE_SPOT"] = sp
         if sp is None or len(sp) == 0:
             return out
         cc = pick_col(sp, ["代码", "code"])
@@ -1026,12 +1040,21 @@ def backtest_institution():
         w("=" * 60)
         return
 
-    # 取当前价
-    _sname, spot = multi_source("结算快照", [
-        ("东财", lambda: ak.stock_zh_a_spot_em()),
-        ("新浪", lambda: ak.stock_zh_a_spot()),
-        ("同花顺", lambda: ak.stock_zh_a_spot_ths()),
-    ])
+    # ★★V4.3：优先复用 _group_winrate 已抓好的快照★★
+    # 8/21两套胜率打架的根因：这里的快照失败(ConnectionError)只结算了979个样本，
+    #   而 _group_winrate 自己抓到了，算了4944个 → 同一问题两个答案。
+    # ★统一数据源 = 统一答案。
+    spot = globals().get("_SETTLE_SPOT")
+    _sname = "复用(与下单指令同源)" if spot is not None else None
+    if spot is None:
+        _sname, spot = multi_source("结算快照", [
+            ("东财", lambda: ak.stock_zh_a_spot_em()),
+            ("新浪", lambda: ak.stock_zh_a_spot()),
+        ])
+        if spot is not None and len(spot) > 0:
+            globals()["_SETTLE_SPOT"] = spot
+    else:
+        w(f"  ✅ 结算快照：{_sname}")
     if spot is None:
         days = sorted(d.keys(), reverse=True)
         n = sum(len(v) for v in d.values())
@@ -1177,7 +1200,7 @@ def main():
     bj = now_beijing()
     wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
     w("=" * 60)
-    w(f"龙虎榜/游资 独立扫描器V4.2 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
+    w(f"龙虎榜/游资 独立扫描器V4.3 | {bj.strftime('%Y-%m-%d %H:%M')} {wd}")
     w("=" * 60)
     # ★V3.3：本文件没有 safe_run（那是 scanner_cloud 的），用 try 直接包
     try:
@@ -1260,7 +1283,7 @@ def main():
     for p in [f"reports/龙虎榜_最新.txt", f"reports/龙虎榜_{d}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 龙虎榜扫描V4.2完成")
+    print("\n✅ 龙虎榜扫描V4.3完成")
 
 
 if __name__ == "__main__":
