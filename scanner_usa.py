@@ -472,9 +472,28 @@ def _cross_check_price_vs_news(spot_map):
     news = globals().get("TODAY_US_NEWS", []) or []
     if not news or not spot_map:
         return None
+
+    # ★★★V4.1：只认【收盘前30分钟内】的新闻★★★
+    # 2026-08-21误报：新闻23:04说"费城半导体指数涨幅扩大至1%"，
+    #   但那是【盘中快照】；价格是【收盘价】，AMD收盘-3.71%、AVGO-4.61%。
+    #   盘中涨、收盘跌，这不是矛盾，是同一天的两个时点。
+    # ★系统却把整节标成"数据不可信" → 正确的价格被误判，
+    #   而明天开盘要靠这份数据决定佰维减不减仓。
+    # ★修法：美股收盘=北京时间05:00(夏令时04:00)，
+    #   只有 04:00-05:30 之间的新闻才与收盘价可比。
+    def _near_close(tm):
+        try:
+            hh = int(str(tm)[-5:-3])
+            mm2 = int(str(tm)[-2:])
+            t = hh * 60 + mm2
+            # 北京 03:30-05:30 视为"收盘前后"
+            return 210 <= t <= 330
+        except Exception:
+            return False
+
     conflicts = []
     for kw, (tks, direction) in NEWS_PRICE_CHECK.items():
-        hit_news = [t for _tm, t in news if kw in str(t)]
+        hit_news = [t for _tm, t in news if kw in str(t) and _near_close(_tm)]
         if not hit_news:
             continue
         for tk in tks:
@@ -503,6 +522,8 @@ def scan_stocks():
     if _cf:
         w("")
         w("  🔴🔴🔴【价格与新闻矛盾 · 严重警报】🔴🔴🔴")
+        w("  ★V4.1：只比对【北京03:30-05:30 即美股收盘前后】的新闻，")
+        w("    盘中快照不算矛盾（8/21误报：23:04说费半涨1%，但那是盘中）")
         w("  ★2026-08-19事故：报告显示闪迪+8.88%，")
         w("    而新闻写着『闪迪跌超10%』『费半跌5%』『纳指收跌超1%』")
         w("    → 系统据此算出『强偏多，明日可考虑加仓』，方向完全反了")
@@ -957,7 +978,7 @@ def main():
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][bj.weekday()]
 
     w("=" * 60)
-    w(f"美股夜盘扫描器V4.0 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
+    w(f"美股夜盘扫描器V4.1 | 北京 {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | 美股收盘后")
     w("=" * 60)
     w("★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑")
     w("★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的")
@@ -1007,7 +1028,7 @@ def main():
     for p in [f"reports/美股_最新.txt", f"reports/美股_{date}.txt"]:
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
-    print("\n✅ 美股扫描V4.0完成 reports/美股_最新.txt")
+    print("\n✅ 美股扫描V4.1完成 reports/美股_最新.txt")
 
 
 if __name__ == "__main__":
