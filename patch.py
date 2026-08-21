@@ -1,98 +1,128 @@
 # -*- coding: utf-8 -*-
-"""V27.0 补丁 · 在跑扫描前自动修改 scanner_cloud.py
-手机传不动376KB的主文件，所以改成这个小补丁。"""
-import io, os
+"""V28.0 补丁 · 给选股模块打【历史胜率】标签
+
+2026-08-21：AI推荐 1胜7负。根因不是运气，是一直在用
+【已经被自己的回测证明无效】的筛选器选股。
+实测：热力图57.4%(唯一>45%) | 事件雷达19% | 选股器0% | 冷低早-2.85%
+规则记分卡明写"胜率<45%立即停用"，但这些模块照样每天输出候选，
+AI也照样从里面挑 → 规则形同虚设。
+本补丁让每个模块输出时强制带标签，AI看到🔴就不许拿它推荐。
+"""
+import io
+import os
 
 P = "scanner_cloud.py"
 if not os.path.exists(P):
-    print("找不到 scanner_cloud.py"); raise SystemExit(0)
+    print("找不到 scanner_cloud.py")
+    raise SystemExit(0)
 s = io.open(P, encoding="utf-8").read()
 n = 0
 
-# ① 5个天天被预算挤掉的模块，加进永不跳过
-old1 = '''_NEVER_SKIP = ("止盈体系", "📌推荐跟踪表", "风险监测", "仓位建议",
-               "推荐台账", "规则记分卡")'''
-new1 = '''_NEVER_SKIP = ("止盈体系", "📌推荐跟踪表", "风险监测", "仓位建议",
-               "推荐台账", "规则记分卡",
-               "我的持仓相关消息", "持仓相关消息",
-               "埋伏池回测", "热力图回测", "选股器回测", "事件雷达回测",
-               "买入后复核")'''
-if old1 in s:
-    s = s.replace(old1, new1); n += 1; print("✅ ①5个必需模块已加入永不跳过")
-elif "买入后复核" in s and "_NEVER_SKIP" in s:
-    print("↩️ ①已是最新")
+INJ = '''
+RULE_WINRATE_TAG = {
+    "热力图": (57.4, True),
+    "事件雷达": (19.0, False),
+    "选股器": (0.0, False),
+    "冷低早": (-2.85, False),
+    "埋伏池": (None, None),
+    "预启动雷达": (None, None),
+    "隐形主线": (None, None),
+}
 
-# ② 冷低早连续2次回测为负 → 自动停用
-old2 = '''            w("    ⚠️ 平均为负 → 这个筛选器当前参数在这种行情下无效，")
-            w("       不要照单买，必须配合板块启动信号")'''
-new2 = '''            w("    ⚠️ 平均为负 → 这个筛选器当前参数在这种行情下无效，")
-            w("       不要照单买，必须配合板块启动信号")
-            try:
-                _cf = "reports/cold_low_verdict.json"
-                _cv = {}
-                if os.path.exists(_cf):
-                    with open(_cf, "r", encoding="utf-8") as _f:
-                        _cv = json.load(_f)
-                _neg = int(_cv.get("neg_streak", 0)) + 1
-                _cv["neg_streak"] = _neg
-                _cv["last_avg"] = float(avg)
-                os.makedirs("reports", exist_ok=True)
-                with open(_cf, "w", encoding="utf-8") as _f:
-                    json.dump(_cv, _f, ensure_ascii=False)
-                if _neg >= 2:
-                    w("")
-                    w("    🔴🔴【冷低早已自动停用】连续%d次回测平均为负" % _neg)
-                    w("       ★候选名单仅作记录，AI不许拿它当推荐依据")
-                    w("       ★回测转正会自动恢复")
-            except Exception:
-                pass'''
-if old2 in s and "冷低早已自动停用" not in s:
-    s = s.replace(old2, new2); n += 1; print("✅ ②冷低早自动停用已加")
-elif "冷低早已自动停用" in s:
-    print("↩️ ②已是最新")
 
-# ③ 冷低早输出前先看停用标记
-old3 = '''    w("\\n★★★【冷低早候选·暗流吸筹】★★★（大盘闸+冷+低+缩量+涨日放量+板块闸）")'''
-new3 = '''    w("\\n★★★【冷低早候选·暗流吸筹】★★★（大盘闸+冷+低+缩量+涨日放量+板块闸）")
-    try:
-        _cf = "reports/cold_low_verdict.json"
-        if os.path.exists(_cf):
-            with open(_cf, "r", encoding="utf-8") as _f:
-                _cv = json.load(_f)
-            if int(_cv.get("neg_streak", 0)) >= 2:
-                w("  🔴🔴【本模块已自动停用】连续%d次回测平均为负(最近%+.2f%%)"
-                  % (_cv.get("neg_streak", 0), _cv.get("last_avg", 0)))
-                w("     ★下面的候选【仅作记录】，不许当推荐依据★")
+def wr_tag(name):
+    """★V28.0 模块胜率标签。<45%的强制标【不许推荐】"""
+    v = RULE_WINRATE_TAG.get(name)
+    if not v or v[0] is None:
+        return "  \\u26aa\\u3010%s \\u00b7 \\u6837\\u672c\\u4e0d\\u8db3\\u3011\\u4ec5\\u4f9b\\u53c2\\u8003" % name
+    rate, ok = v
+    if ok:
+        return "  \\U0001f7e2\\u3010%s \\u00b7 \\u5386\\u53f2\\u80dc\\u7387%.1f%%\\u3011\\u2605\\u53ef\\u4f5c\\u4e3a\\u9009\\u80a1\\u4f9d\\u636e\\u2605" % (name, rate)
+    return ("  \\U0001f534\\U0001f534\\u3010%s \\u00b7 %.1f%% \\u00b7 \\u5df2\\u505c\\u7528\\u3011"
+            "\\u4ec5\\u4f5c\\u8bb0\\u5f55\\uff0c\\u2605AI\\u4e0d\\u8bb8\\u62ff\\u5b83\\u63a8\\u8350\\u4efb\\u4f55\\u6807\\u7684\\u2605" % (name, rate))
+
+
+'''
+
+if "RULE_WINRATE_TAG" not in s:
+    s = s.replace("def safe_run(title, func):", INJ + "def safe_run(title, func):", 1)
+    n += 1
+    print("OK 1: winrate table injected")
+else:
+    print("SKIP 1: already patched")
+
+PAIRS = [
+    ("\u5085\u5085", "", ""),
+]
+
+# 热力图
+a1 = 'w("\U0001f525\U0001f525\u3010\u50ac\u5316\u70ed\u529b\u56fe\u00b7\u591a\u7a7a\u7248\u3011'
+i1 = s.find(a1)
+if i1 > 0 and 'wr_tag("\u70ed\u529b\u56fe")' not in s:
+    j1 = s.find("\n", i1)
+    s = s[:j1 + 1] + '    w(wr_tag("\u70ed\u529b\u56fe"))\n' + s[j1 + 1:]
+    n += 1
+    print("OK 2a: heatmap tag")
+
+# 事件雷达
+a2 = 'w("\U0001f4a5\U0001f4a5\u3010\u4e8b\u4ef6\u9a71\u52a8\u96f7\u8fbe\u3011'
+i2 = s.find(a2)
+if i2 > 0 and 'wr_tag("\u4e8b\u4ef6\u96f7\u8fbe")' not in s:
+    j2 = s.find("\n", i2)
+    s = s[:j2 + 1] + '    w(wr_tag("\u4e8b\u4ef6\u96f7\u8fbe"))\n' + s[j2 + 1:]
+    n += 1
+    print("OK 2b: event radar tag")
+
+# 选股器
+a3 = 'w("\U0001f3af\U0001f3af\u3010\u4e2a\u80a1\u7ea7\u9009\u80a1\u5668\u3011'
+i3 = s.find(a3)
+if i3 > 0 and 'wr_tag("\u9009\u80a1\u5668")' not in s:
+    j3 = s.find("\n", i3)
+    s = s[:j3 + 1] + '    w(wr_tag("\u9009\u80a1\u5668"))\n' + s[j3 + 1:]
+    n += 1
+    print("OK 2c: picker tag")
+
+TAIL = '''    try:
+        w("")
+        w("=" * 60)
+        w("\\U0001f3af\\U0001f3af\\u3010\\u4eca\\u65e5\\u552f\\u4e00\\u53ef\\u7528\\u7684\\u9009\\u80a1\\u4f9d\\u636e\\u3011\\u53ea\\u5217\\u80dc\\u7387>45%%\\u7684\\u6a21\\u5757 \\U0001f3af\\U0001f3af")
+        w("=" * 60)
+        w("  \\u26052026-08-21\\uff1aAI\\u63a8\\u8350 1\\u80dc7\\u8d1f\\uff0c\\u6839\\u56e0\\u662f\\u7528\\u5df2\\u5224\\u6b7b\\u7684\\u7b5b\\u9009\\u5668\\u9009\\u80a1\\u3002")
+        w("  \\u2605\\u4ece\\u4eca\\u5929\\u8d77\\uff0c\\u53ea\\u6709\\u4e0b\\u9762\\u8fd9\\u4e9b\\u6a21\\u5757\\u7684\\u8f93\\u51fa\\u53ef\\u4ee5\\u62ff\\u6765\\u63a8\\u8350\\uff1a")
+        w("")
+        _any = False
+        for _k, _v in RULE_WINRATE_TAG.items():
+            if _v and _v[0] is not None and _v[1]:
+                w("  \\U0001f7e2 %s\\uff08\\u5386\\u53f2%.1f%%\\uff09" % (_k, _v[0]))
+                _any = True
+        if not _any:
+            w("  \\U0001f534 \\u4eca\\u5929\\u6ca1\\u6709\\u4efb\\u4f55\\u6a21\\u5757\\u7684\\u80dc\\u7387>45%%")
+            w("     \\u2192 \\u2605\\u4e0d\\u8bb8\\u63a8\\u8350\\u4efb\\u4f55\\u6807\\u7684\\u2605\\uff08\\u94c1\\u5f8bD\\uff09")
+        w("")
+        w("  \\U0001f534 \\u5df2\\u505c\\u7528\\uff08\\u4ec5\\u4f5c\\u8bb0\\u5f55\\uff0c\\u4e0d\\u8bb8\\u63a8\\u8350\\uff09\\uff1a")
+        for _k, _v in RULE_WINRATE_TAG.items():
+            if _v and _v[0] is not None and not _v[1]:
+                w("     %s\\uff08%.1f%%\\uff09" % (_k, _v[0]))
+        w("=" * 60)
     except Exception:
-        pass'''
-if old3 in s and "本模块已自动停用" not in s:
-    s = s.replace(old3, new3); n += 1; print("✅ ③冷低早停用警告已加")
-elif "本模块已自动停用" in s:
-    print("↩️ ③已是最新")
+        pass
 
-# ④ 推荐跟踪表区分 推荐/观察/否决
-old4 = '''            bo = "✅买了" if it.get("bought") else "❌没买"'''
-new4 = '''            _kind = it.get("kind", "推荐")
-            _km = {"推荐": "🎯推荐", "观察": "👁️观察",
-                   "否决": "🚫否决"}.get(_kind, _kind)
-            bo = "✅买了" if it.get("bought") else "❌没买"'''
-if old4 in s and "👁️观察" not in s:
-    s = s.replace(old4, new4)
-    s = s.replace(
-        '''w(f"  {mark} {nm}({c6}) 推荐@{p0} → 现价{px:.2f} "''',
-        '''w(f"  {mark} [{_km}] {nm}({c6}) @{p0} → 现价{px:.2f} "''')
-    n += 1; print("✅ ④跟踪表已区分 推荐/观察/否决")
-elif "👁️观察" in s:
-    print("↩️ ④已是最新")
+'''
 
-# ⑤ 版本号
-if "V26.0 |" in s:
-    s = s.replace("A股作战扫描器V26.0 |", "A股作战扫描器V27.0 |")
-    s = s.replace('print(f"\\n✅ V26.0完成', 'print(f"\\n✅ V27.0完成')
+ANCHOR = '    os.makedirs("reports", exist_ok=True)\n    text = "\\n".join(REPORT)'
+if "\u4eca\u65e5\u552f\u4e00\u53ef\u7528\u7684\u9009\u80a1\u4f9d\u636e" not in s and ANCHOR in s:
+    s = s.replace(ANCHOR, TAIL + ANCHOR, 1)
+    n += 1
+    print("OK 3: tail section added")
+else:
+    print("SKIP 3")
+
+if "V27.0 |" in s:
+    s = s.replace("A\u80a1\u4f5c\u6218\u626b\u63cf\u5668V27.0 |", "A\u80a1\u4f5c\u6218\u626b\u63cf\u5668V28.0 |")
     n += 1
 
 if n:
     io.open(P, "w", encoding="utf-8").write(s)
-    print("★ 补丁应用完成，共 %d 处修改" % n)
+    print("DONE: %d changes" % n)
 else:
-    print("★ 无需修改（已是最新）")
+    print("DONE: nothing to change")
