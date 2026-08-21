@@ -47,7 +47,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install akshare pandas requests lxml beautifulsoup4
-            - name: 应用补丁
+      - name: 应用补丁
         run: |
           if [ -f patch.py ]; then python patch.py; else echo "无补丁"; fi
           if [ -f patch2.py ]; then python patch2.py; else echo "无补丁2"; fi
