@@ -47,6 +47,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install akshare pandas requests lxml beautifulsoup4
+      - name: 应用补丁
+        run: |
+          if [ -f patch.py ]; then python patch.py; else echo "无补丁"; fi
+
       - name: 运行扫描
         env:
           CHECK: ${{ github.event.inputs.check }}
