@@ -940,7 +940,19 @@ def _load_watchlist():
                             if _want[:2] and _want[:2] not in _real:
                                 _bad.append((_code, _name, f"实际名称是【{_real}】"))
                         elif _real != _want and _want not in _real and _real not in _want:
-                            _bad.append((_code, _name, f"实际名称是【{_real}】"))
+                            # ★★V29.0：XD/DR/XR = 除权除息临时显示名，不是代码错★★
+                            # 8/21-8/22连报两天：山东黄金→XD山东黄、紫金矿业→XD紫金矿
+                            # ★假警报会淹没真警报（8/13香农芯创那种），必须区分
+                            _r2 = str(_real)
+                            _skip = False
+                            for _pfx in ("XD", "DR", "XR"):
+                                if _r2.startswith(_pfx):
+                                    _core = _r2[len(_pfx):]
+                                    if _core and _core in str(_want):
+                                        _skip = True
+                                    break
+                            if not _skip:
+                                _bad.append((_code, _name, f"实际名称是【{_real}】"))
                     if _bad:
                         w("")
                         w("🔴🔴🔴【代码与名称不符 · 严重警报】🔴🔴🔴")
@@ -1626,6 +1638,23 @@ def print_deep_stock(code, name="", cached=None):
         w(f"     （不是查无此股。ETF的价格见【重点盯盘】那一节的[ETF源]标记）")
         w("  ═══════════════════════════════════")
         return d
+    if rn:
+        # ★★V29.0：XD/DR/XR 是除权除息前缀，不是代码错★★
+        # 8/21-8/22连续两天报警：山东黄金→XD山东黄、紫金矿业→XD紫金矿、
+        #   有研新材→XD有研新。这三只都是当天除息，交易所临时改的显示名。
+        # ★把它当"代码写错"会淹没真正的警报（8/13香农芯创那种）。
+        _rn2 = str(rn)
+        for _p in ("XD", "DR", "XR", "N", "C"):
+            if _rn2.startswith(_p):
+                _rn2 = _rn2[len(_p):]
+                break
+        _nm2 = str(name or "")
+        ok = (not name) or (rn == name) or (name in rn) or (rn in name) \
+             or (_rn2 and (_rn2 in _nm2 or _nm2[:len(_rn2)] == _rn2))
+        if ok and rn != name and str(rn).startswith(("XD", "DR", "XR")):
+            w(f"  0️⃣ 代码核对：{code} → 【{rn}】 ✅一致"
+              f"（XD=今日除权除息，交易所临时显示名，不是代码错）")
+            rn = None      # 标记已打印，跳过下面
     if rn:
         ok = (not name) or (rn == name) or (name in rn) or (rn in name)
         w(f"  0️⃣ 代码核对：{code} → 实际名称【{rn}】 "
@@ -7285,11 +7314,18 @@ def scan_ledger():
         w("     扣手续费/印花税/滑点后基本无利润，不许当成功。")
         w("  ⚠️ A类事件仓超期未走 = 违反铁律，立即处理")
         w("  ⚠️ B类周期仓在期内跌5-8% = 噪音，不许砍（铁律F）")
-    w("  ⚠️ ★铁律R（V5.6）：达+10%即可分批兑现，不必死守全周期★")
-    w("     持有周期是【最长期限】，不是【必须期限】")
-    w("     +10% → 减半锁利，剩余仓位设移动止盈(从最高点回落5%)")
-    w("     +20% → 再减半，剩余当免费仓")
-    w("     用户原话：『潜伏一两个月就没意思了』")
+    # ★★V29.0：这里原本印的是【已被推翻的旧铁律R】★★
+    # 8/22用户发现：台账这一节还在印『+10%减半、+20%再减半』，
+    #   而同一份报告的【风险监测体系】印的是8/17更正后的新版：
+    #   『+10%是及格线不是卖出线，赚钱就尽量多赚』
+    # ★同一份报告里两条相反的规则 = 系统在自己打自己
+    w("  ⚠️ ★铁律R（2026-08-17 用户亲自更正版）★")
+    w("     ★+10%是【及格线】，不是【卖出线】★")
+    w("     用户原话：『谁说10%马上跑？我从没说过10%就要跑。")
+    w("       如果你看好这个板块，为什么在10%的时候跑？")
+    w("       ★赚钱就尽量多赚★』")
+    w("     ⚠️ 卖出只看两件事：①回撤≥5个百分点 ②驱动链见顶")
+    w("     ⚠️ 不看赚了多少。赚30%趋势还在 = 继续拿")
     safe_run("推荐台账", _do)
 
 
@@ -7529,7 +7565,7 @@ def main():
         mode = "盘后全扫描"
 
     w("=" * 60)
-    w(f"A股作战扫描器V28.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
+    w(f"A股作战扫描器V29.0 | {bj.strftime('%Y-%m-%d %H:%M')} {weekday} | {mode}")
     if FAST:
         w("⚡ 快扫模式(应急)：数据不完整，仅供紧急查价，不可用于决策。")
     w("=" * 60)
@@ -7639,6 +7675,9 @@ def main():
         pass
 
     try:
+        if globals().get("_TAIL_DONE"):
+            raise RuntimeError("skip-dup")
+        globals()["_TAIL_DONE"] = True
         w("")
         w("=" * 60)
         w("\U0001f3af\U0001f3af\u3010\u4eca\u65e5\u552f\u4e00\u53ef\u7528\u7684\u9009\u80a1\u4f9d\u636e\u3011\u53ea\u5217\u80dc\u7387>45%%\u7684\u6a21\u5757 \U0001f3af\U0001f3af")
@@ -7665,6 +7704,9 @@ def main():
 
     # ★★V28.0：报告最后，只列胜率>45%的模块给出的方向★★
     try:
+        if globals().get("_TAIL_DONE"):
+            raise RuntimeError("skip-dup")
+        globals()["_TAIL_DONE"] = True
         w("")
         w("=" * 60)
         w("🎯🎯【今日唯一可用的选股依据】只列胜率>45%的模块 🎯🎯")
@@ -7698,7 +7740,7 @@ def main():
                  "reports/latest.txt"]:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-    print(f"\n✅ V28.0完成 {prefix}_最新.txt")
+    print(f"\n✅ V29.0完成 {prefix}_最新.txt")
 
 
 class _HardTimeout(Exception):
