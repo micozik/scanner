@@ -1,0 +1,261 @@
+======================================================================
+🔬 代码探针 patch_probe2 | 北京 2026-08-31 21:28
+   目标：scanner_cloud.py 共 7805 行
+======================================================================
+
+----------------------------------------------------------------------
+🔎 关键词：已过及格线
+   用途：【BUG二】铁律S的10%门槛，香农8.89%被判成已过10%
+   命中 1 处
+----------------------------------------------------------------------
+
+   ===== 第 4142 行附近 =====
+        4130 |             line = f"  ◆ {name}({code6})：现{pnl:+.2f}% | 历史最高{peak:+.2f}%"
+        4131 |             if drop > 0.05:
+        4132 |                 line += f" | 回撤{drop:.2f}点"
+        4133 |             if peak >= 20 and drop >= 5:
+        4134 |                 line += "  🔴【R+S】曾达+20%且回撤5点 → 减至1/4，剩余免费仓"
+        4135 |             elif peak >= 10 and drop >= 5:
+        4136 |                 line += "  🔴【触发止盈】曾达+10%且回撤5点 → 立刻减半锁利"
+        4137 |             elif pnl >= 10:
+        4138 |                 line += "  💎【达标】+10% → 减半锁利，剩余移动止盈"
+        4139 |             elif drop >= 5:
+        4140 |                 line += "  ⚠️【回撤警告】从高点回落5点 → 减1/3"
+        4141 |             elif pnl >= 7:
+   >>>  4142 |                 line += "  📈 已过及格线(+10%)，★趋势还在就继续拿，不许因为到10%就减★"
+        4143 |             w(line)
+        4144 |         if not _peak_exists:
+        4145 |             w("  🔴 position_peak.json 本次不存在 → 说明它没能在两次运行间保留！")
+        4146 |             w("     请确认 GitHub Actions 的 commit 步骤包含 reports/*.json")
+        4147 |             w("     （已用 KNOWN_PEAKS 种子兜底，但新高点仍会丢，必须修 workflow）")
+        4148 |         if changed:
+        4149 |             try:
+        4150 |                 os.makedirs("reports", exist_ok=True)
+        4151 |                 with open(PEAK_FILE, "w", encoding="utf-8") as f:
+        4152 |                     json.dump(peaks, f, ensure_ascii=False)
+        4153 |             except Exception:
+        4154 |                 pass
+        4155 |         w("\n  ⚠️★★止盈规则（2026-08-17 用户亲自更正）★★")
+        4156 |         w("    🔴 已删除『+10%减半』『+20%再减半』—— 这两条是错的")
+        4157 |         w("       用户原话：『谁说10%马上跑？我从没说过10%就要跑。")
+        4158 |         w("         如果你看好这个板块，为什么在10%的时候跑？")
+        4159 |         w("         ★赚钱就尽量多赚★，趋势还在，你跑去买别的")
+        4160 |         w("         还不是买回这个行业？』")
+        4161 |         w("    ✅ 唯一的减仓触发：★从历史最高回落≥5个百分点★")
+        4162 |         w("       它不是『锁利』，是【趋势转折的客观信号】")
+        4163 |         w("    ✅ 第二种：驱动链见顶（三条同时成立才算）")
+        4164 |         w("       ①板块连续≥2天资金净流出且累计>30亿")
+        4165 |         w("       ②同时板块在跌(跌>1%)  ③催化被官方/公司证伪")
+        4166 |         w("    ⚠️ 赚了30%、50%，只要①-B驱动还在、没回撤5点 → ★继续拿★")
+        4167 |         w("    ⚠️ +10%是【及格线】不是【卖出线】：")
+        4168 |         w("       『连10%都赚不到就跑，那叫炒什么股』")
+        4169 |         w("  ★铁律F与S不矛盾：")
+        4170 |         w("    F防止我用【短线跌幅】砍长线仓（还没赚过就砍）")
+        4171 |         w("    S防止我看着【已赚到的利润】飞走不动手")
+
+----------------------------------------------------------------------
+🔎 关键词：当前最优
+   用途：【BUG一】公告源挑选逻辑，按条数挑→挑中无代码的源
+   命中 1 处
+----------------------------------------------------------------------
+
+   ===== 第 6432 行附近 =====
+        6420 |             try:
+        6421 |                 fn = getattr(ak, fname)
+        6422 |                 _to = 20 if "巨潮" in tag else 40
+        6423 |                 r = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=_to)
+        6424 |                 if r is None or len(r) == 0:
+        6425 |                     w(f"  [跳过] {tag}：返回空")
+        6426 |                     continue
+        6427 |                 _hascode = pick_col(r, ["代码", "股票代码", "证券代码", "symbol", "code"]) is not None
+        6428 |                 _score = len(r) * (3 if _hascode else 1)
+        6429 |                 _mark = "✅带代码" if _hascode else "⚠️无代码(定位不到个股)"
+        6430 |                 if _score > best_score:
+        6431 |                     df, best_score, best_n, best_tag, best_hascode = r, _score, len(r), tag, _hascode
+   >>>  6432 |                     w(f"  ✅ 公告源候选：{tag}（{len(r)}条 {_mark}）← 当前最优")
+        6433 |                 else:
+        6434 |                     w(f"  [较弱] {tag}：{len(r)}条 {_mark}")
+        6435 |                 if _hascode and len(r) >= 500:
+        6436 |                     break
+        6437 |             except Exception as e:
+        6438 |                 w(f"  [跳过] {tag}：{type(e).__name__}")
+        6439 |         if best_tag:
+        6440 |             w(f"  ★最终采用：{best_tag}（{best_n}条，{'带代码' if best_hascode else '★无代码★'}）")
+        6441 |             if not best_hascode:
+        6442 |                 w("  🔴 该源无股票代码列 → 事件雷达无法定位个股、")
+        6443 |                 w("     持仓公告核对失效。本次这两节不可用于决策。")
+        6444 |             if best_n < 300:
+        6445 |                 w(f"  ⚠️ 只有{best_n}条（正常≥900条）→ 事件雷达/定增雷达/")
+        6446 |                 w("     持仓公告核对 三节数据不完整，不可用于决策")
+        6447 |         if df is None:
+        6448 |             w("  [报空] 公告源不可用")
+        6449 |             return
+        6450 |         c_name = pick_col(df, ["名称", "股票简称", "简称"])
+        6451 |         c_code = pick_col(df, ["代码", "股票代码"])
+        6452 |         c_title = pick_col(df, ["公告标题", "标题", "内容", "摘要", "简称"])
+        6453 |         if not c_title:
+        6454 |             w(f"  [报空] 缺标题列 {list(df.columns)[:6]}")
+        6455 |             return
+        6456 |         hits = []
+        6457 |         for _, r in df.iterrows():
+        6458 |             try:
+        6459 |                 t = str(r[c_title])
+        6460 |                 if any(k in t for k in ANNOUNCE_KEYS):
+        6461 |                     nm = str(r[c_name]) if c_name else ""
+
+----------------------------------------------------------------------
+🔎 关键词：无代码(定位不到个股)
+   用途：【BUG一】标记无代码源的地方
+   命中 1 处
+----------------------------------------------------------------------
+
+   ===== 第 6429 行附近 =====
+        6417 |         # ★200条无代码 < 93条有代码。评分 = 条数 × (有代码?3:1)
+        6418 |         best_score, best_n, best_tag, best_hascode = 0, 0, "", False
+        6419 |         for tag, fname, kw in avail:
+        6420 |             try:
+        6421 |                 fn = getattr(ak, fname)
+        6422 |                 _to = 20 if "巨潮" in tag else 40
+        6423 |                 r = with_retry(lambda: fn(**kw), tries=1, wait=1, timeout=_to)
+        6424 |                 if r is None or len(r) == 0:
+        6425 |                     w(f"  [跳过] {tag}：返回空")
+        6426 |                     continue
+        6427 |                 _hascode = pick_col(r, ["代码", "股票代码", "证券代码", "symbol", "code"]) is not None
+        6428 |                 _score = len(r) * (3 if _hascode else 1)
+   >>>  6429 |                 _mark = "✅带代码" if _hascode else "⚠️无代码(定位不到个股)"
+        6430 |                 if _score > best_score:
+        6431 |                     df, best_score, best_n, best_tag, best_hascode = r, _score, len(r), tag, _hascode
+        6432 |                     w(f"  ✅ 公告源候选：{tag}（{len(r)}条 {_mark}）← 当前最优")
+        6433 |                 else:
+        6434 |                     w(f"  [较弱] {tag}：{len(r)}条 {_mark}")
+        6435 |                 if _hascode and len(r) >= 500:
+        6436 |                     break
+        6437 |             except Exception as e:
+        6438 |                 w(f"  [跳过] {tag}：{type(e).__name__}")
+        6439 |         if best_tag:
+        6440 |             w(f"  ★最终采用：{best_tag}（{best_n}条，{'带代码' if best_hascode else '★无代码★'}）")
+        6441 |             if not best_hascode:
+        6442 |                 w("  🔴 该源无股票代码列 → 事件雷达无法定位个股、")
+        6443 |                 w("     持仓公告核对失效。本次这两节不可用于决策。")
+        6444 |             if best_n < 300:
+        6445 |                 w(f"  ⚠️ 只有{best_n}条（正常≥900条）→ 事件雷达/定增雷达/")
+        6446 |                 w("     持仓公告核对 三节数据不完整，不可用于决策")
+        6447 |         if df is None:
+        6448 |             w("  [报空] 公告源不可用")
+        6449 |             return
+        6450 |         c_name = pick_col(df, ["名称", "股票简称", "简称"])
+        6451 |         c_code = pick_col(df, ["代码", "股票代码"])
+        6452 |         c_title = pick_col(df, ["公告标题", "标题", "内容", "摘要", "简称"])
+        6453 |         if not c_title:
+        6454 |             w(f"  [报空] 缺标题列 {list(df.columns)[:6]}")
+        6455 |             return
+        6456 |         hits = []
+        6457 |         for _, r in df.iterrows():
+        6458 |             try:
+
+----------------------------------------------------------------------
+🔎 关键词：龙虎榜·东财失败
+   用途：【BUG三】主扫描器龙虎榜取数，三源全挂
+   命中 0 处
+----------------------------------------------------------------------
+   （未找到）
+
+----------------------------------------------------------------------
+🔎 关键词：CHAIN_MAP
+   用途：【BUG四】驱动链映射表，冷低早6只查不到
+   命中 6 处
+----------------------------------------------------------------------
+
+   ===== 第 2542 行附近 =====
+        2530 |         w("    ⚠️ 今日无任何驱动链带✅验证信号 → 全部标为『驱动待确认』")
+        2531 | 
+        2532 |     w(f"    今日有验证信号的链：{('、'.join(ver_chains)) if ver_chains else '无'}")
+        2533 |     w(f"    今日跳升≥100位的板块：{len(hot_jump)}个 ｜ 资金≥5亿的行业：{len(hot_flow)}个")
+        2534 |     w("")
+        2535 | 
+        2536 |     for h in hits:
+        2537 |         try:
+        2538 |             nm = h.get("name", "")
+        2539 |             cd = h.get("code", "")
+        2540 |         except Exception:
+        2541 |             continue
+   >>>  2542 |         # 查它属于哪条链（用 CHAIN_MAP 或板块名模糊匹配）
+        2543 |         chain = None
+        2544 |         try:
+        2545 |             for _cn, _codes in (globals().get("CHAIN_MAP") or {}).items():
+        2546 |                 if cd in _codes or nm in str(_codes):
+        2547 |                     chain = _cn
+        2548 |                     break
+        2549 |         except Exception:
+        2550 |             pass
+        2551 |         ind = None
+        2552 |         try:
+        2553 |             # ★V16.0：行业来自 industry_map.json 缓存（不是不存在的 IND_MAP）
+        2554 |             _im, _age = _load_ind_cache()
+        2555 |             ind = (_im or {}).get(cd)
+        2556 |         except Exception:
+        2557 |             pass
+        2558 | 
+        2559 |         marks, score = [], 0
+        2560 |         if chain and any(chain[:3] in c for c in ver_chains):
+        2561 |             marks.append(f"✅驱动链[{chain}]今日有验证信号")
+        2562 |             score += 5
+        2563 |         elif chain:
+        2564 |             marks.append(f"⚠️驱动链[{chain}]今日无验证信号")
+        2565 |         else:
+        2566 |             marks.append("❔驱动链未识别（CHAIN_MAP里没有它）")
+        2567 | 
+        2568 |         if ind:
+        2569 |             if any(ind in k or k in ind for k in hot_jump):
+        2570 |                 marks.append(f"🚀所属[{ind}]今日跳升≥100位")
+        2571 |                 score += 3
+
+   ===== 第 2545 行附近 =====
+        2533 |     w(f"    今日跳升≥100位的板块：{len(hot_jump)}个 ｜ 资金≥5亿的行业：{len(hot_flow)}个")
+        2534 |     w("")
+        2535 | 
+        2536 |     for h in hits:
+        2537 |         try:
+        2538 |             nm = h.get("name", "")
+        2539 |             cd = h.get("code", "")
+        2540 |         except Exception:
+        2541 |             continue
+        2542 |         # 查它属于哪条链（用 CHAIN_MAP 或板块名模糊匹配）
+        2543 |         chain = None
+        2544 |         try:
+   >>>  2545 |             for _cn, _codes in (globals().get("CHAIN_MAP") or {}).items():
+        2546 |                 if cd in _codes or nm in str(_codes):
+        2547 |                     chain = _cn
+        2548 |                     break
+        2549 |         except Exception:
+        2550 |             pass
+        2551 |         ind = None
+        2552 |         try:
+        2553 |             # ★V16.0：行业来自 industry_map.json 缓存（不是不存在的 IND_MAP）
+        2554 |             _im, _age = _load_ind_cache()
+        2555 |             ind = (_im or {}).get(cd)
+        2556 |         except Exception:
+        2557 |             pass
+        2558 | 
+        2559 |         marks, score = [], 0
+        2560 |         if chain and any(chain[:3] in c for c in ver_chains):
+        2561 |             marks.append(f"✅驱动链[{chain}]今日有验证信号")
+        2562 |             score += 5
+        2563 |         elif chain:
+        2564 |             marks.append(f"⚠️驱动链[{chain}]今日无验证信号")
+        2565 |         else:
+        2566 |             marks.append("❔驱动链未识别（CHAIN_MAP里没有它）")
+        2567 | 
+        2568 |         if ind:
+        2569 |             if any(ind in k or k in ind for k in hot_jump):
+        2570 |                 marks.append(f"🚀所属[{ind}]今日跳升≥100位")
+        2571 |                 score += 3
+        2572 |             if any(ind in k or k in ind for k in hot_flow):
+        2573 |                 marks.append(f"💰所属[{ind}]资金≥5亿")
+        2574 |                 score += 2
+
+   （还有 4 处，行号：[2566, 4284, 4302, 4409]）
+
+======================================================================
+🔬 探针结束
+======================================================================
