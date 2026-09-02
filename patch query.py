@@ -48,9 +48,18 @@ from concurrent.futures import ThreadPoolExecutor
 
 OUTDIR = "reports"
 QUERY_FILE = "查询.txt"
-TIME_BUDGET = 150.0
+TIME_BUDGET = 90.0
 MAX_ITEMS = 20
 WORKERS = 8
+
+# ★★★ 安全开关 ★★★
+# 主扫描 scan.yml 基线20分02秒、上限22分钟，只剩2分钟余量。
+# #518 就是因为本补丁被 patch*.py 循环带进主扫描，跑到22m26s被强杀。
+# → 只有独立的 query.yml 会设 QUERY_MODE=1，那时才干活；
+#   在主扫描里被扫到时，0秒退出，★对主扫描零影响★。
+if os.environ.get("QUERY_MODE") != "1":
+    print("⏭️ patch_query: 非查询模式，跳过（对主扫描零耗时）")
+    raise SystemExit(0)
 
 _T0 = time.time()
 _LOG = []
@@ -84,7 +93,14 @@ def read_query():
     raw = ""
     src = ""
 
-    # ① Actions 输入框（读事件JSON，不依赖输入框叫什么名字）
+    # ⓪ query.yml 直接传进来的（最可靠）
+    qt = os.environ.get("QUERY_TEXT", "")
+    if qt and qt.strip():
+        return ([x.strip() for x in
+                 re.split(r"[,，\s;；\n]+", qt.strip()) if x.strip()][:MAX_ITEMS],
+                "Actions输入框")
+
+    # ① Actions 事件JSON（不依赖输入框叫什么名字）
     p = os.environ.get("GITHUB_EVENT_PATH", "")
     if p and os.path.exists(p):
         try:
