@@ -1,85 +1,201 @@
 ==================================================================
-📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-02 15:10
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-02 15:59
    决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
 ==================================================================
    清单载入 64 只 | 并发 8 线程 | 时间预算 150 秒
-   取数成功 0 / 64 只 | 实际耗时 25.4 秒
+   取数成功 58 / 64 只 | 实际耗时 11.2 秒
 
 ------------------------------------------------------------------
 【持仓】
 ------------------------------------------------------------------
-  ◆ 佰维存储(688525)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 仕佳光子(688313)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 英维克(002837)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 拓普集团(601689)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 香农芯创(300475)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ ST海华(002018)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 佰维存储(688525) 现价222.28 今-2.4%
+      60日-29.8% | 距高点-56.2% 距低点+7.5% 🟢60日低位·可埋伏区
+      5日/60日量=0.47(缩量)
+  ◆ 仕佳光子(688313) 现价148.14 今-1.8%
+      60日-2.1% | 距高点-27.1% 距低点+76.4% 🟡中段
+      5日/60日量=0.64(缩量)
+  ◆ 英维克(002837) 现价66.23 今+0.5%
+      60日-3.9% | 距高点-23.9% 距低点+42.6% 🟡中段
+      5日/60日量=1.38(常量)
+  ◆ 拓普集团(601689) 现价46.52 今+0.1%
+      60日-26.4% | 距高点-26.4% 距低点+5.5% 🟢60日低位·可埋伏区
+      5日/60日量=0.54(缩量)
+  ◆ 香农芯创(300475) 现价167.80 今-1.1%
+      60日-5.8% | 距高点-45.2% 距低点+25.2% 🟡中段
+      5日/60日量=0.83(常量)
+  ◆ ST海华(002018)：【无数据】取数失败
 
 ------------------------------------------------------------------
 【观察】
 ------------------------------------------------------------------
-  ◆ 天孚通信(300394)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 瑞芯微(603893)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 双环传动(002472)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 天孚通信(300394) 现价250.00 今-0.7%
+      60日-14.7% | 距高点-26.9% 距低点+56.2% 🟡中段
+      5日/60日量=0.76(缩量)
+  ◆ 瑞芯微(603893) 现价197.49 今-3.0%
+      60日+21.6% | 距高点-13.3% 距低点+24.3% 🟡中段
+      5日/60日量=0.93(常量)
+  ◆ 双环传动(002472) 现价34.95 今-1.1%
+      60日-17.6% | 距高点-25.2% 距低点+0.0% 🟢60日低位·可埋伏区
+      5日/60日量=0.34(缩量)
   ◆ 华天科技(002185)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 紫光股份(000938)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中恒电气(002364)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 紫光股份(000938) 现价37.99 今-0.9%
+      60日+46.9% | 距高点-15.4% 距低点+51.1% 🟡中段
+      5日/60日量=0.66(缩量)
+  ◆ 中恒电气(002364) 现价36.00 今-2.1%
+      60日-29.5% | 距高点-35.8% 距低点+5.4% 🟢60日低位·可埋伏区
+      5日/60日量=0.62(缩量)
 
 ------------------------------------------------------------------
 【候选】
 ------------------------------------------------------------------
-  ◆ 万向德农(600371)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 新赛股份(600540)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 京粮控股(000505)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 百洋股份(002696)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 华绿生物(300970)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 福建金森(002679)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 江天化学(300927)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 秋乐种业(920087)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 万向德农(600371) 现价14.42 今+3.3%
+      60日+103.1% | 距高点+0.0% 距低点+131.1% 🔴60日高点附近·追高区
+      5日/60日量=3.08(放量)
+  ◆ 新赛股份(600540) 现价6.73 今+10.0%
+      60日+53.3% | 距高点+0.0% 距低点+112.3% 🔴60日高点附近·追高区
+      🔥连板5天 | 5日/60日量=1.84(放量)
+  ◆ 京粮控股(000505) 现价7.09 今-8.4%
+      60日+29.1% | 距高点-8.4% 距低点+41.0% 🟡中段
+      5日/60日量=3.56(放量)
+  ◆ 百洋股份(002696) 现价6.68 今-8.2%
+      60日+21.2% | 距高点-8.2% 距低点+42.4% 🟡中段
+      5日/60日量=1.79(放量)
+  ◆ 华绿生物(300970) 现价19.57 今-11.0%
+      60日-5.9% | 距高点-13.1% 距低点+34.0% 🟡中段
+      5日/60日量=3.17(放量)
+  ◆ 福建金森(002679) 现价12.24 今-5.2%
+      60日+39.4% | 距高点-5.2% 距低点+59.6% 🟡中段
+      5日/60日量=3.30(放量)
+  ◆ 江天化学(300927) 现价32.07 今-8.2%
+      60日+35.1% | 距高点-8.2% 距低点+61.8% 🟡中段
+      5日/60日量=3.16(放量)
+  ◆ 秋乐种业(920087) 现价19.36 今-9.7%
+      60日+76.3% | 距高点-9.7% 距低点+124.1% 🟡中段
+      5日/60日量=3.05(放量)
   ◆ 康农种业(920403)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 绿亨科技(920866)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 迪尔化工(920304)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 绿亨科技(920866) 现价7.40 今-7.7%
+      60日+12.8% | 距高点-7.7% 距低点+37.5% 🟡中段
+      5日/60日量=3.90(放量)
+  ◆ 迪尔化工(920304) 现价11.46 今-2.0%
+      60日+3.4% | 距高点-2.1% 距低点+44.7% 🔴60日高点附近·追高区
+      5日/60日量=3.61(放量)
   ◆ 一致魔芋(920273)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中国人保(601319)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 豫能控股(001896)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 中国人保(601319) 现价7.92 今+0.1%
+      60日+19.3% | 距高点+0.0% 距低点+21.7% 🔴60日高点附近·追高区
+      5日/60日量=1.51(放量)
+  ◆ 豫能控股(001896) 现价11.70 今-1.9%
+      60日-44.7% | 距高点-48.5% 距低点+0.0% 🟢60日低位·可埋伏区
+      5日/60日量=0.33(缩量)
   ◆ 芒果超媒(300413)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 欢瑞世纪(000892)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 欢瑞世纪(000892) 现价5.20 今+9.9%
+      60日+40.5% | 距高点+0.0% 距低点+73.9% 🔴60日高点附近·追高区
+      🔥连板3天 | 5日/60日量=0.57(缩量)
   ◆ 中广天择(603721)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 时代出版(600551)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 龙版传媒(605577)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 掌阅科技(603533)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 大晟文化(600892)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 国芳集团(601086)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 捷荣技术(002855)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 日联科技(688531)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 新宙邦(300037)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 江化微(603078)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中际旭创(300308)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 太辰光(300570)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 源杰科技(688498)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 长光华芯(688048)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 永新光学(603297)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 盛科通信(688702)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 德明利(001309)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 兆易创新(603986)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 安路科技(688107)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 斯迪克(300806)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 洁美科技(002859)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 风华高科(000636)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 山东黄金(600547)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 紫金矿业(601899)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 安泰科技(000969)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 铂科新材(300811)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 申菱环境(301018)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 云南锗业(002428)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 有研新材(600206)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 药明康德(603259)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 凯莱英(002821)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 九洲药业(603456)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 皓元医药(688131)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 长飞光纤(601869)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 亨通光电(600487)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 融发核电(002366)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 时代出版(600551) 现价8.62 今-5.1%
+      60日+20.1% | 距高点-5.1% 距低点+31.0% 🟡中段
+      5日/60日量=6.60(放量)
+  ◆ 龙版传媒(605577) 现价12.85 今+10.0%
+      60日+29.4% | 距高点+0.0% 距低点+45.9% 🔴60日高点附近·追高区
+      🔥连板3天 | 5日/60日量=3.00(放量)
+  ◆ 掌阅科技(603533) 现价24.15 今-2.8%
+      60日+16.4% | 距高点-2.8% 距低点+34.9% 🔴60日高点附近·追高区
+      5日/60日量=1.72(放量)
+  ◆ 大晟文化(600892) 现价5.35 今+10.1%
+      60日+47.0% | 距高点+0.0% 距低点+77.7% 🔴60日高点附近·追高区
+      🔥连板3天 | 5日/60日量=1.08(常量)
+  ◆ 国芳集团(601086) 现价11.10 今+10.0%
+      60日+52.9% | 距高点+0.0% 距低点+68.2% 🔴60日高点附近·追高区
+      🔥连板4天 | 5日/60日量=1.46(常量)
+  ◆ 捷荣技术(002855) 现价19.01 今+7.3%
+      60日+77.3% | 距高点+0.0% 距低点+123.9% 🔴60日高点附近·追高区
+      5日/60日量=4.30(放量)
+  ◆ 日联科技(688531) 现价132.59 今+1.3%
+      60日-24.4% | 距高点-31.9% 距低点+29.3% 🟡中段
+      5日/60日量=0.47(缩量)
+  ◆ 新宙邦(300037) 现价62.28 今-3.7%
+      60日-13.7% | 距高点-33.4% 距低点+9.3% 🟡中段
+      5日/60日量=0.54(缩量)
+  ◆ 江化微(603078) 现价33.50 今-1.9%
+      60日-26.6% | 距高点-41.9% 距低点+25.8% 🟡中段
+      5日/60日量=0.69(缩量)
+  ◆ 中际旭创(300308) 现价822.40 今-4.3%
+      60日-28.3% | 距高点-40.5% 距低点+0.0% 🟢60日低位·可埋伏区
+      5日/60日量=0.78(缩量)
+  ◆ 太辰光(300570) 现价189.04 今-2.5%
+      60日+11.2% | 距高点-32.8% 距低点+78.5% 🟡中段
+      5日/60日量=0.73(缩量)
+  ◆ 源杰科技(688498) 现价1481.00 今-0.1%
+      60日+2.1% | 距高点-21.5% 距低点+45.7% 🟡中段
+      5日/60日量=0.62(缩量)
+  ◆ 长光华芯(688048) 现价277.60 今-0.9%
+      60日-18.8% | 距高点-44.7% 距低点+30.3% 🟡中段
+      5日/60日量=0.62(缩量)
+  ◆ 永新光学(603297) 现价111.38 今-2.1%
+      60日-4.6% | 距高点-24.2% 距低点+28.9% 🟡中段
+      5日/60日量=1.07(常量)
+  ◆ 盛科通信(688702) 现价362.41 今-1.8%
+      60日+35.6% | 距高点-16.9% 距低点+43.3% 🟡中段
+      5日/60日量=0.57(缩量)
+  ◆ 德明利(001309) 现价412.93 今-1.2%
+      60日-34.2% | 距高点-57.4% 距低点+18.3% 🟡中段
+      5日/60日量=0.81(常量)
+  ◆ 兆易创新(603986) 现价388.86 今-1.1%
+      60日-19.1% | 距高点-53.7% 距低点+14.1% 🟡中段
+      5日/60日量=0.56(缩量)
+  ◆ 安路科技(688107) 现价29.60 今-3.2%
+      60日-24.9% | 距高点-35.1% 距低点+8.4% 🟡中段
+      5日/60日量=0.61(缩量)
+  ◆ 斯迪克(300806) 现价47.55 今+0.4%
+      60日-18.3% | 距高点-43.6% 距低点+24.3% 🟡中段
+      5日/60日量=0.90(常量)
+  ◆ 洁美科技(002859) 现价63.99 今+1.2%
+      60日-22.5% | 距高点-43.9% 距低点+16.0% 🟡中段
+      5日/60日量=0.74(缩量)
+  ◆ 风华高科(000636) 现价49.78 今-4.0%
+      60日-16.6% | 距高点-37.9% 距低点+23.8% 🟡中段
+      5日/60日量=0.90(常量)
+  ◆ 山东黄金(600547) 现价37.89 今+2.7%
+      60日+43.9% | 距高点+0.0% 距低点+66.8% 🔴60日高点附近·追高区
+      5日/60日量=1.42(常量)
+  ◆ 紫金矿业(601899) 现价32.95 今-2.3%
+      60日+22.5% | 距高点-5.9% 距低点+33.5% 🟡中段
+      5日/60日量=0.71(缩量)
+  ◆ 安泰科技(000969) 现价17.37 今-1.9%
+      60日-15.7% | 距高点-34.5% 距低点+13.1% 🟡中段
+      5日/60日量=0.61(缩量)
+  ◆ 铂科新材(300811) 现价73.21 今-3.2%
+      60日-17.1% | 距高点-31.7% 距低点+32.8% 🟡中段
+      5日/60日量=0.60(缩量)
+  ◆ 申菱环境(301018) 现价106.82 今+1.3%
+      60日+5.9% | 距高点-14.5% 距低点+57.7% 🟡中段
+      5日/60日量=1.04(常量)
+  ◆ 云南锗业(002428) 现价92.23 今-2.8%
+      60日+15.0% | 距高点-29.1% 距低点+49.2% 🟡中段
+      5日/60日量=0.78(缩量)
+  ◆ 有研新材(600206) 现价48.26 今-1.2%
+      60日+49.9% | 距高点-27.5% 距低点+49.9% 🟡中段
+      5日/60日量=0.68(缩量)
+  ◆ 药明康德(603259) 现价155.99 今+1.0%
+      60日+60.7% | 距高点-7.1% 距低点+60.7% 🟡中段
+      5日/60日量=0.56(缩量)
+  ◆ 凯莱英(002821) 现价164.60 今+2.3%
+      60日+46.8% | 距高点-15.9% 距低点+48.6% 🟡中段
+      5日/60日量=0.79(缩量)
+  ◆ 九洲药业(603456) 现价15.05 今-1.0%
+      60日+20.2% | 距高点-17.6% 距低点+23.6% 🟡中段
+      5日/60日量=0.63(缩量)
+  ◆ 皓元医药(688131) 现价92.11 今+0.0%
+      60日+23.4% | 距高点-8.3% 距低点+35.2% 🟡中段
+      5日/60日量=0.54(缩量)
+  ◆ 长飞光纤(601869) 现价407.80 今+1.9%
+      60日-9.9% | 距高点-29.7% 距低点+55.6% 🟡中段
+      5日/60日量=0.98(常量)
+  ◆ 亨通光电(600487) 现价66.90 今-0.7%
+      60日-37.4% | 距高点-45.6% 距低点+41.7% 🟡中段
+      5日/60日量=1.00(常量)
+  ◆ 融发核电(002366) 现价5.89 今-4.2%
+      60日-2.8% | 距高点-12.6% 距低点+18.3% 🟡中段
+      5日/60日量=1.32(常量)
 
 ==================================================================
 ⚠️ 怎么用（AI每次决断必须引用本表）：
