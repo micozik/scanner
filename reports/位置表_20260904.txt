@@ -1,9 +1,9 @@
 ==================================================================
-📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-04 14:02
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-04 15:18
    决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
 ==================================================================
    清单载入 80 只 | 并发 8 线程 | 时间预算 150 秒
-   取数成功 9 / 80 只 | 实际耗时 24.1 秒
+   取数成功 0 / 80 只 | 实际耗时 28.4 秒
 
 ------------------------------------------------------------------
 【持仓】
@@ -61,9 +61,7 @@
   ◆ 华绿生物(300970)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 福建金森(002679)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 江天化学(300927)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 秋乐种业(920087) 现价20.24 今+4.2%
-      60日+78.8% | 距高点-5.6% 距低点+134.3% 🟡中段
-      5日/60日量=2.48(放量)
+  ◆ 秋乐种业(920087)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 康农种业(920403)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 绿亨科技(920866)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 迪尔化工(920304)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
@@ -74,9 +72,7 @@
   ◆ 时代出版(600551)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 龙版传媒(605577)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 掌阅科技(603533)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 大晟文化(600892) 现价4.96 今-9.0%
-      60日+41.7% | 距高点-9.0% 距低点+64.8% 🟡中段
-      5日/60日量=3.04(放量)
+  ◆ 大晟文化(600892)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 中际旭创(300308)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 太辰光(300570)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 源杰科技(688498)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
@@ -85,34 +81,20 @@
   ◆ 盛科通信(688702)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 德明利(001309)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 兆易创新(603986)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 安路科技(688107) 现价29.90 今-1.0%
-      60日-20.3% | 距高点-34.4% 距低点+9.5% 🟡中段
-      5日/60日量=0.65(缩量)
+  ◆ 安路科技(688107)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 斯迪克(300806)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 洁美科技(002859)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 风华高科(000636)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 山东黄金(600547)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 紫金矿业(601899)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 安泰科技(000969) 现价17.11 今-1.5%
-      60日-30.0% | 距高点-35.5% 距低点+11.4% 🟡中段
-      5日/60日量=0.58(缩量)
-  ◆ 铂科新材(300811) 现价73.26 今-2.8%
-      60日-11.6% | 距高点-31.6% 距低点+32.9% 🟡中段
-      5日/60日量=0.52(缩量)
-  ◆ 申菱环境(301018) 现价103.94 今-7.8%
-      60日+5.8% | 距高点-16.8% 距低点+53.4% 🟡中段
-      5日/60日量=1.06(常量)
-  ◆ 云南锗业(002428) 现价87.50 今-4.5%
-      60日-5.1% | 距高点-32.7% 距低点+41.6% 🟡中段
-      5日/60日量=0.57(缩量)
+  ◆ 安泰科技(000969)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 铂科新材(300811)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 申菱环境(301018)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 云南锗业(002428)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 有研新材(600206)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 药明康德(603259)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 凯莱英(002821) 现价163.95 今-2.5%
-      60日+41.7% | 距高点-16.2% 距低点+48.0% 🟡中段
-      5日/60日量=0.72(缩量)
-  ◆ 九洲药业(603456) 现价15.08 今-0.7%
-      60日+18.0% | 距高点-17.4% 距低点+19.6% 🟡中段
-      5日/60日量=0.53(缩量)
+  ◆ 凯莱英(002821)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 九洲药业(603456)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 皓元医药(688131)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
 
 ==================================================================
