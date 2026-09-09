@@ -1,9 +1,9 @@
 ==================================================================
-📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-09 14:06
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-09 15:27
    决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
 ==================================================================
    清单载入 75 只 | 并发 8 线程 | 时间预算 150 秒
-   取数成功 9 / 75 只 | 实际耗时 12.4 秒
+   取数成功 0 / 75 只 | 实际耗时 14.0 秒
 
 ------------------------------------------------------------------
 【持仓】
@@ -79,36 +79,18 @@
   ◆ 药明康德(603259)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 凯莱英(002821)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 九洲药业(603456)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 皓元医药(688131) 现价93.67 今-1.1%
-      60日+24.8% | 距高点-6.7% 距低点+37.4% 🟡中段
-      5日/60日量=0.50(缩量)
-  ◆ 荣亿精密(920223) 现价14.63 今-7.6%
-      60日+0.9% | 距高点-18.7% 距低点+42.6% 🟡中段
-      5日/60日量=3.28(放量)
+  ◆ 皓元医药(688131)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 荣亿精密(920223)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 晟楠科技(920006)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 晨曦航空(300581) 现价11.05 今+0.0%
-      60日-10.5% | 距高点-10.5% 距低点+25.9% 🟡中段
-      5日/60日量=1.45(常量)
+  ◆ 晨曦航空(300581)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 华密新材(920247)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 优机股份(920943) 现价15.43 今+0.6%
-      60日+5.5% | 距高点-20.3% 距低点+26.8% 🟡中段
-      5日/60日量=0.76(缩量)
-  ◆ 万向德农(600371) 现价15.24 今-3.7%
-      60日+128.8% | 距高点-3.7% 距低点+144.2% 🟡中段
-      5日/60日量=4.45(放量)
+  ◆ 优机股份(920943)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 万向德农(600371)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 新赛股份(600540)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 京粮控股(000505) 现价7.92 今+2.6%
-      60日+46.9% | 距高点+0.0% 距低点+57.5% 🔴60日高点附近·追高区
-      5日/60日量=2.81(放量)
-  ◆ 福建金森(002679) 现价11.39 今-0.7%
-      60日+35.6% | 距高点-11.8% 距低点+48.5% 🟡中段
-      5日/60日量=4.31(放量)
-  ◆ 国芳集团(601086) 现价14.64 今-2.1%
-      60日+107.7% | 距高点-2.1% 距低点+121.8% 🔴60日高点附近·追高区
-      5日/60日量=4.75(放量)
-  ◆ 中国人保(601319) 现价7.88 今+0.8%
-      60日+14.9% | 距高点-2.0% 距低点+21.0% 🔴60日高点附近·追高区
-      5日/60日量=1.06(常量)
+  ◆ 京粮控股(000505)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 福建金森(002679)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 国芳集团(601086)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 中国人保(601319)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
 
 ==================================================================
 ⚠️ 怎么用（AI每次决断必须引用本表）：
