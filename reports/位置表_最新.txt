@@ -1,96 +1,19 @@
 ==================================================================
-📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-11 12:42
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-09-11 13:37
    决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
 ==================================================================
-   清单载入 75 只 | 并发 8 线程 | 时间预算 150 秒
-   取数成功 0 / 75 只 | 实际耗时 28.0 秒
+   清单载入 6 只 | 并发 8 线程 | 时间预算 150 秒
+   取数成功 0 / 6 只 | 实际耗时 2.2 秒
 
 ------------------------------------------------------------------
 【持仓】
 ------------------------------------------------------------------
-  ◆ 香农芯创(300475)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 东方电气(600875)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 双环传动(002472)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 东方电气(600875)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 紫金矿业(601899)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 香农芯创(300475)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 拓普集团(601689)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 申菱环境(301018)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-
-------------------------------------------------------------------
-【观察】
-------------------------------------------------------------------
-  ◆ 天孚通信(300394)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 瑞芯微(603893)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 华天科技(002185)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 紫光股份(000938)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中恒电气(002364)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 佰维存储(688525)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 仕佳光子(688313)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 英维克(002837)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-
-------------------------------------------------------------------
-【候选】
-------------------------------------------------------------------
-  ◆ 应流股份(603308)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 炼石航空(000697)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 铂力特(688333)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 隆达股份(688231)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 图南股份(300855)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 抚顺特钢(600399)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 博云新材(002297)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 航材股份(688563)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 西部超导(688122)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 立中集团(300428)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 上大股份(301522)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中超控股(002471)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 航发动力(600893)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 航发科技(600391)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中国动力(600482)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 上海电气(601727)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 航宇科技(688239)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 航亚科技(688510)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 派克新材(605123)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 豪迈科技(002595)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 融发核电(002366)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 豫能控股(001896)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中际旭创(300308)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 长飞光纤(601869)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 亨通光电(600487)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 太辰光(300570)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 源杰科技(688498)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 长光华芯(688048)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 永新光学(603297)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 斯迪克(300806)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 洁美科技(002859)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 风华高科(000636)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 顺络电子(002138)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 德明利(001309)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 兆易创新(603986)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 盛科通信(688702)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 安路科技(688107)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 日联科技(688531)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 新宙邦(300037)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 江化微(603078)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 鼎龙股份(300054)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 山东黄金(600547)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 安泰科技(000969)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 铂科新材(300811)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 云南锗业(002428)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 有研新材(600206)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 药明康德(603259)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 凯莱英(002821)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 九洲药业(603456)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 皓元医药(688131)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 荣亿精密(920223)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 晟楠科技(920006)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 晨曦航空(300581)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 华密新材(920247)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 优机股份(920943)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 万向德农(600371)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 新赛股份(600540)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 京粮控股(000505)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 福建金森(002679)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 国芳集团(601086)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 中国人保(601319)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
 
 ==================================================================
 ⚠️ 怎么用（AI每次决断必须引用本表）：
