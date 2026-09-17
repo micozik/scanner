@@ -1,0 +1,124 @@
+name: A股自动扫描
+
+# ★★V23.0 修复 9/17 报告丢失★★
+# 症状：跑完显示"对齐后无差异"，但报告其实是旧的，新内容不见了
+# 根因：旧版用 git stash push → reset --hard → git stash pop
+#       reset 先把新报告清掉，全指望 pop 救回来；
+#       pop 一冲突就失败，后面的 git checkout --theirs . 在没有
+#       合并冲突时是无效命令，|| true 又把错误吞掉
+#       → 新报告丢失，却显示 exit 0，看起来是成功的
+# ★改法：不用 stash，改用【复制到 /tmp → reset → 复制回来】
+#   纯文件操作，不可能冲突，不可能丢
+#
+# ★V23.0 另两项：
+#   ① 提交步骤加 if: always() —— 扫描超时被砍，已跑出的部分也能提交
+#   ② 跑完直接打印完整链接 —— 不用再去 Actions 首页找运行号
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scan-a
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      check:
+        description: '★即时体检★ 填股票名字或代码（多只逗号分隔）留空则不查'
+        required: false
+        default: ''
+  schedule:
+    - cron: '25 1 * * 1-5'    # 北京 09:25
+    - cron: '25 2 * * 1-5'    # 北京 10:25
+    - cron: '25 3 * * 1-5'    # 北京 11:25
+    - cron: '0 5 * * 1-5'     # 北京 13:00
+    - cron: '0 6 * * 1-5'     # 北京 14:00
+    - cron: '55 6 * * 1-5'    # 北京 14:55
+    - cron: '30 7 * * 1-5'    # 北京 15:30 盘后
+    - cron: '15 1 * * 6,0'
+    - cron: '15 5 * * 6,0'
+    - cron: '15 9 * * 6,0'
+    - cron: '15 13 * * 6,0'
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install akshare pandas requests lxml beautifulsoup4
+
+      - name: 应用补丁
+        run: |
+          echo "════ 补丁清单 ════"
+          ls -1 patch*.py 2>/dev/null || echo "（没有任何 patch 文件）"
+          echo "════ 开始应用 ════"
+          for f in patch*.py; do
+            if [ -f "$f" ]; then echo "--- $f ---"; python "$f"; fi
+          done
+          echo "════ 补丁应用完毕 ════"
+
+      - name: 运行扫描
+        env:
+          CHECK: ${{ github.event.inputs.check }}
+          HARD_LIMIT: '2700'
+        run: python scanner_cloud.py
+
+      # ★★V23.0：报告丢失的根治 —— 纯文件复制，不用 stash★★
+      - name: 提交报告
+        if: always()          # ★扫描超时被砍，已跑出的部分也要提交★
+        run: |
+          git config user.name  "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+
+          if [ ! -d reports ] || [ -z "$(ls -A reports 2>/dev/null)" ]; then
+            echo "🔴 reports/ 是空的，扫描没产出任何文件"; exit 0
+          fi
+
+          echo "── 本次生成的报告 ──"
+          ls -l reports/ | head -20
+
+          # ★把新报告完整备份到 /tmp，reset 碰不到它
+          rm -rf /tmp/rp_backup
+          mkdir -p /tmp/rp_backup
+          cp -a reports/. /tmp/rp_backup/
+
+          for i in 1 2 3; do
+            echo "── 推送尝试 $i/3 ──"
+            git fetch origin main
+            git reset --hard origin/main
+            # ★从备份复制回来：纯文件覆盖，不可能冲突、不可能丢
+            mkdir -p reports
+            cp -a /tmp/rp_backup/. reports/
+            git add -A reports/
+            if [ -z "$(git diff --staged --name-only)" ]; then
+              echo "⚠️ 对齐后无差异 —— 报告内容和远端完全一样"
+              echo "   （如果你刚跑过扫描，说明这次没抓到新数据）"
+              exit 0
+            fi
+            git commit -m "scan $(date -u '+%Y-%m-%d %H:%M') UTC run#${{ github.run_number }}"
+            if git push origin HEAD:main; then
+              echo "✅ 推送成功"
+              echo ""
+              echo "════════════════════════════════════════════"
+              echo "★报告时间戳（核对是不是今天的）："
+              head -3 reports/latest.txt 2>/dev/null || true
+              echo ""
+              echo "★把下面三条发给AI（等1分钟让Pages部署完）："
+              echo "https://micozik.github.io/scanner/reports/r${{ github.run_number }}.txt"
+              echo "https://micozik.github.io/scanner/reports/%E7%BE%8E%E8%82%A1_%E6%9C%80%E6%96%B0.txt"
+              echo "https://micozik.github.io/scanner/reports/%E9%BE%99%E8%99%8E%E6%A6%9C_%E6%9C%80%E6%96%B0.txt"
+              echo "════════════════════════════════════════════"
+              exit 0
+            fi
+            echo "⚠️ 推送失败，8秒后重试"; sleep 8
+          done
+          echo "🔴 三次推送均失败（报告已生成，下次会补推）"
+          exit 0
