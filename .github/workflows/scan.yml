@@ -56,7 +56,7 @@ jobs:
       - name: 运行扫描
         env:
           CHECK: ${{ github.event.inputs.check }}
-          HARD_LIMIT: '1020'
+          HARD_LIMIT: '2700'
         run: python scanner_cloud.py
 
       - name: 提交报告
