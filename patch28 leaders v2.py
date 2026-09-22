@@ -9,7 +9,7 @@ patch28_leaders_v2.py —— 修【强板块·领涨挖掘】首跑暴露的4个
   ③ 只按今日涨幅排序 = 追高（排第一的光云科技已+16%）。
      → 改成面向"明天能买"：今日强度5%封顶，20cm折半计；折算后>7%扣分；封板单列"明日看溢价"。
   ④ 板块打分偏涨幅，资金+17亿的半导体没入选。
-     → 资金第一且>5亿的行业强制入选。
+     → 资金前两名且>5亿的行业强制入选。
   依赖 patch27 已打（替换它注入的函数体，保留原标记）。
 """
 import io, os, sys
@@ -99,12 +99,13 @@ def scan_strong_board_picks():
     try:
         _ind_by_flow = sorted([b for b in boards if b[1] == "行业" and b[5] is not None],
                               key=lambda x: -x[5])
-        if _ind_by_flow and _ind_by_flow[0][5] > 5 and \
-                _ind_by_flow[0][2] not in [b[2] for b in pick_b]:
-            pick_b[-1 if len(pick_b) >= 5 else len(pick_b):] = [_ind_by_flow[0]]
+        for _bf in _ind_by_flow[:2]:                     # 资金前两名的行业都要看
+            if _bf[5] > 5 and _bf[2] not in [b[2] for b in pick_b]:
+                pick_b.append(_bf)
+        pick_b = pick_b[:6]
     except Exception:
         pass
-    w("\n  ── ①今日最强板块（涨幅×2+跳升+资金；资金第一的行业强制入选）──")
+    w("\n  ── ①今日最强板块（涨幅×2+跳升+资金；资金前两名的行业强制入选）──")
     for sc, kind, nm, pct, jp, fl in pick_b:
         w(f"    [{kind}]{nm} {pct:+.2f}% 跳升{jp:+d}位"
           + (f" 资金{fl:+.1f}亿" if fl is not None else "") + f" → {sc:.1f}分")
