@@ -44,7 +44,7 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -68,7 +68,7 @@ jobs:
       - name: 运行扫描
         env:
           CHECK: ${{ github.event.inputs.check }}
-          HARD_LIMIT: '2700'
+          HARD_LIMIT: '1200'
         run: python scanner_cloud.py
 
       # ★★V23.0：报告丢失的根治 —— 纯文件复制，不用 stash★★
