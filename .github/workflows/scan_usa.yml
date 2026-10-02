@@ -1,5 +1,10 @@
-
 name: 美股夜盘扫描
+
+# ★2026-10-02 修复：原版没有【应用补丁】这一步，
+#   patch12(日期)、patch23(运行号文件)、patch_usa46(持仓对标) 传上去从没执行过，
+#   所以 us113/us116/us118/us120 全部 404。
+# ★只应用文件名含 usa 的补丁（A股补丁是给 scanner_cloud.py 的，这里不需要）
+#   兼容手机上传把下划线变空格：patch23_usa_runnum.py / "patch23 usa runnum.py" 都认
 
 on:
   schedule:
@@ -23,17 +28,34 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install akshare pandas
+
+      - name: 应用美股补丁
+        run: |
+          echo "════ 美股补丁清单 ════"
+          ls -1 patch*usa*.py 2>/dev/null || echo "（没有美股补丁）"
+          echo "════ 开始应用 ════"
+          for f in patch*usa*.py; do
+            if [ -f "$f" ]; then echo "--- $f ---"; python "$f"; fi
+          done
+          echo "════ 应用完毕 ════"
+
       - run: python scanner_usa.py
+
       - name: 提交美股报告
+        if: always()
         run: |
           git config user.name "scanner-bot"
           git config user.email "scanner-bot@users.noreply.github.com"
           git add -f reports/美股_最新.txt
           git add reports/
           if git diff --cached --quiet; then echo "无改动"; exit 0; fi
-          git commit -m "美股扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
+          git commit -m "美股扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M') run#${{ github.run_number }}"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push && break
             sleep 3
           done
-
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "★把下面这条发给AI（每次运行号不同，缓存打不中）："
+          echo "https://micozik.github.io/scanner/reports/us${{ github.run_number }}.txt"
+          echo "════════════════════════════════════════════"
