@@ -87,6 +87,7 @@ NEW = r'''    # ===== @@MARK@@：美股联动核对 =====
             _L51.append("")
             _L51.append("  链条              美股       A股代表股今日     判定")
             _div = []
+            _rows51 = {}
             for _ch, _us, _as in _CH51:
                 _uv = [_q51[t][0] for t in _us if t in _q51]
                 if not _uv:
@@ -105,8 +106,30 @@ NEW = r'''    # ===== @@MARK@@：美股联动核对 =====
                 else:
                     _tag = "⚠️背离·美涨A跌" if _um > 0 else "⚠️背离·美跌A涨"
                     _div.append(_ch)
+                _rows51[_ch] = [round(_um, 2), round(_am, 2)]
                 _det = " ".join(f"{n}{p:+.1f}" for n, p in _av[:3])
                 _L51.append(f"  {_ch:<12} 美{_um:+.2f}%  A{_am:+.2f}%  {_tag}  ({_det})")
+            # 记账：每天每条链 美股/A股 涨跌入库，滚动算真实联动率
+            try:
+                _hf51 = "reports/uslink_hist.json"
+                _h51 = json.load(open(_hf51, encoding="utf-8")) if os.path.exists(_hf51) else {}
+                _dk = now_beijing().strftime("%Y-%m-%d")
+                _h51[_dk] = _rows51
+                json.dump(_h51, open(_hf51, "w", encoding="utf-8"), ensure_ascii=False)
+                _L51.append("")
+                _L51.append(f"  ── 滚动联动率（入库{len(_h51)}天；≥10天才算数）──")
+                for _ch, _us, _as in _CH51:
+                    _pts = [v[_ch] for v in _h51.values() if _ch in v]
+                    _big = [p for p in _pts if abs(p[0]) >= 2]
+                    if len(_pts) < 10:
+                        continue
+                    _same = sum(1 for p in _pts if (p[0] > 0) == (p[1] > 0))
+                    _bs = sum(1 for p in _big if (p[0] > 0) == (p[1] > 0))
+                    _ok = "可用" if _same / len(_pts) >= 0.6 else "≈抛硬币，别用美股推这条链"
+                    _L51.append(f"  {_ch:<12} 同向{_same}/{len(_pts)}={_same/len(_pts)*100:.0f}%"
+                                f"  美股大动(≥2%)后同向{_bs}/{len(_big)}  → {_ok}")
+            except Exception as _eh51:
+                _L51.append(f"  [patch51] 联动记账失败：{type(_eh51).__name__}")
             _L51.append("")
             if _div:
                 _L51.append("  ★AI必做：背离的链逐条写原因（亚洲盘/港股先跌了？国内利空？"
