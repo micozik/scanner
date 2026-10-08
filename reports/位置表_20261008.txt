@@ -1,21 +1,18 @@
 ==================================================================
-📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-10-08 18:44
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-10-08 19:46
    决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
 ==================================================================
-   清单载入 18 只 | 并发 8 线程 | 时间预算 150 秒
-   取数成功 0 / 18 只 | 实际耗时 9.6 秒
+   清单载入 15 只 | 并发 8 线程 | 时间预算 150 秒
+   取数成功 0 / 15 只 | 实际耗时 4.8 秒
 
 ------------------------------------------------------------------
 【持仓】
 ------------------------------------------------------------------
-  ◆ 创新药ETF广发(515120)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 键凯科技(688356)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 凯盛科技(600552)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 香农芯创(300475)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 大金重工(002487)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 双环传动(002472)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 亿纬锂能(300014)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 拓普集团(601689)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 博杰股份(002975)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
 
 ------------------------------------------------------------------
 【观察】
