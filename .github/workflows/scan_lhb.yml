@@ -30,6 +30,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install akshare pandas requests lxml beautifulsoup4
+      - name: 应用龙虎榜补丁
+        run: |
+          for f in patch*lhb*.py; do
+            if [ -f "$f" ]; then echo "--- $f ---"; python "$f"; fi
+          done
       - name: 运行龙虎榜扫描
         env:
           BACKFILL: ${{ github.event.inputs.backfill }}
