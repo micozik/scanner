@@ -69,7 +69,9 @@ jobs:
         env:
           CHECK: ${{ github.event.inputs.check }}
           HARD_LIMIT: '1800'
-        run: python scanner_cloud.py
+        run: |
+          touch /tmp/scan_start      # ★只提交本次扫描新写的文件，不覆盖龙虎榜/美股/查股票的新报告
+          python scanner_cloud.py
 
       # ★★V23.0：报告丢失的根治 —— 纯文件复制，不用 stash★★
       - name: 提交报告
@@ -88,7 +90,13 @@ jobs:
           # ★把新报告完整备份到 /tmp，reset 碰不到它
           rm -rf /tmp/rp_backup
           mkdir -p /tmp/rp_backup
-          cp -a reports/. /tmp/rp_backup/
+          # ★只备份本次扫描新写/改过的文件（旧做法整目录复制，会把别的工作流刚推送的新报告覆盖回旧版）
+          if [ -f /tmp/scan_start ]; then
+            (cd reports && find . -type f -newer /tmp/scan_start -exec cp --parents {} /tmp/rp_backup/ \;)
+          else
+            cp -a reports/. /tmp/rp_backup/
+          fi
+          echo "本次扫描新写的文件：$(find /tmp/rp_backup -type f | wc -l) 个"
 
           for i in 1 2 3; do
             echo "── 推送尝试 $i/3 ──"
