@@ -4,16 +4,16 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6709条）
   存档最近同步：2026-10-21T00:23:31Z UTC（状态 ok）
-  最近48小时：原创 3 条 / 回复 4 条（北京时间）
+  最近72小时：原创 6 条 / 回复 7 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×10 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    激光/光芯片/InP ×10 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    激光雷达 ×8 → 激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片
+    激光/光芯片/InP ×40 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    算力/云/数据中心 ×20 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    CPO/光模块 ×17 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
+    激光雷达 ×9 → 激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片
     人形机器人/物理AI ×3 → 机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115
-    CPO/光模块 ×2 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
-    存储/HBM ×1 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-  提到的代码：$AEVA×3 $AAOI×2 $SPCX×2 $NVDA×2 $SMCI×1 $NBIS×1 $SIVE×1
+    存储/HBM ×2 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
+  提到的代码：$AAOI×4 $AEVA×4 $LITE×4 $SIVE×3 $SPCX×2 $NBIS×2 $NVDA×2 $GFS×2 $SMCI×1 $MSFT×1 $IREN×1 $POET×1 $AEHR×1 $JBL×1 $AVGO×1 $GOOGL×1
 
   ── 原创推文（全文，新→旧）──
   [10-21 07:16] 📝原创 Divergence between fundamental demand and valuations are now at extreme levels. You're seeing accelerating procurement from $SMCI to $SPCX vs. collapsing equity prices on $AAOI to colo players. After ERs, I think Oct 2026 will be seen as a DeepSeek / April tariff opportunity
@@ -22,6 +22,12 @@
       https://x.com/aleabitoreddit/status/2112674175446089985
   [10-20 14:24] 📝原创 Exciting, $SIVE gets their first production orders for CW DFB lasers with LiDAR. “We are pleased to see this strategic program advance from design-win to production”. With opportunity for expansion given the speculated customer $AEVA is moving into CPO/NPO optical sources for
       https://x.com/aleabitoreddit/status/2112429644033245666
+  [10-19 18:34] 📝原创 Feels like the public interpretation is all wrong… I’m pretty sure $MSFT backing out on NScale deal is bullish for Neoclouds like $NBIS or even $IREN with energized capacity with Microsoft? Pretend Microsoft just ate a bunch of Chipotle burittos: - They order toilet paper delivery scheduled Q1 2027 - NScale says: sorry 3-4+ year delay of the toilet paper (into 2030’s) because of UK grid constraints - Microsoft still urgently needs toilet paper so they will get it elsewhere The cancellation does send warnings about what happens if a Neocloud can’t execute on contracted demand. But that just makes the other toilet paper sellers more valuable since Microsoft will go elsewhere for supply.
+      https://x.com/aleabitoreddit/status/2112130322683072617
+  [10-19 16:44] 📝原创 Last major $SIVE disclosure was 100M CW DFB laser capacity Q4 2027. And a new foundry partner (that makes 2 including Win Semi). Expected $JBL revenue coming in H1 2027 (with lasers for Jabil's 1.6T LRO scaling up H2 2027). There's channel checks along the way like CIOE where Sivers was engaged with Chinese pluggable makers + laser ASPs being raised. 70mW/100mW ranges were the most tight to Chinese pluggable makers, which was surprising. Biggest industry read through was $LITE selling out into 2029, making agreements for 2030, and having hyperscalers pay for capacity expansion for 2031. I don't think anyone has enough information to do any sort of accurate modeling for $SIVE like you can for
+      https://x.com/aleabitoreddit/status/2112102623721505098
+  [10-19 15:15] 📝原创 $LITE CEO interview on demand, counterparty + financing risk: - "CFO of $GOOGL came on and reported capex going up Y/Y, we expect hyperscalers for report an increase in capex in earnings. Based on what we see, we see their spend going up." - "The purchase agreements we have, to a large degree, are noncancellable." - The difference between Lumentum and companies like $AVGO, "we are not as dependent on AI datacenter buildout going forward" There's a conversion between electrical products to optical products" creating structural demand. Q: When do you see able to see yourself having more inventory? (catching up to surge in demand) - When we look at demand, there is "no end in sight" TLDR: Finan
+      https://x.com/aleabitoreddit/status/2112080246895976755
   [10-21 08:23] ↩回复 @jerrychen0awi Yes I still have $AAOI and personally think the $6.6b valuation doesn’t price in next year’s inflection happening Q2 next year onward. I personally modeling somewhere around ~$1.9B quarterly revenue Q4 2027, ~40% gross margins. With another bump in blended gross margins as
       https://x.com/aleabitoreddit/status/2112701278262546442
   [10-21 06:42] ↩回复 @Bandz_Trading Yeah this statement was heavily bullish on neoclouds like $NBIS along with many others "Our belief is that the value of compute per watt will increase over time, not decrease. The reason for that, I think it should be obvious to people really, is that as you improve the AI
@@ -30,6 +36,12 @@
       https://x.com/aleabitoreddit/status/2112435500246311200
   [10-20 14:37] ↩回复 @PhotonCap I think the more exciting application is robotics/humanoids, which was mentioned in the PR. With likely $AEVA doing FMCW LiDAR and robotics sensing with LG Innotek and others (Boston Dynamics supplier). But hard to get visibility over what end product Sivers lasers go into.
       https://x.com/aleabitoreddit/status/2112433128652542032
+  [10-19 17:19] ↩回复 @Dmytro_Lebid I don't think it's unclear, but I do think segments outside of photonics are noise for what drives valuations (which I don't think management understood). Next earnings, $SIVE should use laser capacity revenue ceiling from foundry allocations + existing fabs as the core metric alongside customer qualification diversity. Not defending what the definition of a revenue pipeline is and using current term cellular AllSpace contract revenue as an example. Potential volume from $GFS probably dwarfs revenue from other segments. Talking about existing qualification cycles is enough since investors how they convert given 1.6T/NPO/CPO transitions are coming up.
+      https://x.com/aleabitoreddit/status/2112111374176555324
+  [10-19 16:07] ↩回复 @qtdevlop Last time I've seen "It's all over" type posts was... 3 months ago during the situational awareness liquidation. And... 3 months ago before that... with Iran tensions + Oil + Helium + LNG fears/pricing. And... few months ago before that. I'm sure everyone remembers Deepseek back in like 2025 Each one had genuine risks, with rate hikes/margin liquidations to oil prices + supply disruption. And now financing/credit markets. Not trying to downplay the risks but haven't seen it materialize in the companies I'm tracking (eg. optical sector) given counterparty types + sector visibility + architectural shifts in 2027-2028. For example in this $LITE CEO interview, the guy said there hasn't
+      https://x.com/aleabitoreddit/status/2112093252962705579
+  [10-19 15:45] ↩回复 @gogolp9527 I can't give advice on what others should do but from what I'm seeing from $AAOI revenue ramp, it looks something like this from disclosed capacity. -> $858M Q1 2027 -> $1.29B Q2 2027 -> $1.62B Q3 2027 -> $1.89B Q4 2027 -> $2.14B Q1 2028 They're sitting on $6.8B MC right now. I'd be very impressed if they do $7.5B exit annualized revenue run rate in 2027 off 40% gross margins and markets assigned them the same valuation. And judging from $LITE making capacity agreements into 2030-2031... I don't quite think demand stalls out after 2027-2028. Anyway, lot of execution risk obviously, but H1 2027 inflection point is pretty close, so I'm personally waiting.
+      https://x.com/aleabitoreddit/status/2112087774845407493
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
