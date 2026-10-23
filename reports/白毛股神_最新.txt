@@ -4,16 +4,16 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6720条）
   存档最近同步：2026-10-22T18:25:36Z UTC（状态 ok）
-  最近48小时：原创 3 条 / 回复 8 条（北京时间）
+  最近72小时：原创 3 条 / 回复 9 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
+    激光/光芯片/InP ×6 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
     算力/云/数据中心 ×5 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    激光/光芯片/InP ×5 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
     存储/HBM ×4 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
     衬底/封装材料 ×3 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
     CPO/光模块 ×3 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$LITE×1 $AAOI×1 $SIVE×1 $AMD×1 $RKLB×1 $ASTS×1 $SPCX×1 $NBIS×1 $HOOD×1 $GOOGL×1 $NVDA×1 $AMKR×1
+  提到的代码：$AAOI×2 $LITE×1 $SIVE×1 $AMD×1 $SPCX×1 $HOOD×1 $RKLB×1 $ASTS×1 $NBIS×1 $GOOGL×1 $NVDA×1 $AMKR×1
 
   ── 原创推文（全文，新→旧）──
   [10-22 22:00] 📝原创 Yeah… minor volatility in October. Figured I’d share some personal drawdowns too for transparency.
@@ -38,6 +38,8 @@
       https://x.com/aleabitoreddit/status/2113241907673571746
   [10-22 16:51] ↩回复 @dBooray AI names are backed by actual earnings and contractual demand. Memory names are under <3x fwd P/E, with LTAs extending 5-10 years from your richest companies in the world like $GOOGL. Optical names are compressing to <10x fwd P/E despite 500-1000%+ growth next year Back in the day companies like Cisco/Yahoo were in 100x-600x+ earnings range.
       https://x.com/aleabitoreddit/status/2113191492067983849
+  [10-21 08:23] ↩回复 @jerrychen0awi Yes I still have $AAOI and personally think the $6.6b valuation doesn’t price in next year’s inflection happening Q2 next year onward. I personally modeling somewhere around ~$1.9B quarterly revenue Q4 2027, ~40% gross margins. With another bump in blended gross margins as
+      https://x.com/aleabitoreddit/status/2112701278262546442
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
