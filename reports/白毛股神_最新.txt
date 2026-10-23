@@ -13,7 +13,7 @@
     衬底/封装材料 ×3 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
     CPO/光模块 ×3 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$AAOI×1 $LITE×1 $SIVE×1 $AMD×1 $RKLB×1 $HOOD×1 $SPCX×1 $NBIS×1 $ASTS×1 $GOOGL×1 $AMKR×1 $NVDA×1
+  提到的代码：$AAOI×1 $LITE×1 $SIVE×1 $AMD×1 $ASTS×1 $NBIS×1 $RKLB×1 $HOOD×1 $SPCX×1 $GOOGL×1 $AMKR×1 $NVDA×1
 
   ── 原创推文（全文，新→旧）──
   [10-22 22:00] 📝原创 Yeah… minor volatility in October. Figured I’d share some personal drawdowns too for transparency.
