@@ -4,15 +4,14 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6726条）
   存档最近同步：2026-10-23T10:55:29Z UTC（状态 ok）
-  最近48小时：原创 5 条 / 回复 10 条（北京时间）
+  最近48小时：原创 4 条 / 回复 7 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     存储/HBM ×13 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    算力/云/数据中心 ×7 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    激光/光芯片/InP ×5 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    CPO/光模块 ×2 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
-    CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$NBIS×3 $TSM×1 $SNDK×1 $ESMT×1 $GOOGL×1 $KOSPI×1 $NVDA×1 $AAOI×1 $LITE×1 $SIVE×1 $AMD×1 $ASTS×1 $RKLB×1 $HOOD×1 $SPCX×1
+    算力/云/数据中心 ×4 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×4 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    CPO/光模块 ×1 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
+  提到的代码：$NBIS×2 $SNDK×1 $TSM×1 $ESMT×1 $KOSPI×1 $NVDA×1 $GOOGL×1 $LITE×1 $AAOI×1
 
   ── 原创推文（全文，新→旧）──
   [10-23 18:17] 📝原创 Pretty crazy Reuters piece on the global selloff. - October 22 marked the 1st time since the COVID crash that long/short, systematic, and multi-strategy hedge funds tracked by Goldman Sachs ALL lost more than 1% in a single day. - Tech-focused hedge funds: down ~10% in October - Asia-focused hedge funds: down ~9% in October There’s separate interviews where Citadel/JP Morgan have been saying retail has been the ones buying the dip in semiconductor, neocloud, and memory stocks. And the stocks bought by most retail were $NBIS, $SNDK, and $TSM. Reuters stated this downturn triggered institutional deleveraging events among hedge funds. Quite the divergence, I do think there’s been a ton of irrat
@@ -23,8 +22,6 @@
       https://x.com/aleabitoreddit/status/2113433338522546399
   [10-22 22:00] 📝原创 Yeah… minor volatility in October. Figured I’d share some personal drawdowns too for transparency.
       https://x.com/aleabitoreddit/status/2113269349519954203
-  [10-22 20:05] 📝原创 I don't own $ASTS and not advice, but if you're capitulating just because a stock price went down.. There's little investment thesis or conviction in the first place. People always have multi-year ideas like $RKLB becoming the next $SPCX or AST becoming the next Starlink competitor. Kinda reminiscent of retail favorite names like $HOOD back in 2024, or $NBIS later in 2025... But there's always capitulation periods along the way like the time hedge funds shorted Nebius to $70 in Dec/Jan, after calling it the Neocloud winter. Or the wave of negative analyst DGs on Robinhood on the drop back to $17. Or even macro scares like April 2025. So lot of retail investors never gave their original longs
-      https://x.com/aleabitoreddit/status/2113240389813780923
   [10-23 18:55] ↩回复 @ram_blings Thanks for asking! Obviously disappointed about the drawdown but very comfortable waiting this volatility out since I’m personally on a pretty conservative ~1.15x leverage now. Been seeing a lot of sad stories of people who went to 0 off options.
       https://x.com/aleabitoreddit/status/2113585093856108796
   [10-23 18:27] ↩回复 @Joshuachaisson I almost forgot about that, I’ll go look for some billboard space next to the $NBIS and OpenAI ones.
@@ -39,12 +36,6 @@
       https://x.com/aleabitoreddit/status/2113329741654806551
   [10-22 23:46] ↩回复 @Simipandaface Oh yeah, I’m up a lot YTD. It’s just surprising to see names sold off to ridiculous valuations after irrational selling. I’ll probably do some Halloween shopping later
       https://x.com/aleabitoreddit/status/2113296015755468831
-  [10-22 20:57] ↩回复 @tsazeng $SIVE is directly engaged with hyperscalers and from CIOE channel checks they’re now starting work with larger pluggable makers in China… So there’s a lot of surprising ways they can cook in the next 2 earnings calls. I’m just personally waiting for new disclosures.
-      https://x.com/aleabitoreddit/status/2113253354986144171
-  [10-22 20:30] ↩回复 @amitisinvesting Yeah $AMD is a great example you gave. It even got the popular nickname “Advanced Money Destroyer” for awhile… Then it had that massive rally to a $1T valuation, but lot of people didn’t give it time to play out.
-      https://x.com/aleabitoreddit/status/2113246620712370367
-  [10-22 20:11] ↩回复 @valustok X should probably do investigations on bot accounts like these trying to influence sentiment
-      https://x.com/aleabitoreddit/status/2113241907673571746
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
