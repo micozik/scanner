@@ -4,14 +4,14 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6726条）
   存档最近同步：2026-10-23T10:55:29Z UTC（状态 ok）
-  最近48小时：原创 4 条 / 回复 7 条（北京时间）
+  最近48小时：原创 3 条 / 回复 6 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     存储/HBM ×13 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
     算力/云/数据中心 ×4 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     激光/光芯片/InP ×4 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
     CPO/光模块 ×1 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
-  提到的代码：$NBIS×2 $SNDK×1 $TSM×1 $ESMT×1 $KOSPI×1 $NVDA×1 $GOOGL×1 $LITE×1 $AAOI×1
+  提到的代码：$NBIS×2 $TSM×1 $SNDK×1 $ESMT×1 $KOSPI×1 $NVDA×1 $GOOGL×1 $LITE×1 $AAOI×1
 
   ── 原创推文（全文，新→旧）──
   [10-23 18:17] 📝原创 Pretty crazy Reuters piece on the global selloff. - October 22 marked the 1st time since the COVID crash that long/short, systematic, and multi-strategy hedge funds tracked by Goldman Sachs ALL lost more than 1% in a single day. - Tech-focused hedge funds: down ~10% in October - Asia-focused hedge funds: down ~9% in October There’s separate interviews where Citadel/JP Morgan have been saying retail has been the ones buying the dip in semiconductor, neocloud, and memory stocks. And the stocks bought by most retail were $NBIS, $SNDK, and $TSM. Reuters stated this downturn triggered institutional deleveraging events among hedge funds. Quite the divergence, I do think there’s been a ton of irrat
@@ -20,8 +20,6 @@
       https://x.com/aleabitoreddit/status/2113437977749999628
   [10-23 08:52] 📝原创 $NVDA Jensen Huang: Surplus of memory supply is unlikely by 2029. The CNBC question referenced a Korean newspaper opinion on $KOSPI / Samsung / SK Hynix that predicted "new supply will leave the memory sector a red ocean in 2029." "One of the things that's really great about memory is that you can always use more of it", Jensen said, citing LPDDR usage in DCs. And responded "I don't think so" in terms of possibilities of oversupply in 2029. Just my personal opinion, Nvidia probably has the most visibility in the entire industry. Especially around supply procurement and emerging capacity, given they're the ones leading all the architectural shifts. On durability, you have Samsung already allo
       https://x.com/aleabitoreddit/status/2113433338522546399
-  [10-22 22:00] 📝原创 Yeah… minor volatility in October. Figured I’d share some personal drawdowns too for transparency.
-      https://x.com/aleabitoreddit/status/2113269349519954203
   [10-23 18:55] ↩回复 @ram_blings Thanks for asking! Obviously disappointed about the drawdown but very comfortable waiting this volatility out since I’m personally on a pretty conservative ~1.15x leverage now. Been seeing a lot of sad stories of people who went to 0 off options.
       https://x.com/aleabitoreddit/status/2113585093856108796
   [10-23 18:27] ↩回复 @Joshuachaisson I almost forgot about that, I’ll go look for some billboard space next to the $NBIS and OpenAI ones.
@@ -34,8 +32,6 @@
       https://x.com/aleabitoreddit/status/2113332383542120584
   [10-23 02:00] ↩回复 @MarkTheLaird I feel like markets are seeing a lot of forced liquidations and panic selling right now. You have peers like $LITE sold out completely into 2029, and are starting negotiations for 2030. So seeing a company like $AAOI now worth $5.7B despite all their laser/transceiver/ELSFP capacity coming online + demand visibility reminds me of July
       https://x.com/aleabitoreddit/status/2113329741654806551
-  [10-22 23:46] ↩回复 @Simipandaface Oh yeah, I’m up a lot YTD. It’s just surprising to see names sold off to ridiculous valuations after irrational selling. I’ll probably do some Halloween shopping later
-      https://x.com/aleabitoreddit/status/2113296015755468831
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达

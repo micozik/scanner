@@ -1,0 +1,37 @@
+==================================================================
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-10-25 00:35
+   决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
+==================================================================
+   清单载入 15 只 | 并发 8 线程 | 时间预算 150 秒
+   取数成功 0 / 15 只 | 实际耗时 8.0 秒
+
+------------------------------------------------------------------
+【持仓】
+------------------------------------------------------------------
+  ◆ 雷赛智能(002979)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 歌尔股份(002241)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 拓普集团(601689)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 长电科技(600584)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 通富微电(002156)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+
+------------------------------------------------------------------
+【观察】
+------------------------------------------------------------------
+  ◆ 康达新材(002669)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 东方电气(600875)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 先导智能(300450)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 恩捷股份(002812)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 招商南油(601975)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 天能重工(300569)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 澜起科技(688008)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 沃格光电(603773)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 英维克(002837)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 同飞股份(300990)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+
+==================================================================
+⚠️ 怎么用（AI每次决断必须引用本表）：
+   · 距60日高点 > -3%   → 追高区，仓位砍半或不买
+   · 距60日低点 < +8%   → 埋伏区，同等条件优先
+   · 连板≥3天           → 位置已高，只在【产业周期型】才可考虑
+   · 5日/60日量 < 0.8   → 缩量没人注意，配合催化才是机会
+==================================================================
