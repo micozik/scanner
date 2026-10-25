@@ -4,16 +4,16 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6736条）
   存档最近同步：2026-10-24T18:03:11Z UTC（状态 ok）
-  最近48小时：原创 4 条 / 回复 9 条（北京时间）
+  最近48小时：原创 3 条 / 回复 7 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     激光/光芯片/InP ×88 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
     CPO/光模块 ×26 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
-    存储/HBM ×10 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    算力/云/数据中心 ×9 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    存储/HBM ×8 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
+    算力/云/数据中心 ×6 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     激光雷达 ×5 → 激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$SIVE×5 $AAOI×4 $NBIS×3 $LITE×3 $META×2 $AMZN×2 $AAPL×2 $COHR×2 $APPL×2 $JBL×2 $MTSI×2 $GFS×2 $MU×1 $AMD×1 $AEVA×1 $POET×1 $SNDK×1 $TSM×1
+  提到的代码：$SIVE×5 $AAOI×4 $LITE×3 $META×2 $AMZN×2 $AAPL×2 $COHR×2 $APPL×2 $MTSI×2 $JBL×2 $GFS×2 $MU×1 $NBIS×1 $AMD×1 $AEVA×1 $POET×1
 
   ── 原创推文（全文，新→旧）──
   [10-25 01:46] 📝原创 So back on your Neoclouds like $NBIS + memory read through... From $AMZN CEO + A16z interview. Q: On memory shortages (eg. $MU / SK Hynix / Samsung): A: "There's only so much memory, and I don't think that that shortage ends in 2027." Q: On AWS capacity: A: "A good chunk of 28 is sold out", "largely sold out through 2027." Q: On capex ROI: A: Amazon had ​said it would spend about $220 billion in capex for 2026. But Jassy said the company "could invest a lot more ​and it wouldn't be a bad use of ​capital" This is probably validating economics of Neoclouds model since this comes from a pretty stingy hyperscaler like Amazon... that only serves free bananas to their employees. Unlike trusting $M
@@ -22,8 +22,6 @@
       https://x.com/aleabitoreddit/status/2114030117416755494
   [10-24 19:05] 📝原创 Yes, I like $SIVE. It's a fun company to cover, since there's a lot of supply chain alpha here. But the company completely Tall Poppy Syndromed itself last earnings. And it's clearly shown in the drawdown. Bit of a longer consolidated thought and some scattered bits of supply chain info: - Sivers has 100M CW DFB laser capacity coming online Q4 2027 during an industry shortage. And very large allocations from foundries online (they were doing these quals with Win Semi + 2 others back in 2023/2024), so they can actively monetize the bottleneck today. The other interesting reason why bottlenecks are important (aside from ASP hikes), is because qualifications convert much faster + more likely gi
       https://x.com/aleabitoreddit/status/2113950041207607453
-  [10-23 18:17] 📝原创 Pretty crazy Reuters piece on the global selloff. - October 22 marked the 1st time since the COVID crash that long/short, systematic, and multi-strategy hedge funds tracked by Goldman Sachs ALL lost more than 1% in a single day. - Tech-focused hedge funds: down ~10% in October - Asia-focused hedge funds: down ~9% in October There’s separate interviews where Citadel/JP Morgan have been saying retail has been the ones buying the dip in semiconductor, neocloud, and memory stocks. And the stocks bought by most retail were $NBIS, $SNDK, and $TSM. Reuters stated this downturn triggered institutional deleveraging events among hedge funds. Quite the divergence, I do think there’s been a ton of irrat
-      https://x.com/aleabitoreddit/status/2113575601390936238
   [10-25 02:03] ↩回复 @siddhrts I used to spend a lot of time inside $AMZN offices... so I do understand the lack of food availability firsthand. Despite making so much money, they even limited coffee to once a day. Bro when I visited $META, they had all you can eat buffets like you see in Vegas or Cruise Ships.
       https://x.com/aleabitoreddit/status/2114055113732182110
   [10-24 20:43] ↩回复 @stockprodigyman This was responding to a question this year whether their Fortune 100 was still working with $SIVE, given a lot of doubts. They qualified it’s a “very long cycle”, “they have a lot of things to work through because it’s a biosensing application” I use the word ~ likely since it’s not publicly disclosed. This is public supply chain inference that it’s $APPL, given 50M unit RFQ commercial scale, US, and technology/application overlap. I’d argue Apple would be a cherry on top if it happens in 2028, not really any part of the core thesis. Main thing I’m looking for is Sivers AI DC laser revenue growth.
@@ -38,10 +36,6 @@
       https://x.com/aleabitoreddit/status/2113954878393561487
   [10-24 13:02] ↩回复 @freearkshaw 粉丝太多了，到了100万+这个量级，分享点想法都很容易被人误解 所以我不发波段交易相关的内容了，虽然现在这种行情，抓波动做交易确实很有赚头 我也觉得 现在短期波动率上来了，像逢跌卖 put（看跌期权）这类卖出期权的操作，在这种行情下一般都挺赚钱的
       https://x.com/aleabitoreddit/status/2113858708996530234
-  [10-23 18:55] ↩回复 @ram_blings Thanks for asking! Obviously disappointed about the drawdown but very comfortable waiting this volatility out since I’m personally on a pretty conservative ~1.15x leverage now. Been seeing a lot of sad stories of people who went to 0 off options.
-      https://x.com/aleabitoreddit/status/2113585093856108796
-  [10-23 18:27] ↩回复 @Joshuachaisson I almost forgot about that, I’ll go look for some billboard space next to the $NBIS and OpenAI ones.
-      https://x.com/aleabitoreddit/status/2113578093935997334
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
