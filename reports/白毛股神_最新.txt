@@ -2,36 +2,46 @@
 ============================================================
 🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
 ============================================================
-  来源：raw.githubusercontent.com 公开存档（共6726条）
-  存档最近同步：2026-10-23T10:55:29Z UTC（状态 ok）
-  最近48小时：原创 3 条 / 回复 6 条（北京时间）
+  来源：raw.githubusercontent.com 公开存档（共6736条）
+  存档最近同步：2026-10-24T18:03:11Z UTC（状态 ok）
+  最近48小时：原创 4 条 / 回复 9 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    存储/HBM ×13 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    算力/云/数据中心 ×4 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    激光/光芯片/InP ×4 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    CPO/光模块 ×1 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
-  提到的代码：$NBIS×2 $TSM×1 $SNDK×1 $ESMT×1 $KOSPI×1 $NVDA×1 $GOOGL×1 $LITE×1 $AAOI×1
+    激光/光芯片/InP ×88 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    CPO/光模块 ×26 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
+    存储/HBM ×10 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
+    算力/云/数据中心 ×9 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光雷达 ×5 → 激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片
+    CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
+  提到的代码：$SIVE×5 $AAOI×4 $NBIS×3 $LITE×3 $META×2 $AMZN×2 $AAPL×2 $COHR×2 $APPL×2 $JBL×2 $MTSI×2 $GFS×2 $MU×1 $AMD×1 $AEVA×1 $POET×1 $SNDK×1 $TSM×1
 
   ── 原创推文（全文，新→旧）──
+  [10-25 01:46] 📝原创 So back on your Neoclouds like $NBIS + memory read through... From $AMZN CEO + A16z interview. Q: On memory shortages (eg. $MU / SK Hynix / Samsung): A: "There's only so much memory, and I don't think that that shortage ends in 2027." Q: On AWS capacity: A: "A good chunk of 28 is sold out", "largely sold out through 2027." Q: On capex ROI: A: Amazon had ​said it would spend about $220 billion in capex for 2026. But Jassy said the company "could invest a lot more ​and it wouldn't be a bad use of ​capital" This is probably validating economics of Neoclouds model since this comes from a pretty stingy hyperscaler like Amazon... that only serves free bananas to their employees. Unlike trusting $M
+      https://x.com/aleabitoreddit/status/2114051018510287340
+  [10-25 00:23] 📝原创 I guess what I've seen from Chinese laser capacity expansion: 1. Dongshan/Source Photonics (索尔思): 9M/month capacity -> 22M/month Q4 -> 300m/year in 2027 (mostly EML, but blended) Claims of 1B/year "target" for laser chips with no deadline, but I'd take this as a grain of salt. 2. Shijia (仕佳): 72M/year for 100mW CW, 2-3 year project (mainly 2029 full capacity online) 3. Yunling (云岭): 18.75M/year 70/100mW CW, 3 year schedule (mainly 2029 full capacity online) 4. Ligent (纳真), some reports stated 170M target for total capacity (also blended, lot of which is 200G EML) 5. Yuanjie: ~10M/year currently, expanding for early 2027 and 2028, but no quantities. 6. Hongchen: I think this was the perfect e
+      https://x.com/aleabitoreddit/status/2114030117416755494
+  [10-24 19:05] 📝原创 Yes, I like $SIVE. It's a fun company to cover, since there's a lot of supply chain alpha here. But the company completely Tall Poppy Syndromed itself last earnings. And it's clearly shown in the drawdown. Bit of a longer consolidated thought and some scattered bits of supply chain info: - Sivers has 100M CW DFB laser capacity coming online Q4 2027 during an industry shortage. And very large allocations from foundries online (they were doing these quals with Win Semi + 2 others back in 2023/2024), so they can actively monetize the bottleneck today. The other interesting reason why bottlenecks are important (aside from ASP hikes), is because qualifications convert much faster + more likely gi
+      https://x.com/aleabitoreddit/status/2113950041207607453
   [10-23 18:17] 📝原创 Pretty crazy Reuters piece on the global selloff. - October 22 marked the 1st time since the COVID crash that long/short, systematic, and multi-strategy hedge funds tracked by Goldman Sachs ALL lost more than 1% in a single day. - Tech-focused hedge funds: down ~10% in October - Asia-focused hedge funds: down ~9% in October There’s separate interviews where Citadel/JP Morgan have been saying retail has been the ones buying the dip in semiconductor, neocloud, and memory stocks. And the stocks bought by most retail were $NBIS, $SNDK, and $TSM. Reuters stated this downturn triggered institutional deleveraging events among hedge funds. Quite the divergence, I do think there’s been a ton of irrat
       https://x.com/aleabitoreddit/status/2113575601390936238
-  [10-23 09:10] 📝原创 Actually $ESMT and my legacy memory names held up better than the rest of the AI trade. Probably did better... since ESMT is around 1.6x runrate P/E, annualized off July earnings. This was more of a durability/PSMC hike sensitivity type thesis, but... we got durability support now from brand new commentary yesterday: - ESMT expected tightness on their legacy memory products through 2028 or longer - Further Q4 price increases... with the operating performance is expected to be better than the third quarter - Supply shortfall exceeding 30% Source: Digitimes TW So you have a $2.15B MC company that made $107M net income a month (annualized $1.28B earnings a year) from July earnings... With futur
-      https://x.com/aleabitoreddit/status/2113437977749999628
-  [10-23 08:52] 📝原创 $NVDA Jensen Huang: Surplus of memory supply is unlikely by 2029. The CNBC question referenced a Korean newspaper opinion on $KOSPI / Samsung / SK Hynix that predicted "new supply will leave the memory sector a red ocean in 2029." "One of the things that's really great about memory is that you can always use more of it", Jensen said, citing LPDDR usage in DCs. And responded "I don't think so" in terms of possibilities of oversupply in 2029. Just my personal opinion, Nvidia probably has the most visibility in the entire industry. Especially around supply procurement and emerging capacity, given they're the ones leading all the architectural shifts. On durability, you have Samsung already allo
-      https://x.com/aleabitoreddit/status/2113433338522546399
+  [10-25 02:03] ↩回复 @siddhrts I used to spend a lot of time inside $AMZN offices... so I do understand the lack of food availability firsthand. Despite making so much money, they even limited coffee to once a day. Bro when I visited $META, they had all you can eat buffets like you see in Vegas or Cruise Ships.
+      https://x.com/aleabitoreddit/status/2114055113732182110
+  [10-24 20:43] ↩回复 @stockprodigyman This was responding to a question this year whether their Fortune 100 was still working with $SIVE, given a lot of doubts. They qualified it’s a “very long cycle”, “they have a lot of things to work through because it’s a biosensing application” I use the word ~ likely since it’s not publicly disclosed. This is public supply chain inference that it’s $APPL, given 50M unit RFQ commercial scale, US, and technology/application overlap. I’d argue Apple would be a cherry on top if it happens in 2028, not really any part of the core thesis. Main thing I’m looking for is Sivers AI DC laser revenue growth.
+      https://x.com/aleabitoreddit/status/2113974563809943849
+  [10-24 20:03] ↩回复 @soohu Yep, O-Net is an existing hyperscaler supplier, but not really well known to Western audiences. They're actually building out on an 8 channel ELSFP with $SIVE for CPO though rather than pluggable deployments.
+      https://x.com/aleabitoreddit/status/2113964694201643199
+  [10-24 19:48] ↩回复 @JohnnyXAngelo I think it's always helpful to learn what's going on in the supply chain, even if you're not an investor in lasers or $SIVE. There's a lot of dynamics + game theory that goes on in supply shortages like: - Expanding supplier # during shortages -> more opportunities for others. - or as seen with $LITE sold out into 2027 -> causes other hyperscalers to sign LTAs -> capacity sold out into 2029 -> hyperscalers approach $MTSI / $AAOI + others for their own ramps or different opportunities from supply procurement info like $JBL 1.6T LRO program scaling up in H2 2027 from upstream disclosures.
+      https://x.com/aleabitoreddit/status/2113960886461444206
+  [10-24 19:38] ↩回复 @smith_susa23828 $AMD was negotiating CW laser capacity LTAs from Trendforce. And are working with Ayar / $GFS for CPO deployments, (where $SIVE is upstream as the laser supplier/reference design) So there's strong overlap in photonics. However, AMD on Sivers website currently is likely baseband related from cellular + Xilinx.
+      https://x.com/aleabitoreddit/status/2113958295325319387
+  [10-24 19:24] ↩回复 @pg320 I'll let this revenue projection graph I made for $AAOI do the talking. Price at $70 I find genuinely riduclous if they deliver on their projections. Rate hikes/macro trims a lot of forward valuations. But the selloff way overshot, which I'd argue is amplified by hedge fund risk/forced deleveraging before month end reporting. Rather than something individually wrong with the company.
+      https://x.com/aleabitoreddit/status/2113954878393561487
+  [10-24 13:02] ↩回复 @freearkshaw 粉丝太多了，到了100万+这个量级，分享点想法都很容易被人误解 所以我不发波段交易相关的内容了，虽然现在这种行情，抓波动做交易确实很有赚头 我也觉得 现在短期波动率上来了，像逢跌卖 put（看跌期权）这类卖出期权的操作，在这种行情下一般都挺赚钱的
+      https://x.com/aleabitoreddit/status/2113858708996530234
   [10-23 18:55] ↩回复 @ram_blings Thanks for asking! Obviously disappointed about the drawdown but very comfortable waiting this volatility out since I’m personally on a pretty conservative ~1.15x leverage now. Been seeing a lot of sad stories of people who went to 0 off options.
       https://x.com/aleabitoreddit/status/2113585093856108796
   [10-23 18:27] ↩回复 @Joshuachaisson I almost forgot about that, I’ll go look for some billboard space next to the $NBIS and OpenAI ones.
       https://x.com/aleabitoreddit/status/2113578093935997334
-  [10-23 09:34] ↩回复 @upouluopu68975 I mean it's just personally interesting to me! I've never seen a company make this much net income already with 30-100% price hikes on a lot of their SKUs the next quarter. And they're just sitting on like $380M net cash + $244M in appreciating inventory, so EV is a lot lower
-      https://x.com/aleabitoreddit/status/2113443934395580453
-  [10-23 02:25] ↩回复 @pepemoonboy Thanks for the flattery! I feel like every investor has drawdowns, especially if global markets seem to be dropping. Usually people who never lose money turn out to be scammers that try and sell you some sort of paywall half the time.
-      https://x.com/aleabitoreddit/status/2113335979717316881
-  [10-23 02:11] ↩回复 @Emotionallkrs Lot of the names I wrote a thesis on are still up hundreds of percent YTD despite the drawdown. So lower cost average probably helps with the volatility. Along with understanding the company + theme? I’m primarily long memory/photonics, feels like demand visibility for those two segments are very high.
-      https://x.com/aleabitoreddit/status/2113332383542120584
-  [10-23 02:00] ↩回复 @MarkTheLaird I feel like markets are seeing a lot of forced liquidations and panic selling right now. You have peers like $LITE sold out completely into 2029, and are starting negotiations for 2030. So seeing a company like $AAOI now worth $5.7B despite all their laser/transceiver/ELSFP capacity coming online + demand visibility reminds me of July
-      https://x.com/aleabitoreddit/status/2113329741654806551
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
