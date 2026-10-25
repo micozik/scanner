@@ -13,7 +13,7 @@
     算力/云/数据中心 ×6 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     激光雷达 ×5 → 激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$SIVE×5 $AAOI×4 $LITE×3 $META×2 $AMZN×2 $AAPL×2 $COHR×2 $APPL×2 $MTSI×2 $JBL×2 $GFS×2 $MU×1 $NBIS×1 $AMD×1 $AEVA×1 $POET×1
+  提到的代码：$SIVE×5 $AAOI×4 $LITE×3 $META×2 $AMZN×2 $AAPL×2 $COHR×2 $APPL×2 $JBL×2 $MTSI×2 $GFS×2 $NBIS×1 $MU×1 $AMD×1 $POET×1 $AEVA×1
 
   ── 原创推文（全文，新→旧）──
   [10-25 01:46] 📝原创 So back on your Neoclouds like $NBIS + memory read through... From $AMZN CEO + A16z interview. Q: On memory shortages (eg. $MU / SK Hynix / Samsung): A: "There's only so much memory, and I don't think that that shortage ends in 2027." Q: On AWS capacity: A: "A good chunk of 28 is sold out", "largely sold out through 2027." Q: On capex ROI: A: Amazon had ​said it would spend about $220 billion in capex for 2026. But Jassy said the company "could invest a lot more ​and it wouldn't be a bad use of ​capital" This is probably validating economics of Neoclouds model since this comes from a pretty stingy hyperscaler like Amazon... that only serves free bananas to their employees. Unlike trusting $M
