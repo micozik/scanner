@@ -2,26 +2,46 @@
 ============================================================
 🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
 ============================================================
-  来源：raw.githubusercontent.com 公开存档（共6736条）
-  存档最近同步：2026-10-24T18:03:11Z UTC（状态 ok）
-  最近48小时：原创 3 条 / 回复 7 条（北京时间）
+  来源：raw.githubusercontent.com 公开存档（共6745条）
+  存档最近同步：2026-10-26T00:46:53Z UTC（状态 ok）
+  最近48小时：原创 6 条 / 回复 13 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×88 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    CPO/光模块 ×26 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
-    存储/HBM ×8 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    算力/云/数据中心 ×6 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×116 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    CPO/光模块 ×35 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
+    算力/云/数据中心 ×28 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    存储/HBM ×11 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
     激光雷达 ×5 → 激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片
+    衬底/封装材料 ×4 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
+    人形机器人/物理AI ×2 → 机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$SIVE×5 $AAOI×4 $LITE×3 $META×2 $AMZN×2 $AAPL×2 $COHR×2 $APPL×2 $JBL×2 $MTSI×2 $GFS×2 $NBIS×1 $MU×1 $AMD×1 $POET×1 $AEVA×1
+  提到的代码：$SIVE×7 $LITE×5 $AAOI×5 $SPCX×4 $COHR×4 $NVDA×3 $META×3 $GFS×3 $AMZN×3 $JBL×3 $AXTI×2 $NBIS×2 $CRWV×2 $TSLA×2 $AAPL×2 $APPL×2 $MTSI×2 $SLNH×1 $AVGO×1 $MSFT×1
 
   ── 原创推文（全文，新→旧）──
+  [10-26 08:46] 📝原创 Just another $40B going into the "AI Infra" Bubble... Elon stated this $SPCX financing would primarily fund $NVDA GPU procurement H1 2027. Which indirectly increases demand for memory, networking, etc needed. In some other notes, VPEC today in UDN: "InP substrates is seriously in short supply" in regards to suppliers like $AXTI. - Morgan Stanley believes that InP substrates, EML and CW lasers will be the primary bottlenecks - VPEC emphasized that whoever can secure more raw material supply in the future will have greater pricing power and influence in the market. Very true about supply procurement... both upstream materials like epiwafers/substrates to ultimately compute. We're in a volatile
+      https://x.com/aleabitoreddit/status/2114519097526686033
+  [10-26 06:00] 📝原创 I've always defended X as the only platform to be on for financial discourse. But it's getting harder to when the owner constantly amplifies narratives of collapse… of companies whose interests conflict with his own at $SPCX or $TSLA. Would people be comfortable if $NVDA Jensen Huang owned $META? And then the timelines were dominated by his amplified narratives of $AVGO failing? I can't see how that would be healthy for grassroots discussion.
+      https://x.com/aleabitoreddit/status/2114477224208535600
+  [10-25 12:31] 📝原创 $NVDA Jensen Huang on photonics: adding scale-up to optical domain, “is going to be, well, 15x” to aggregate volume. Relating to $LITE, $COHR, and laser companies.. “I'm fairly certain the amount of optics that we need in the future will be several orders of magnitude” Huang added. We’re already in a CW laser bottleneck, but given the time/rate for capacity expansion, I definitely don’t see it meeting the scale Jensen envisions… Your leading merchant suppliers focusing new capacity toward UHP CPO lasers might also unintentionally make shortages around lower end ranges more severe… Since even if you don’t reallocate capacity (which Coherent implied they’d do to maximize margins), the demand f
+      https://x.com/aleabitoreddit/status/2114213351060554010
   [10-25 01:46] 📝原创 So back on your Neoclouds like $NBIS + memory read through... From $AMZN CEO + A16z interview. Q: On memory shortages (eg. $MU / SK Hynix / Samsung): A: "There's only so much memory, and I don't think that that shortage ends in 2027." Q: On AWS capacity: A: "A good chunk of 28 is sold out", "largely sold out through 2027." Q: On capex ROI: A: Amazon had ​said it would spend about $220 billion in capex for 2026. But Jassy said the company "could invest a lot more ​and it wouldn't be a bad use of ​capital" This is probably validating economics of Neoclouds model since this comes from a pretty stingy hyperscaler like Amazon... that only serves free bananas to their employees. Unlike trusting $M
       https://x.com/aleabitoreddit/status/2114051018510287340
   [10-25 00:23] 📝原创 I guess what I've seen from Chinese laser capacity expansion: 1. Dongshan/Source Photonics (索尔思): 9M/month capacity -> 22M/month Q4 -> 300m/year in 2027 (mostly EML, but blended) Claims of 1B/year "target" for laser chips with no deadline, but I'd take this as a grain of salt. 2. Shijia (仕佳): 72M/year for 100mW CW, 2-3 year project (mainly 2029 full capacity online) 3. Yunling (云岭): 18.75M/year 70/100mW CW, 3 year schedule (mainly 2029 full capacity online) 4. Ligent (纳真), some reports stated 170M target for total capacity (also blended, lot of which is 200G EML) 5. Yuanjie: ~10M/year currently, expanding for early 2027 and 2028, but no quantities. 6. Hongchen: I think this was the perfect e
       https://x.com/aleabitoreddit/status/2114030117416755494
   [10-24 19:05] 📝原创 Yes, I like $SIVE. It's a fun company to cover, since there's a lot of supply chain alpha here. But the company completely Tall Poppy Syndromed itself last earnings. And it's clearly shown in the drawdown. Bit of a longer consolidated thought and some scattered bits of supply chain info: - Sivers has 100M CW DFB laser capacity coming online Q4 2027 during an industry shortage. And very large allocations from foundries online (they were doing these quals with Win Semi + 2 others back in 2023/2024), so they can actively monetize the bottleneck today. The other interesting reason why bottlenecks are important (aside from ASP hikes), is because qualifications convert much faster + more likely gi
       https://x.com/aleabitoreddit/status/2113950041207607453
+  [10-26 07:47] ↩回复 @Ngen704 He's allowed to comment on the state of the industry, but this is what my "For You" looks like BTW There's probably something off with X owner amplification if it's 10+ of the same Elon Musk post of Neocloud competitors are going to die in a row.
+      https://x.com/aleabitoreddit/status/2114504149127868641
+  [10-26 07:29] ↩回复 @JiminPuntaGorda @elonmusk I'm not here to blindly cheerlead or flip flop opinions every month like Chamath, so you're free to do what you want with your $1. I agree with you that Elon is the greatest inventor in the modern era. I have friends from DOGE, Optimus, $SPCX programs, and respect his visions for space, humanoid, to FSD. But respecting Elon doesn't mean ignoring the implications of his recent commentary on memory/neoclouds, and has nothing to do with politics or employee wealth.
+      https://x.com/aleabitoreddit/status/2114499541026455686
+  [10-26 07:14] ↩回复 @wannabepanacea Not actively. I've been pointing out issues with Neocloud/Colo financing since 2025 from $SLNH to $CRWV debt interest. And maintain my opinion only a few neoclouds would survive in a few years, given they build enough of a moat to differentiate themselves against hyperscalers. So I don't think Elon's comments are completely wrong about Neoclouds, but there's nuances. One example was $NBIS SOFR + 2.75% $3.5B facility with Citibank, which actually has better rates than GPU financing from $2T+ companies. So kinda hard to say neocloud financing has "entirely shut off" since this Citibank facility was announced 3D ago I'm not arguing the merits of Elon's claims here. There's some 
+      https://x.com/aleabitoreddit/status/2114495814538285526
+  [10-25 13:18] ↩回复 @Robertff8n Few things: - $SIVE is targeting T1 hyperscaler deployments for pluggables, CPO, NPO. Not quite sure what you mean by Tier 2. They have direct engagements with hyperscalers but currently are more upstream by qualifying with companies like Ayar, $JBL, $GFS, O-Net that eventually likely ends up -> $AMZN / $MSFT for example. On financing: - Colo players like $CIFR still need $1B+ of financing for their sites. - Neoclouds like $CRWV need billions of financing to buy GPUs. Higher rates + less support for financing makes it more challenging for these players. $SIVE already raised 700M SEK for their buildout and largely rely on external foundries, so they don't have financing constraint
+      https://x.com/aleabitoreddit/status/2114225154591207690
+  [10-25 12:57] ↩回复 @sillyuf08 $AXTI still the chokepoint of the entire optical buildout + demand for InP substrates will grow a lot. They have LTA supply agreements to $LITE / $COHR and probably ends up #1 vs. Sumitomo Electric. The main thing I'm watching is if they can pull a $SNDK style price hike. So far from some channel checks: - Q2 2026: 50-60% increase - Q3 2026: 10% increase - Q4 2026: 10%+ hike But from Coherent's SEC offering... it does look like there's a ceiling to how high % prices can go, which makes that case less likely. We'll see how it plays out
+      https://x.com/aleabitoreddit/status/2114219806706860495
+  [10-25 12:50] ↩回复 @axxm0 $AAOI is the perfect example. They're expanding laser manufacturing at 350%. But they said they can't produce enough lasers to even meet their own pluggable transceiver demand. So they had to turn away hyperscalers for CPO lasers. TBH if I were AOI, I'd reallocate toward CPO lasers and then buy lasers off merchant players like $SIVE. But I guess they want to be end-to-end vertically integrated.
+      https://x.com/aleabitoreddit/status/2114217916153373049
   [10-25 02:03] ↩回复 @siddhrts I used to spend a lot of time inside $AMZN offices... so I do understand the lack of food availability firsthand. Despite making so much money, they even limited coffee to once a day. Bro when I visited $META, they had all you can eat buffets like you see in Vegas or Cruise Ships.
       https://x.com/aleabitoreddit/status/2114055113732182110
   [10-24 20:43] ↩回复 @stockprodigyman This was responding to a question this year whether their Fortune 100 was still working with $SIVE, given a lot of doubts. They qualified it’s a “very long cycle”, “they have a lot of things to work through because it’s a biosensing application” I use the word ~ likely since it’s not publicly disclosed. This is public supply chain inference that it’s $APPL, given 50M unit RFQ commercial scale, US, and technology/application overlap. I’d argue Apple would be a cherry on top if it happens in 2028, not really any part of the core thesis. Main thing I’m looking for is Sivers AI DC laser revenue growth.
