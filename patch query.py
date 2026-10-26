@@ -229,6 +229,26 @@ def kline_info(ak, code):
         except Exception as e:
             err = str(e)[:50]
     if df is None:
+        # v3 2026-10-26：东财K线晚上断线（#39 十只全挂），用腾讯日K兜底（国家队雷达同源，一直能通）
+        try:
+            import json as _j
+            import pandas as _pd
+            mk = _tx_mk(code)
+            raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,100,qfq" % mk)
+            dd = _j.loads(raw)["data"][mk]
+            rows = dd.get("qfqday") or dd.get("day") or []
+            recs, prev = [], None
+            for r in rows:
+                c = float(r[2])
+                recs.append({"收盘": c, "成交量": float(r[5]),
+                             "涨跌幅": ((c / prev - 1) * 100) if prev else 0.0})
+                prev = c
+            if len(recs) > 5:
+                df = _pd.DataFrame(recs)
+                note("K线[腾讯]兜底 %s" % code)
+        except Exception as e2:
+            err = (err + " | 腾讯:" + str(e2)[:40])
+    if df is None:
         return None, err or "K线取数失败"
     try:
         cc = col(df, "收盘", "close")
@@ -326,7 +346,7 @@ def _tx_quote(codes):
     if not codes:
         return out
     try:
-        txt = _tx_get("http://qt.gtimg.cn/q=" + ",".join(_tx_mk(c) for c in codes))
+        txt = _tx_get("https://qt.gtimg.cn/q=" + ",".join(_tx_mk(c) for c in codes))
     except Exception as e:
         note("快照[腾讯]失败 %s" % str(e)[:50])
         return out
@@ -356,7 +376,7 @@ def _tx_quote(codes):
 def _tx_ff(code):
     """腾讯资金流向兜底：qt.gtimg.cn/q=ff_xxx（单位万元，只有当日）"""
     try:
-        txt = _tx_get("http://qt.gtimg.cn/q=ff_" + _tx_mk(code))
+        txt = _tx_get("https://qt.gtimg.cn/q=ff_" + _tx_mk(code))
         body = txt.split('="', 1)[1].split('"', 1)[0]
         f = body.split("~")
         if len(f) < 10:
@@ -375,6 +395,7 @@ def _tx_ff(code):
         return ["%s 主力净流入%+.2f亿（腾讯：流入%.2f亿 流出%.2f亿）"
                 % (dt, net / 1e4, (inn or 0) / 1e4, (outt or 0) / 1e4)]
     except Exception as e:
+        note("资金[腾讯]失败 %s %s" % (code, str(e)[:60]))
         return None
 
 
