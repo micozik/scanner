@@ -4,16 +4,16 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6745条）
   存档最近同步：2026-10-26T00:46:53Z UTC（状态 ok）
-  最近48小时：原创 5 条 / 回复 8 条（北京时间）
+  最近48小时：原创 5 条 / 回复 7 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×62 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    激光/光芯片/InP ×60 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
     算力/云/数据中心 ×28 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     CPO/光模块 ×16 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
     存储/HBM ×11 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
     衬底/封装材料 ×4 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
     人形机器人/物理AI ×2 → 机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115
-  提到的代码：$SPCX×4 $NVDA×3 $META×3 $AMZN×3 $SIVE×3 $LITE×3 $COHR×3 $AXTI×2 $CRWV×2 $TSLA×2 $NBIS×2 $AAOI×2 $SLNH×1 $AVGO×1 $CIFR×1 $GFS×1 $MSFT×1 $JBL×1 $SNDK×1 $MU×1
+  提到的代码：$SPCX×4 $NVDA×3 $META×3 $AMZN×3 $LITE×3 $COHR×3 $AXTI×2 $NBIS×2 $TSLA×2 $CRWV×2 $SIVE×2 $AAOI×2 $SLNH×1 $AVGO×1 $CIFR×1 $MSFT×1 $GFS×1 $JBL×1 $SNDK×1 $MU×1
 
   ── 原创推文（全文，新→旧）──
   [10-26 08:46] 📝原创 Just another $40B going into the "AI Infra" Bubble... Elon stated this $SPCX financing would primarily fund $NVDA GPU procurement H1 2027. Which indirectly increases demand for memory, networking, etc needed. In some other notes, VPEC today in UDN: "InP substrates is seriously in short supply" in regards to suppliers like $AXTI. - Morgan Stanley believes that InP substrates, EML and CW lasers will be the primary bottlenecks - VPEC emphasized that whoever can secure more raw material supply in the future will have greater pricing power and influence in the market. Very true about supply procurement... both upstream materials like epiwafers/substrates to ultimately compute. We're in a volatile
@@ -40,8 +40,6 @@
       https://x.com/aleabitoreddit/status/2114217916153373049
   [10-25 02:03] ↩回复 @siddhrts I used to spend a lot of time inside $AMZN offices... so I do understand the lack of food availability firsthand. Despite making so much money, they even limited coffee to once a day. Bro when I visited $META, they had all you can eat buffets like you see in Vegas or Cruise Ships.
       https://x.com/aleabitoreddit/status/2114055113732182110
-  [10-24 20:43] ↩回复 @stockprodigyman This was responding to a question this year whether their Fortune 100 was still working with $SIVE, given a lot of doubts. They qualified it’s a “very long cycle”, “they have a lot of things to work through because it’s a biosensing application” I use the word ~ likely since it’s not publicly disclosed. This is public supply chain inference that it’s $APPL, given 50M unit RFQ commercial scale, US, and technology/application overlap. I’d argue Apple would be a cherry on top if it happens in 2028, not really any part of the core thesis. Main thing I’m looking for is Sivers AI DC laser revenue growth.
-      https://x.com/aleabitoreddit/status/2113974563809943849
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
