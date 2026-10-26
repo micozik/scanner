@@ -4,18 +4,16 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6745条）
   存档最近同步：2026-10-26T00:46:53Z UTC（状态 ok）
-  最近48小时：原创 6 条 / 回复 12 条（北京时间）
+  最近48小时：原创 5 条 / 回复 8 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×116 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    CPO/光模块 ×35 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
+    激光/光芯片/InP ×62 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
     算力/云/数据中心 ×28 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    CPO/光模块 ×16 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
     存储/HBM ×11 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    激光雷达 ×5 → 激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片
     衬底/封装材料 ×4 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
     人形机器人/物理AI ×2 → 机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115
-    CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$SIVE×7 $LITE×5 $AAOI×5 $SPCX×4 $COHR×4 $NVDA×3 $META×3 $AMZN×3 $GFS×3 $JBL×3 $AXTI×2 $TSLA×2 $NBIS×2 $CRWV×2 $AAPL×2 $APPL×2 $MTSI×2 $SLNH×1 $AVGO×1 $MSFT×1
+  提到的代码：$SPCX×4 $NVDA×3 $META×3 $AMZN×3 $SIVE×3 $LITE×3 $COHR×3 $AXTI×2 $CRWV×2 $TSLA×2 $NBIS×2 $AAOI×2 $SLNH×1 $AVGO×1 $CIFR×1 $GFS×1 $MSFT×1 $JBL×1 $SNDK×1 $MU×1
 
   ── 原创推文（全文，新→旧）──
   [10-26 08:46] 📝原创 Just another $40B going into the "AI Infra" Bubble... Elon stated this $SPCX financing would primarily fund $NVDA GPU procurement H1 2027. Which indirectly increases demand for memory, networking, etc needed. In some other notes, VPEC today in UDN: "InP substrates is seriously in short supply" in regards to suppliers like $AXTI. - Morgan Stanley believes that InP substrates, EML and CW lasers will be the primary bottlenecks - VPEC emphasized that whoever can secure more raw material supply in the future will have greater pricing power and influence in the market. Very true about supply procurement... both upstream materials like epiwafers/substrates to ultimately compute. We're in a volatile
@@ -28,8 +26,6 @@
       https://x.com/aleabitoreddit/status/2114051018510287340
   [10-25 00:23] 📝原创 I guess what I've seen from Chinese laser capacity expansion: 1. Dongshan/Source Photonics (索尔思): 9M/month capacity -> 22M/month Q4 -> 300m/year in 2027 (mostly EML, but blended) Claims of 1B/year "target" for laser chips with no deadline, but I'd take this as a grain of salt. 2. Shijia (仕佳): 72M/year for 100mW CW, 2-3 year project (mainly 2029 full capacity online) 3. Yunling (云岭): 18.75M/year 70/100mW CW, 3 year schedule (mainly 2029 full capacity online) 4. Ligent (纳真), some reports stated 170M target for total capacity (also blended, lot of which is 200G EML) 5. Yuanjie: ~10M/year currently, expanding for early 2027 and 2028, but no quantities. 6. Hongchen: I think this was the perfect e
       https://x.com/aleabitoreddit/status/2114030117416755494
-  [10-24 19:05] 📝原创 Yes, I like $SIVE. It's a fun company to cover, since there's a lot of supply chain alpha here. But the company completely Tall Poppy Syndromed itself last earnings. And it's clearly shown in the drawdown. Bit of a longer consolidated thought and some scattered bits of supply chain info: - Sivers has 100M CW DFB laser capacity coming online Q4 2027 during an industry shortage. And very large allocations from foundries online (they were doing these quals with Win Semi + 2 others back in 2023/2024), so they can actively monetize the bottleneck today. The other interesting reason why bottlenecks are important (aside from ASP hikes), is because qualifications convert much faster + more likely gi
-      https://x.com/aleabitoreddit/status/2113950041207607453
   [10-26 07:47] ↩回复 @Ngen704 He's allowed to comment on the state of the industry, but this is what my "For You" looks like BTW There's probably something off with X owner amplification if it's 10+ of the same Elon Musk post of Neocloud competitors are going to die in a row.
       https://x.com/aleabitoreddit/status/2114504149127868641
   [10-26 07:29] ↩回复 @JiminPuntaGorda @elonmusk I'm not here to blindly cheerlead or flip flop opinions every month like Chamath, so you're free to do what you want with your $1. I agree with you that Elon is the greatest inventor in the modern era. I have friends from DOGE, Optimus, $SPCX programs, and respect his visions for space, humanoid, to FSD. But respecting Elon doesn't mean ignoring the implications of his recent commentary on memory/neoclouds, and has nothing to do with politics or employee wealth.
@@ -46,14 +42,6 @@
       https://x.com/aleabitoreddit/status/2114055113732182110
   [10-24 20:43] ↩回复 @stockprodigyman This was responding to a question this year whether their Fortune 100 was still working with $SIVE, given a lot of doubts. They qualified it’s a “very long cycle”, “they have a lot of things to work through because it’s a biosensing application” I use the word ~ likely since it’s not publicly disclosed. This is public supply chain inference that it’s $APPL, given 50M unit RFQ commercial scale, US, and technology/application overlap. I’d argue Apple would be a cherry on top if it happens in 2028, not really any part of the core thesis. Main thing I’m looking for is Sivers AI DC laser revenue growth.
       https://x.com/aleabitoreddit/status/2113974563809943849
-  [10-24 20:03] ↩回复 @soohu Yep, O-Net is an existing hyperscaler supplier, but not really well known to Western audiences. They're actually building out on an 8 channel ELSFP with $SIVE for CPO though rather than pluggable deployments.
-      https://x.com/aleabitoreddit/status/2113964694201643199
-  [10-24 19:48] ↩回复 @JohnnyXAngelo I think it's always helpful to learn what's going on in the supply chain, even if you're not an investor in lasers or $SIVE. There's a lot of dynamics + game theory that goes on in supply shortages like: - Expanding supplier # during shortages -> more opportunities for others. - or as seen with $LITE sold out into 2027 -> causes other hyperscalers to sign LTAs -> capacity sold out into 2029 -> hyperscalers approach $MTSI / $AAOI + others for their own ramps or different opportunities from supply procurement info like $JBL 1.6T LRO program scaling up in H2 2027 from upstream disclosures.
-      https://x.com/aleabitoreddit/status/2113960886461444206
-  [10-24 19:38] ↩回复 @smith_susa23828 $AMD was negotiating CW laser capacity LTAs from Trendforce. And are working with Ayar / $GFS for CPO deployments, (where $SIVE is upstream as the laser supplier/reference design) So there's strong overlap in photonics. However, AMD on Sivers website currently is likely baseband related from cellular + Xilinx.
-      https://x.com/aleabitoreddit/status/2113958295325319387
-  [10-24 19:24] ↩回复 @pg320 I'll let this revenue projection graph I made for $AAOI do the talking. Price at $70 I find genuinely riduclous if they deliver on their projections. Rate hikes/macro trims a lot of forward valuations. But the selloff way overshot, which I'd argue is amplified by hedge fund risk/forced deleveraging before month end reporting. Rather than something individually wrong with the company.
-      https://x.com/aleabitoreddit/status/2113954878393561487
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
