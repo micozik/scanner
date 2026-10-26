@@ -156,6 +156,20 @@ def _num(r, c):
 
 
 def load_snapshot(ak):
+    # 2026-10-26 v2：新浪/东财都失败时，run() 里会用腾讯 qt.gtimg.cn 补快照、补当日主力资金
+    # 2026-10-26 #37 两源同时 RemoteDisconnected → 10只全【无数据】。加一轮重试（间隔8秒）
+    import time as _t
+    for _round in range(2):
+        m = _load_snapshot_once(ak)
+        if m:
+            return m
+        if _round == 0:
+            note("快照两源均失败，8秒后重试一轮")
+            _t.sleep(8)
+    return {}
+
+
+def _load_snapshot_once(ak):
     for tag, fn in (("新浪", lambda: ak.stock_zh_a_spot()),
                     ("东财", lambda: ak.stock_zh_a_spot_em())):
         try:
@@ -290,6 +304,80 @@ def fund_flow(ak, code):
     return None
 
 
+def _tx_mk(code):
+    return ("sh" if code.startswith(("6", "9")) and not code.startswith("92")
+            else ("bj" if code[:2] in ("92", "83", "87", "43") else "sz")) + code
+
+
+def _tx_get(url):
+    import urllib.request
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0",
+                                               "Referer": "https://gu.qq.com/"})
+    raw = urllib.request.urlopen(req, timeout=6).read()
+    try:
+        return raw.decode("gbk")
+    except Exception:
+        return raw.decode("utf-8", "ignore")
+
+
+def _tx_quote(codes):
+    """腾讯行情兜底（2026-10-26：新浪/东财快照晚上从海外连不上，腾讯K线一直能通）"""
+    out = {}
+    if not codes:
+        return out
+    try:
+        txt = _tx_get("http://qt.gtimg.cn/q=" + ",".join(_tx_mk(c) for c in codes))
+    except Exception as e:
+        note("快照[腾讯]失败 %s" % str(e)[:50])
+        return out
+    for line in txt.split(";"):
+        if '="' not in line:
+            continue
+        body = line.split('="', 1)[1].rstrip('"').strip()
+        f = body.split("~")
+        if len(f) < 40:
+            continue
+        code = f[2][-6:]
+
+        def fl(i):
+            try:
+                return float(f[i])
+            except Exception:
+                return None
+        amt = fl(37)
+        out[code] = {"name": f[1].strip(), "price": fl(3), "pct": fl(32),
+                     "amt": amt * 1e4 if amt is not None else None,
+                     "turn": fl(38), "pe": fl(39)}
+    if out:
+        note("快照[腾讯] 补到%d只" % len(out))
+    return out
+
+
+def _tx_ff(code):
+    """腾讯资金流向兜底：qt.gtimg.cn/q=ff_xxx（单位万元，只有当日）"""
+    try:
+        txt = _tx_get("http://qt.gtimg.cn/q=ff_" + _tx_mk(code))
+        body = txt.split('="', 1)[1].split('"', 1)[0]
+        f = body.split("~")
+        if len(f) < 10:
+            return None
+
+        def fl(i):
+            try:
+                return float(f[i])
+            except Exception:
+                return None
+        inn, outt, net = fl(1), fl(2), fl(3)
+        if net is None:
+            return ["腾讯资金原始：" + "~".join(f[:8])[:80]]
+        dt = f[13] if len(f) > 13 else ""
+        note("资金[腾讯]原始 %s（首次上线用来核对字段）" % "~".join(f[:5] + f[12:14]))
+        return ["%s 主力净流入%+.2f亿（腾讯：流入%.2f亿 流出%.2f亿）"
+                % (dt, net / 1e4, (inn or 0) / 1e4, (outt or 0) / 1e4)]
+    except Exception as e:
+        return None
+
+
 def board_detail(ak, name):
     tries = []
     try:
@@ -358,10 +446,20 @@ def _save(L, bj):
         if not os.path.isdir(OUTDIR):
             os.makedirs(OUTDIR)
         d = bj.strftime("%Y%m%d")
+        rn = os.environ.get("GITHUB_RUN_NUMBER", "")
+        # 2026-10-26：#37 全部失败的结果覆盖了 #36 的好结果 → 失败时不许覆盖当天文件
+        _ok = ("现价" in t)
+        if rn:
+            io.open(os.path.join(OUTDIR, "查询结果_q%s.txt" % rn),
+                    "w", encoding="utf-8").write(t)
+            print("✅ patch_query: 已写出 reports/查询结果_q%s.txt" % rn)
         io.open(os.path.join(OUTDIR, "查询结果_最新.txt"),
                 "w", encoding="utf-8").write(t)
-        io.open(os.path.join(OUTDIR, "查询结果_%s.txt" % d),
-                "w", encoding="utf-8").write(t)
+        if _ok:
+            io.open(os.path.join(OUTDIR, "查询结果_%s.txt" % d),
+                    "w", encoding="utf-8").write(t)
+        else:
+            print("🔴 patch_query: 本次全部无数据 → 不覆盖 查询结果_%s.txt（保留之前的好结果）" % d)
         print("✅ patch_query: 已写出 reports/查询结果_最新.txt")
     except Exception as e:
         print("🔴 patch_query: 写文件失败 %s" % e)
@@ -418,6 +516,10 @@ def run():
         else:
             boards.append(q)
 
+    _miss = [c for c in stocks if c not in snap]
+    if _miss:
+        snap.update(_tx_quote(_miss))
+
     if stocks:
         w("")
         w("█" * 26)
@@ -426,7 +528,7 @@ def run():
 
         def job(cd):
             k, e = kline_info(ak, cd)
-            return (cd, k, e, main_biz(ak, cd), fund_flow(ak, cd))
+            return (cd, k, e, main_biz(ak, cd), fund_flow(ak, cd) or _tx_ff(cd))
 
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             res = list(ex.map(job, stocks))
