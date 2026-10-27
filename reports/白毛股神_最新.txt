@@ -12,7 +12,7 @@
     存储/HBM ×4 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
     衬底/封装材料 ×3 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
     人形机器人/物理AI ×2 → 机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115
-  提到的代码：$SPCX×4 $NVDA×2 $TSLA×2 $MU×1 $ANT×1 $AAOI×1 $AXTI×1 $SLNH×1 $NBIS×1 $CRWV×1 $META×1 $AVGO×1
+  提到的代码：$SPCX×4 $NVDA×2 $TSLA×2 $ANT×1 $AAOI×1 $MU×1 $AXTI×1 $CRWV×1 $NBIS×1 $SLNH×1 $META×1 $AVGO×1
 
   ── 原创推文（全文，新→旧）──
   [10-27 00:14] 📝原创 TY $ANT for the positive $3.4B FCF for H1 2026. Still feels like all your AI infra names from $MU to $AAOI sold off way too hard. Considering the billions in financing raised by frontier labs to hyperscalers.. End up ultimately flowing back to GPUs, networking, to memory.
