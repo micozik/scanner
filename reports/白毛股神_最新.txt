@@ -4,16 +4,16 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6747条）
   存档最近同步：2026-10-26T16:14:18Z UTC（状态 ok）
-  最近48小时：原创 4 条 / 回复 7 条（北京时间）
+  最近48小时：原创 3 条 / 回复 5 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×29 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    算力/云/数据中心 ×23 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    CPO/光模块 ×9 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
-    存储/HBM ×5 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    衬底/封装材料 ×4 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
+    算力/云/数据中心 ×22 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×10 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    存储/HBM ×4 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
+    衬底/封装材料 ×3 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
+    CPO/光模块 ×3 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
     人形机器人/物理AI ×2 → 机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115
-  提到的代码：$SPCX×4 $NVDA×3 $AAOI×2 $AXTI×2 $CRWV×2 $TSLA×2 $SIVE×2 $COHR×2 $LITE×2 $MU×1 $ANT×1 $NBIS×1 $SLNH×1 $AVGO×1 $META×1 $CIFR×1 $JBL×1 $MSFT×1 $AMZN×1 $GFS×1
+  提到的代码：$SPCX×4 $NVDA×2 $CRWV×2 $TSLA×2 $AAOI×1 $ANT×1 $MU×1 $AXTI×1 $NBIS×1 $SLNH×1 $META×1 $AVGO×1 $CIFR×1 $JBL×1 $GFS×1 $MSFT×1 $SIVE×1 $AMZN×1
 
   ── 原创推文（全文，新→旧）──
   [10-27 00:14] 📝原创 TY $ANT for the positive $3.4B FCF for H1 2026. Still feels like all your AI infra names from $MU to $AAOI sold off way too hard. Considering the billions in financing raised by frontier labs to hyperscalers.. End up ultimately flowing back to GPUs, networking, to memory.
@@ -22,8 +22,6 @@
       https://x.com/aleabitoreddit/status/2114519097526686033
   [10-26 06:00] 📝原创 I've always defended X as the only platform to be on for financial discourse. But it's getting harder to when the owner constantly amplifies narratives of collapse… of companies whose interests conflict with his own at $SPCX or $TSLA. Would people be comfortable if $NVDA Jensen Huang owned $META? And then the timelines were dominated by his amplified narratives of $AVGO failing? I can't see how that would be healthy for grassroots discussion.
       https://x.com/aleabitoreddit/status/2114477224208535600
-  [10-25 12:31] 📝原创 $NVDA Jensen Huang on photonics: adding scale-up to optical domain, “is going to be, well, 15x” to aggregate volume. Relating to $LITE, $COHR, and laser companies.. “I'm fairly certain the amount of optics that we need in the future will be several orders of magnitude” Huang added. We’re already in a CW laser bottleneck, but given the time/rate for capacity expansion, I definitely don’t see it meeting the scale Jensen envisions… Your leading merchant suppliers focusing new capacity toward UHP CPO lasers might also unintentionally make shortages around lower end ranges more severe… Since even if you don’t reallocate capacity (which Coherent implied they’d do to maximize margins), the demand f
-      https://x.com/aleabitoreddit/status/2114213351060554010
   [10-26 18:52] ↩回复 @elvermo Thanks for spotlighting it! I don't think Elon is necessarily wrong, but using his reach to hurt smaller competitors might set an unhealthy precedent.
       https://x.com/aleabitoreddit/status/2114671620711465417
   [10-26 07:47] ↩回复 @Ngen704 He's allowed to comment on the state of the industry, but this is what my "For You" looks like BTW There's probably something off with X owner amplification if it's 10+ of the same Elon Musk post of Neocloud competitors are going to die in a row.
@@ -34,10 +32,6 @@
       https://x.com/aleabitoreddit/status/2114495814538285526
   [10-25 13:18] ↩回复 @Robertff8n Few things: - $SIVE is targeting T1 hyperscaler deployments for pluggables, CPO, NPO. Not quite sure what you mean by Tier 2. They have direct engagements with hyperscalers but currently are more upstream by qualifying with companies like Ayar, $JBL, $GFS, O-Net that eventually likely ends up -> $AMZN / $MSFT for example. On financing: - Colo players like $CIFR still need $1B+ of financing for their sites. - Neoclouds like $CRWV need billions of financing to buy GPUs. Higher rates + less support for financing makes it more challenging for these players. $SIVE already raised 700M SEK for their buildout and largely rely on external foundries, so they don't have financing constraint
       https://x.com/aleabitoreddit/status/2114225154591207690
-  [10-25 12:57] ↩回复 @sillyuf08 $AXTI still the chokepoint of the entire optical buildout + demand for InP substrates will grow a lot. They have LTA supply agreements to $LITE / $COHR and probably ends up #1 vs. Sumitomo Electric. The main thing I'm watching is if they can pull a $SNDK style price hike. So far from some channel checks: - Q2 2026: 50-60% increase - Q3 2026: 10% increase - Q4 2026: 10%+ hike But from Coherent's SEC offering... it does look like there's a ceiling to how high % prices can go, which makes that case less likely. We'll see how it plays out
-      https://x.com/aleabitoreddit/status/2114219806706860495
-  [10-25 12:50] ↩回复 @axxm0 $AAOI is the perfect example. They're expanding laser manufacturing at 350%. But they said they can't produce enough lasers to even meet their own pluggable transceiver demand. So they had to turn away hyperscalers for CPO lasers. TBH if I were AOI, I'd reallocate toward CPO lasers and then buy lasers off merchant players like $SIVE. But I guess they want to be end-to-end vertically integrated.
-      https://x.com/aleabitoreddit/status/2114217916153373049
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
