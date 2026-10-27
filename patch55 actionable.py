@@ -67,7 +67,7 @@ NEW = r'''    # ===== @@MARK@@：主线锁定 + 明日可执行信号 =====
                 import glob as _g55
                 _fs = sorted(_g55.glob("reports/r[0-9]*.txt"), key=lambda f: int(_re55.sub(r"\D", "", f) or 0))[-40:]
                 for _f in _fs:
-                    _tx = io.open(_f, encoding="utf-8", errors="ignore").read()
+                    _tx = open(_f, encoding="utf-8", errors="ignore").read()
                     _hd = _re55.search(r"\|\s*(20\d\d-\d\d-\d\d)\s", _tx[:400])
                     if not _hd or "【五、涨停池】" not in _tx:
                         continue
