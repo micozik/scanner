@@ -1,18 +1,16 @@
 ==================================================================
-📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-10-20 20:51
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-10-27 19:51
    决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
 ==================================================================
-   清单载入 15 只 | 并发 8 线程 | 时间预算 150 秒
-   取数成功 0 / 15 只 | 实际耗时 3.2 秒
+   清单载入 13 只 | 并发 8 线程 | 时间预算 150 秒
+   取数成功 0 / 13 只 | 实际耗时 3.9 秒
 
 ------------------------------------------------------------------
 【持仓】
 ------------------------------------------------------------------
+  ◆ 兆易创新(603986)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 工业富联(601138)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
   ◆ 雷赛智能(002979)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 歌尔股份(002241)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 键凯科技(688356)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 双环传动(002472)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
-  ◆ 拓普集团(601689)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
 
 ------------------------------------------------------------------
 【观察】
