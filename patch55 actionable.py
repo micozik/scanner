@@ -61,6 +61,24 @@ NEW = r'''    # ===== @@MARK@@：主线锁定 + 明日可执行信号 =====
             _h55 = _j55.load(open(_hp55, encoding="utf-8"))
         except Exception:
             _h55 = {}
+        # v2：盘中报告没有【涨停池】→ 用仓库里历史盘后报告自举主线库（10/27 首次上线时库是空的）
+        if len(_h55) < 3:
+            try:
+                import glob as _g55
+                _fs = sorted(_g55.glob("reports/r[0-9]*.txt"), key=lambda f: int(_re55.sub(r"\D", "", f) or 0))[-40:]
+                for _f in _fs:
+                    _tx = io.open(_f, encoding="utf-8", errors="ignore").read()
+                    _hd = _re55.search(r"\|\s*(20\d\d-\d\d-\d\d)\s", _tx[:400])
+                    if not _hd or "【五、涨停池】" not in _tx:
+                        continue
+                    _seg = _tx.split("【五、涨停池】", 1)[1].split("最高连板", 1)[0]
+                    _dct = {}
+                    for _mm in _re55.finditer(r"\n\s+(\S+?)：(\d+)只", _seg):
+                        _dct[_mm.group(1).replace("Ⅱ", "")] = int(_mm.group(2))
+                    if _dct and _hd.group(1) != _today55:
+                        _h55[_hd.group(1)] = _dct
+            except Exception:
+                pass
         if _lu55:
             _h55[_today55] = _lu55
         _days55 = sorted(_h55)[-3:]
@@ -70,14 +88,29 @@ NEW = r'''    # ===== @@MARK@@：主线锁定 + 明日可执行信号 =====
                 if _n >= 3:
                     _cnt55[_ind] = _cnt55.get(_ind, 0) + 1
         _ml55 = sorted([(c, _lu55.get(i, 0), i) for i, c in _cnt55.items() if c >= 2], reverse=True)
+        _top15 = []
+        _flag = False
+        for _ln in list(REPORT):
+            _t = str(_ln)
+            if "行业涨幅前15" in _t:
+                _flag = True; continue
+            if _flag:
+                _m = _re55.match(r"\s+(\S+?)\s*\|\s*(-?[\d.]+)%", _t)
+                if _m:
+                    _top15.append((_m.group(1), float(_m.group(2))))
+                elif "◆" in _t or _t.startswith("【"):
+                    break
         _L55.append("  ── A. 主线锁定（近%d个交易日，≥2天涨停≥3只的行业）──" % len(_days55))
         if not _lu55:
-            _L55.append("  【无数据】报告里没找到【涨停池】行业分布")
+            _L55.append("  （盘中报告无【涨停池】→ 主线用历史盘后数据，今天强弱看行业涨幅前15）")
         if _ml55:
             for _c, _nt, _i in _ml55:
-                _hit = any(n.startswith(_i[:3]) or _i.startswith(n[:3]) for n in _in55)
+                _hit = any(n.startswith(_i[:2]) or _i.startswith(n[:2]) for n in _in55)
+                _rk = next((k + 1 for k, (n, _p) in enumerate(_top15) if n.startswith(_i[:2]) or _i.startswith(n[:2])), None)
                 _star = "★强主线(今天资金也在流入)" if _hit else "主线(今天资金未进前10)"
-                _L55.append(f"   {_i}：近{len(_days55)}天有{_c}天涨停≥3只｜今天涨停{_nt}只 → {_star}")
+                _rks = (f"｜今天行业涨幅第{_rk}" if _rk else ("｜今天不在涨幅前15" if _top15 else ""))
+                _nts = (f"今天涨停{_nt}只" if _lu55 else "今天涨停(盘后统计)")
+                _L55.append(f"   {_i}：近{len(_days55)}天有{_c}天涨停≥3只｜{_nts}{_rks} → {_star}")
             _L55.append("  ★新买入只从主线里挑；不抄下跌板块的底（10/27反省第1条）")
         else:
             _L55.append("   今天还没有连续≥2天的主线（库里%d天数据，满3天后才准）" % len(_h55))
@@ -107,8 +140,8 @@ NEW = r'''    # ===== @@MARK@@：主线锁定 + 明日可执行信号 =====
                 except Exception:
                     continue
         _hits55, _seen55 = [], set()
-        _RX55 = _re55.compile(r"【?([^【】：:，,\s]{2,8})[：:].{0,40}?(净利润|归母净利润|扣非净利润).{0,20}?(增长|增|同比增长)\s*([\d.]+)\s*[%倍]")
-        _RX55b = _re55.compile(r"【?([^【】：:，,\s]{2,8})[：:].{0,30}?扭亏")
+        _RX55 = _re55.compile(r"【?([一-龥A-Za-z]{2,8}?)(?:[：:]|(?=前三季度|第三季度|三季度|上半年|前三季)).{0,40}?(净利润|归母净利润|扣非净利润).{0,20}?(增长|增|同比增长)\s*([\d.]+)\s*[%倍]")
+        _RX55b = _re55.compile(r"【?([一-龥A-Za-z]{2,8})[：:].{0,30}?扭亏")
         for _t in _pool55:
             _nm, _g = None, None
             _m = _RX55.search(_t)
@@ -126,6 +159,8 @@ NEW = r'''    # ===== @@MARK@@：主线锁定 + 明日可执行信号 =====
                     _nm, _g = _m.group(1).replace(" ", ""), 999.0
             if not _nm or _g is None or _g < 50 or _nm in _seen55 or "ST" in _nm:
                 continue
+            if _nm not in _n2c55 and not _re55.search(_re55.escape(_nm) + r"[：:]", _t):
+                continue   # 无冒号的写法（如"创世纪前三季度…"）必须能对上快照，防止"公司前三季度"这类误抓
             if any(k in _t for k in ("下降", "下滑", "亏损扩大", "同比减少")):
                 continue
             _seen55.add(_nm)
