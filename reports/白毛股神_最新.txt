@@ -10,7 +10,7 @@
     存储/HBM ×8 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
     算力/云/数据中心 ×4 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     激光/光芯片/InP ×4 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-  提到的代码：$GOOGL×2 $AAOI×2 $MU×2 $EOSE×1 $TSEM×1 $LWLG×1 $WYFI×1 $BRUN×1 $CBRS×1 $CIFR×1 $AMZN×1 $FLNC×1 $ALMU×1 $NVDA×1 $LITE×1 $SKHY×1 $ANT×1
+  提到的代码：$GOOGL×2 $AAOI×2 $MU×2 $EOSE×1 $TSEM×1 $LWLG×1 $WYFI×1 $BRUN×1 $CBRS×1 $CIFR×1 $AMZN×1 $FLNC×1 $ALMU×1 $LITE×1 $NVDA×1 $SKHY×1 $ANT×1
 
   ── 原创推文（全文，新→旧）──
   [10-27 22:51] 📝原创 I made a new “It’s All Over” portfolio today of even higher beta names than $AAOI. The requirements: 1. Fell off a cliff 2. Lower than when they announced their catalysts 3. Increasing fundamentals 4. Looks like the chart 5. Short interest spiking Stuff like $ALMU at $7,
