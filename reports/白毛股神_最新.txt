@@ -4,13 +4,13 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6759条）
   存档最近同步：2026-10-27T16:28:25Z UTC（状态 ok）
-  最近48小时：原创 4 条 / 回复 10 条（北京时间）
+  最近48小时：原创 4 条 / 回复 9 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     存储/HBM ×8 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
     算力/云/数据中心 ×4 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     激光/光芯片/InP ×4 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-  提到的代码：$GOOGL×2 $AAOI×2 $MU×2 $EOSE×1 $TSEM×1 $LWLG×1 $WYFI×1 $BRUN×1 $CBRS×1 $AMZN×1 $CIFR×1 $FLNC×1 $ALMU×1 $LITE×1 $NVDA×1 $SKHY×1 $ANT×1
+  提到的代码：$GOOGL×2 $AAOI×2 $MU×2 $EOSE×1 $LWLG×1 $TSEM×1 $WYFI×1 $BRUN×1 $CBRS×1 $AMZN×1 $CIFR×1 $FLNC×1 $ALMU×1 $NVDA×1 $LITE×1 $SKHY×1 $ANT×1
 
   ── 原创推文（全文，新→旧）──
   [10-27 22:51] 📝原创 I made a new “It’s All Over” portfolio today of even higher beta names than $AAOI. The requirements: 1. Fell off a cliff 2. Lower than when they announced their catalysts 3. Increasing fundamentals 4. Looks like the chart 5. Short interest spiking Stuff like $ALMU at $7,
@@ -39,8 +39,6 @@
       https://x.com/aleabitoreddit/status/2115096629506457833
   [10-27 20:40] ↩回复 @JohnnyXAngelo I'm seeing a pattern here with hyperscalers... They act like VCs + Goldfish. Just requires one to go secure LTAs for memory or lasers with $LITE for the rest to pile in. Since they don't want their allocation to be crowded out. $NVDA is usually always first one... but if
       https://x.com/aleabitoreddit/status/2115060985396670793
-  [10-26 18:52] ↩回复 @elvermo Thanks for spotlighting it! I don't think Elon is necessarily wrong, but using his reach to hurt smaller competitors might set an unhealthy precedent.
-      https://x.com/aleabitoreddit/status/2114671620711465417
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
