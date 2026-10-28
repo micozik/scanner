@@ -1,0 +1,307 @@
+============================================================
+美股夜盘扫描器V4.1 | 北京 2026-10-28 07:56 周三 | 美股收盘后
+============================================================
+★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑
+★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的
+  ✅ 已从 我的清单.txt 载入持仓 3只（3只有美股对标）
+
+【一、美股指数】（费城半导体SOX最关键=A股半导体风向标）
+  （实时指数源：stock_us_famous_spot_em）
+    道琼斯：52377.5703 +0.03%  [2026-10-27]
+    纳斯达克：26477.8105 +1.18%  [2026-10-27]
+    标普500：7676.77 +0.70%  [2026-10-26] ⚠️距今2天(非最新)
+    费城半导体：11083.4697 +2.82%  [2026-10-26] ⚠️距今2天(非最新)
+
+【三、美股/全球新闻】
+  （源：东财全球 已抓取）
+  （源：富途 已抓取）
+  （源：财联社 已抓取）
+  （源：新浪 已抓取）
+
+  💰💰💰【聪明钱专区·大佬动向】（1条）💰💰💰
+    [2026-10-28 07:15] 泡泡玛特三季报“暗淡” 段永平持股浮亏逾10%
+
+  ★★★ 美股相关情报（63条）★★★
+    [2026-10-28 07:52] 【港股上市公司年内回购逾1200亿港元 红利、创新药等板块配置机遇获看好】近期港股市场延续震荡调整态势，但港股上市公司股份回购热情不减。Wind数据显
+    [2026-10-28 07:51] 影视行业内容端陆续布局AI长片
+    [2026-10-28 07:51] 【SK 海力士韩股盘前股价小幅走高】SK 海力士交出一份稳健的财报数据，但投资者目前反应相对克制。该股在 韩国Nextrade 盘前交易中上涨约 3%
+    [2026-10-28 07:48] 【SK海力士第三季度利润激增逾7倍，超出预期】韩国芯片制造商SK海力士周三公布，受人工智能基础设施需求持续推动内存芯片价格上涨的影响，其季度营业利润增
+    [2026-10-28 07:45] 【弗拉维奥・博索纳罗败选后逃离巴西，抵达迈阿密】巴西《环球报》报道，巴西参议员弗拉维奥・博索纳罗在总统选举落败后，于周二逃离巴西，抵达迈阿密。报道援引
+    [2026-10-28 07:43] SK海力士美股盘后涨超2%
+    [2026-10-28 07:43] SK海力士：自第四季度起HBM4芯片已成为主力产品
+    [2026-10-28 07:41] 【SK海力士预计第四季度HBM4出货量和营收将超过HBM3E】10月28日，SK海力士表示，公司将快速提高第六代10纳米级（1c）工艺的比重，并增加D
+    [2026-10-28 07:22] 抢抓万亿市场 民企竞逐算力网建设
+    [2026-10-28 07:17] 甲骨文将于2027年在云平台提供谷歌TPU
+    [2026-10-28 07:15] 英伟达与甲骨文扩大AI基础设施合作 Vera Rubin系统部署规模将达数吉瓦级
+    [2026-10-28 07:10] 史上最大IPO募资加码AI 北美科技巨头“狂飙”资本开支
+    [2026-10-28 07:06] 谷歌推出大模型Genie 4
+    [2026-10-28 06:52] 微型神经芯片实时监测药物对大脑影响
+    [2026-10-28 06:28] AI用电需求催生设备订单 燃气轮机产业链投资机会受关注
+    [2026-10-28 06:22] 物理AI迎落地拐点 产业链公司抢抓机遇
+    [2026-10-28 06:16] WTI原油期货向上触及100美元/桶
+    [2026-10-28 06:15] 周三你需要知道的隔夜全球要闻：特朗普暗示委内瑞拉可能成为美国的州；博索纳罗“流亡”美国；科技股走强提振纳指收涨1%
+    [2026-10-28 06:02] 苹果据悉将于周三发布14和16英寸触屏MACBOOK
+    [2026-10-28 04:51] Anthropic携手百时美施贵宝等六家机构 启动AI药物发现并布局罕见病疗法
+    [2026-10-28 04:48] 特朗普表示 将向得克萨斯州提供更多联邦应急管理署资金
+    [2026-10-28 04:43] 美国上周API原油库存减少203.1万桶
+    [2026-10-28 04:28] 博通安排金融合作伙伴购买基于定制AI加速器的AI机架
+    [2026-10-28 04:02] 纳斯达克中国金龙指数收跌0.11%
+    [2026-10-28 04:01] 纳指收涨1.18% 存储、光通信板块继续走强
+    [2026-10-28 03:50] 特朗普重申石油正从霍尔木兹海峡流出
+    [2026-10-28 03:47] 费城半导体指数涨4%
+    [2026-10-28 03:47] 特朗普暗示委内瑞拉可能成为美国的一个州
+    [2026-10-28 03:33] 甲骨文表示 计划将多云AI数据库服务扩展至美国政府
+    [2026-10-28 02:53] 谷歌Genie 4亮相：一句话创造虚拟世界、敲键盘自由探索
+    [2026-10-28 02:49] 甲骨文与谷歌、英特尔、英伟达等扩大合作 股价一度涨5%
+    [2026-10-28 02:38] 上期所原油期货2612合约夜盘收跌2.56%
+    [2026-10-28 02:21] OpenAI因一起ChatGPT癫痫医疗建议导致的致命事件被起诉
+    [2026-10-28 02:00] AI算力扩张提速！液冷服务器需求升温 多股业绩倍增可期(名单)
+    [2026-10-28 01:41] WTI原油日内跌幅一度达2.0% 最低报99.56美元/桶
+    [2026-10-28 01:26] 甲骨文加码英伟达芯片至数吉瓦级 首度引入谷歌TPU 市场紧盯投资者日
+    [2026-10-28 01:25] 美联储隔夜逆回购协议周二使用规模为2.26亿美元（交易对手2家） 上个交易日报2亿美元
+    [2026-10-28 01:25] 通用汽车宣布将转赴纳斯达克上市 瞄准指数基金买盘寻求估值重塑
+    [2026-10-28 01:07] 美国总统特朗普表示：1亿桶委内瑞拉石油“只是第一批”货
+    [2026-10-28 01:01] 美光科技宣布在美国爱达荷州新增逾6700万美元社区投资 用于交通、住房和儿童领域
+
+  ◆ 全量新闻（最近60条，共230条去重）：
+    [2026-10-28 07:56] 【中国创新药闪耀ESMO 研究成果入选量创新高】在10月23日至27日举行的2026年欧洲肿瘤内科学会年会（ESMO）上，中国创新药迎来“高
+    [2026-10-28 07:56] 【大风蓝色预警！甘肃宁夏等8省区部分地区将有5至7级风】中央气象台10月28日6时继续发布大风蓝色预警：预计，10月28日8时至29日8时，
+    [2026-10-28 07:55] 多省推出“十五五”就业规划 力促产业就业双向奔赴
+    [2026-10-28 07:55] 【东山精密周三将登陆港交所】东山精密周三将登陆港交所。东山精密以每股86.8港元发行1.138亿股，定价低于招股价区间的上限，较其深圳上市A
+    [2026-10-28 07:53] 收入端稳步恢复 成本端结构性优化 五粮液前三季度营收净利同比双增
+    [2026-10-28 07:52] 日本30年期国债收益率上升5个基点至3.87%
+    [2026-10-28 07:52] 格力电器将获股东京海互联6亿元至12亿元增持
+    [2026-10-28 07:52] 【港股上市公司年内回购逾1200亿港元 红利、创新药等板块配置机遇获看好】近期港股市场延续震荡调整态势，但港股上市公司股份回购热情不减。Wi
+    [2026-10-28 07:51] 影视行业内容端陆续布局AI长片
+    [2026-10-28 07:51] 【基金三季度继续重仓科技板块 对红利等传统资产配置意愿提升】10月27日晚间，公募基金2026年三季报披露完毕。天相投顾统计数据显示，三季度
+    [2026-10-28 07:51] 【SK 海力士韩股盘前股价小幅走高】SK 海力士交出一份稳健的财报数据，但投资者目前反应相对克制。该股在 韩国Nextrade 盘前交易中上
+    [2026-10-28 07:51] 日本30年期国债收益率上升5个基点至3.87%。
+    [2026-10-28 07:50] 脑机接口赛道融资升温
+    [2026-10-28 07:49] 长电科技追加先进封装产线投资
+    [2026-10-28 07:48] TCL科技启动“鹰的重生”
+    [2026-10-28 07:48] SK海力士：因汇率下跌，第三季度录得11.6万亿韩元的外汇相关损失。
+    [2026-10-28 07:48] 【SK海力士第三季度利润激增逾7倍，超出预期】韩国芯片制造商SK海力士周三公布，受人工智能基础设施需求持续推动内存芯片价格上涨的影响，其季度
+    [2026-10-28 07:47] 日经225指数期货在早盘交易中上涨1.7%
+    [2026-10-28 07:47] 蚂蚁国际再添境外牌照 跨境支付走向持牌深耕
+    [2026-10-28 07:47] 【滑雪场迎来开板季 冰雪旅游需求提前升温】10月27日，冰雪产业概念股持续活跃，峨眉山A涨停，雪人集团涨超5%，龙江交通、元隆雅图等纷纷跟涨
+    [2026-10-28 07:46] 多家上市国企发布重要股东增持计划
+    [2026-10-28 07:46] SK海力士韩股盘前股价上涨约3%，三星电子股价也上涨3%。
+    [2026-10-28 07:46] 媒体看到的五角大楼估计显示，美国对伊朗战争行动的成本已升至超过470亿美元。
+    [2026-10-28 07:46] 基准10年期日本国债期货早盘下跌0.23点。
+    [2026-10-28 07:45] 日经225指数期货早盘上涨1.7%。
+    [2026-10-28 07:45] 【弗拉维奥・博索纳罗败选后逃离巴西，抵达迈阿密】巴西《环球报》报道，巴西参议员弗拉维奥・博索纳罗在总统选举落败后，于周二逃离巴西，抵达迈阿密
+    [2026-10-28 07:43] SK海力士美股盘后涨超2%
+    [2026-10-28 07:43] SK海力士：自第四季度起HBM4芯片已成为主力产品
+    [2026-10-28 07:43] 【俄称对乌实施大规模打击 乌称击退俄进攻】俄罗斯国防部27日通报称，过去一天，俄军共打击148处区域，目标包括乌军使用的交通基础设施、弹药仓
+    [2026-10-28 07:42] SK海力士：2027年资本支出将较2026年显著增加
+    [2026-10-28 07:42] SK海力士：受内存价格上涨和供应短缺带来的成本负担影响，预计个人电脑和智能手机出货量将下降。
+    [2026-10-28 07:42] 【第140届广交会第二期线下展闭展 27.8万名境外采购商到会】昨天，第140届广交会第二期线下展闭展。截至昨天17时，本届广交会共有来自2
+    [2026-10-28 07:41] SK海力士预计第四季度HBM4出货量和营收将超过HBM3E
+    [2026-10-28 07:41] 银行理财子公司加码“固收+”产品净值回撤管控
+    [2026-10-28 07:41] PCB产业链企业积极扩建钻针棒材项目
+    [2026-10-28 07:41] 【SK海力士预计第四季度HBM4出货量和营收将超过HBM3E】10月28日，SK海力士表示，公司将快速提高第六代10纳米级（1c）工艺的比重
+    [2026-10-28 07:41] 【公募基金三季报披露完毕 债券基金规模创历史新高】10月27日，公募基金2026年三季报披露完毕。公募基金最新前十大重仓股出炉，分别是中际旭
+    [2026-10-28 07:40] 9月以来创业板电池主题ETF发行7只
+    [2026-10-28 07:39] 部分银行更新互联网助贷合作机构名单 主动压缩新增合作 稳步消化存量
+    [2026-10-28 07:38] SK海力士预计2027年DRAM市场需求将同比增长20%以上
+    [2026-10-28 07:38] “电力超市”带来三重变化
+    [2026-10-28 07:37] SK海力士预计明年营收及营业利润再上新台阶 明年投资规模将大幅增加
+    [2026-10-28 07:37] 低轨卫星互联网建设提速
+    [2026-10-28 07:36] SK海力士与部分客户磋商延长长期供应协议 现有协议通常为5年
+    [2026-10-28 07:35] SK海力士计划第四季度将321层NAND工艺产能占比提升至50%以上
+    [2026-10-28 07:35] 月内32只FOF启动募集发行 数量创历史单月新高
+    [2026-10-28 07:35] SK海力士计划年底前将M15X工厂产能提升至最大水平
+    [2026-10-28 07:34] A股限售股解禁一览：708.48亿元市值限售股今日解禁
+    [2026-10-28 07:32] 中金“三合一”交割落地 券业并购迈向系统整合新阶段
+    [2026-10-28 07:31] SK海力士计划于2026年向股东返还约100万亿韩元
+    [2026-10-28 07:30] 港股风格再平衡 红利资产价值凸显
+    [2026-10-28 07:30] SK海力士第三季度运营利润为83.33万亿韩元 预计为77.5万亿韩元
+    [2026-10-28 07:28] 制造业的护城河本质上是时间的函数
+    [2026-10-28 07:27] 从装机量到可靠性 “十五五”能源投资换赛道
+    [2026-10-28 07:26] 三季度净利增速抬升 PCB企业加码高端产能
+    [2026-10-28 07:25] 前海综合保税区月度进出口首超千亿元
+    [2026-10-28 07:24] 年内七十三家企业终止IPO 超九成为主动撤回
+    [2026-10-28 07:23] 券商资管公募三季报出炉 四家跻身千亿梯队
+    [2026-10-28 07:22] 抢抓万亿市场 民企竞逐算力网建设
+    [2026-10-28 07:21] 恩智浦第三季度营收37.86亿美元，同比增长19%
+
+【二、重点个股】（芯片/算力/存储/中概 + 伯克希尔）
+  [切换] stock_us_spot_em 失败(ConnectionError)
+  [切换] stock_us_spot 失败(CallTimeout)
+  [切换] stock_us_famous_spot_em 失败(ConnectionError)
+  [切换] stock_us_pink_spot_em 失败(ConnectionError)
+  ⚠️ 全量快照4源全挂 → 启用【单只逐个抓】（只抓我们要的25只）
+  ✅ 单只逐个抓成功 27/27 只
+    英伟达(NVDA) 216.0 +2.39%  [2026-10-26] ⚠️距今2天(非最新)
+    台积电(TSM) 436.87 +2.95%  [2026-10-27]
+    美光(MU) 903.7 +2.98%  [2026-10-26] ⚠️距今2天(非最新)
+    AMD(AMD) 531.28 +2.80%  [2026-10-26] ⚠️距今2天(非最新)
+    博通(AVGO) 329.17 +2.33%  [2026-10-26] ⚠️距今2天(非最新)
+    特斯拉(TSLA) 407.46 +4.04%  [2026-10-27]
+    苹果(AAPL) 343.91 -1.10%  [2026-10-26] ⚠️距今2天(非最新)
+    阿斯麦(ASML) 1590.9 +1.22%  [2026-10-26] ⚠️距今2天(非最新)
+    英特尔(INTC) 93.74 +3.61%  [2026-10-27]
+    阿里巴巴(BABA) 100.25 +0.61%  [2026-10-26] ⚠️距今2天(非最新)
+    Meta(META) 620.19 -1.64%  [2026-10-27]
+    微软(MSFT) 531.33 -0.24%  [2026-10-27]
+    谷歌(GOOGL) 316.8 -1.06%  [2026-10-26] ⚠️距今2天(非最新)
+    亚马逊(AMZN) 249.09 +0.44%  [2026-10-26] ⚠️距今2天(非最新)
+    希捷(STX) 667.85 +3.67%  [2026-10-27]
+    西部数据(WDC) 380.88 +6.95%  [2026-10-27]
+    闪迪(SNDK) 1304.84 +3.92%  [2026-10-27]
+    应用材料(AMAT) 395.93 +2.15%  [2026-10-27]
+    拉姆研究(LRCX) 240.85 +1.41%  [2026-10-27]
+    康宁(GLW) 126.3 -1.13%  [2026-10-27]
+    Coherent(COHR) 235.79 +6.45%  [2026-10-27]
+    礼来(LLY) 1279.14 +0.45%  [2026-10-26] ⚠️距今2天(非最新)
+    纽蒙特(NEM) 110.39 +1.40%  [2026-10-26] ⚠️距今2天(非最新)
+    GE Vernova(GEV) 895.08 +4.67%  [2026-10-27]
+    Moderna(MRNA) 207.97 +4.59%  [2026-10-27]
+    伯克希尔B(BRK.B) 542.99 -1.02%  [2026-10-27]
+    伯克希尔A(BRK.A) 821931.0 +1.02%  [2026-10-26] ⚠️距今2天(非最新)
+  （成功27/27只）
+
+============================================================
+🎯🎯【持仓夜盘影响】今夜美股，直接点名你的票 🎯🎯
+============================================================
+  （基于27只美股真实涨跌幅，非新闻情绪）
+
+  ◆ 兆易创新(603986) ← 存储涨价周期（黄仁勋:2029前内存不过剩；亚马逊:短缺持续到2027后；主力4/5天净买）   🔥🔥 强偏多  加权净+4.30%
+     美光 +2.98% | 希捷 +3.67% | 西部数据 +6.95% | 闪迪 +3.92%
+     → 明日可考虑加仓，但仍需过决策卡①-B
+
+  ◆ 工业富联(601138) ← AI服务器（AWS算力售罄至2027；SpaceX 400亿美元债买GPU；60日低位缩量）   🔥 偏多  加权净+1.44%
+     英伟达 +2.39% | 博通 +2.33% | AMD +2.80% | 微软 -0.24% | 亚马逊 +0.44% | 谷歌 -1.06%
+     → 持有，顺风
+
+  ◆ 雷赛智能(002979) ← 人形机器人主线（电机行业涨幅第一；三季报净利+86.8%；10/27大单净买+6810万、3日+2.1亿；PE 48.8）   🔥🔥 强偏多  加权净+3.57%
+     特斯拉 +4.04% | 英伟达 +2.39%
+     → 明日可考虑加仓，但仍需过决策卡①-B
+
+  ── 排序 ──
+  最偏空：工业富联（+1.44%）
+  最偏多：兆易创新（+4.30%）
+
+  ⚠️ 铁律K：如果某只票【美股对标大跌但它明天高开】，
+     这不是好消息也不是坏消息，是【反常】= 必须查清原因再动
+  ⚠️ 铁律①-B：加权净值只说明『同链共振』，不等于驱动相同。
+     买卖前仍须回答：它靠什么赚钱？今夜涨的那个原因跟它是同一个吗？
+============================================================
+
+============================================================
+🔥【美股催化热力图 → A股映射】美股是A股的先行指标
+============================================================
+
+  ★净利多排行（美股利多→次日A股对应板块大概率跟涨）：
+    1. 存储芯片→A股存储/长鑫链：净+8（↑10 ↓2） 🔥🔥🔥重点
+    2. AI算力→A股紫光/中贝通信：净+4（↑4 ↓0） 🔥🔥🔥重点
+    3. 消费电子→A股立讯/歌尔：净+2（↑2 ↓0） 🔥🔥
+    4. 软件AI应用→A股金山/华大九天：净+2（↑2 ↓0） 🔥🔥
+    5. 贵金属→A股黄金：净+2（↑2 ↓0） 🔥🔥
+    6. 医药→A股创新药：净+1（↑1 ↓0） 🔥
+    7. 金融→A股银行/保险：净+1（↑2 ↓1） 🔥
+    8. 能源→A股油气：净-3（↑0 ↓3） ❄️❄️回避
+
+  ★前3名的具体催化：
+
+  ◆【存储芯片→A股存储/长鑫链】↑10 ↓2
+      ↑[2026-10-28 07:51] (SK海力士) 【SK 海力士韩股盘前股价小幅走高】SK 海力士交出一份稳健的财报数据，但投资者目前反应相对克制。该股在 韩国Nex
+      ↑[2026-10-28 07:48] (SK海力士) 【SK海力士第三季度利润激增逾7倍，超出预期】韩国芯片制造商SK海力士周三公布，受人工智能基础设施需求持续推动内存芯
+      ↑[2026-10-28 07:46] (SK海力士) SK海力士韩股盘前股价上涨约3%，三星电子股价也上涨3%。
+      ↑[2026-10-28 07:43] (SK海力士) SK海力士美股盘后涨超2%
+      ↑[2026-10-28 07:42] (SK海力士) SK海力士：受内存价格上涨和供应短缺带来的成本负担影响，预计个人电脑和智能手机出货量将下降。
+
+  ◆【AI算力→A股紫光/中贝通信】↑4 ↓0
+      ↑[2026-10-28 07:52] (资本开支) 【港股上市公司年内回购逾1200亿港元 红利、创新药等板块配置机遇获看好】近期港股市场延续震荡调整态势，但港股上市公
+      ↑[2026-10-28 07:48] (英伟达) 【SK海力士第三季度利润激增逾7倍，超出预期】韩国芯片制造商SK海力士周三公布，受人工智能基础设施需求持续推动内存芯
+      ↑[2026-10-28 02:49] (英伟达) 甲骨文与谷歌、英特尔、英伟达等扩大合作 股价一度涨5%
+      ↑[2026-10-28 00:16] (算力) Q3净利同比大增217%！算力龙头中科曙光业绩爆发 同步推出3亿至5亿元回购方案
+
+  ◆【消费电子→A股立讯/歌尔】↑2 ↓0
+      ↑[2026-10-28 07:42] (手机出货) SK海力士：受内存价格上涨和供应短缺带来的成本负担影响，预计个人电脑和智能手机出货量将下降。
+      ↑[2026-10-27 22:13] (苹果) 古尔曼：2899美元起 苹果触屏版MacBook Pro起售价将再创新高
+
+  ★利空最重（次日A股对应板块回避）：
+    ❄️ 能源→A股油气：净-3
+        ↓[2026-10-28 02:38] (原油) 上期所原油期货2612合约夜盘收跌2.56%
+        ↓[2026-10-28 01:41] (原油) WTI原油日内跌幅一度达2.0% 最低报99.56美元/桶
+        ↓[2026-10-27 23:08] (原油) WTI原油期货跌破每桶100美元
+
+  ⚠️ 判读：美股某板块净利多高 → 次日A股对应板块优先看
+     但仍需过A股决策卡①②④⑤（板块第几天/资金/位置/游资）
+  ⚠️ 提醒：本排行的准确率见下方【映射回测】，没验证过的规则不许当依据
+  📌 已存档今夜前3 → 次日A股收盘后自动回看
+============================================================
+
+============================================================
+🔬【美股→A股映射·回测】这条规则准不准，机器说了算
+============================================================
+  已积累 65 天 / 195 个样本
+
+  ── 最近5夜的前3预测（次日请对照A股板块榜自查）──
+  2026-10-28：存储芯片(净+8) ｜ AI算力(净+4) ｜ 消费电子(净+2)
+  2026-10-27：存储芯片(净+4) ｜ 金融(净+2) ｜ 能源(净-2)
+  2026-10-24：能源(净+3) ｜ 消费电子(净+1) ｜ 金融(净+1)
+  2026-10-23：能源(净+4) ｜ 医药(净+0) ｜ 存储芯片(净-2)
+  2026-10-22：软件AI应用(净+7) ｜ AI算力(净+3) ｜ 电动车(净+2)
+
+  ⚠️ 对照方法：次日A股盘后扫描器的【板块全景榜】，
+     看这3个板块在不在当日涨幅前20。在=命中。
+  ⚠️ 满5天后把命中结果写进 scanner_cloud 的规则记分卡，一起管理
+============================================================
+
+============================================================
+★★★【明日A股开盘参考】★★★
+  数据在上，具体操作由AI结合你的持仓在对话中给出。
+  核心看点：①🎯持仓夜盘影响（V3.0新增，直接点名你的票）
+           ②费城半导体SOX → A股半导体/芯片
+           ③英伟达/美光/存储链 → A股算力/存储/CPO/PCB
+           ④美联储/CPI → 成长股整体估值
+           ⑤油价/黄金 → A股资源链
+           ⑥💰聪明钱专区 → 巴菲特等大佬持仓/表态（13F披露日重点看）
+
+  ✅ V3.4起：持仓从 我的清单.txt 自动载入，三个扫描器共用一份，不用同步改
+============================================================
+
+============================================================
+🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
+============================================================
+  来源：raw.githubusercontent.com 公开存档（共6747条）
+  存档最近同步：2026-10-26T16:14:18Z UTC（状态 ok）
+  最近72小时：原创 4 条 / 回复 7 条（北京时间）
+
+  ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
+    激光/光芯片/InP ×29 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    算力/云/数据中心 ×23 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    CPO/光模块 ×9 → 光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394
+    存储/HBM ×5 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
+    衬底/封装材料 ×4 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
+    人形机器人/物理AI ×2 → 机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115
+  提到的代码：$SPCX×4 $NVDA×3 $AAOI×2 $AXTI×2 $CRWV×2 $TSLA×2 $SIVE×2 $COHR×2 $LITE×2 $ANT×1 $MU×1 $SLNH×1 $NBIS×1 $META×1 $AVGO×1 $AMZN×1 $MSFT×1 $CIFR×1 $JBL×1 $GFS×1
+
+  ── 原创推文（全文，新→旧）──
+  [10-27 00:14] 📝原创 TY $ANT for the positive $3.4B FCF for H1 2026. Still feels like all your AI infra names from $MU to $AAOI sold off way too hard. Considering the billions in financing raised by frontier labs to hyperscalers.. End up ultimately flowing back to GPUs, networking, to memory.
+      https://x.com/aleabitoreddit/status/2114752489476309203
+  [10-26 08:46] 📝原创 Just another $40B going into the "AI Infra" Bubble... Elon stated this $SPCX financing would primarily fund $NVDA GPU procurement H1 2027. Which indirectly increases demand for memory, networking, etc needed. In some other notes, VPEC today in UDN: "InP substrates is seriously in short supply" in regards to suppliers like $AXTI. - Morgan Stanley believes that InP substrates, EML and CW lasers will be the primary bottlenecks - VPEC emphasized that whoever can secure more raw material supply in the future will have greater pricing power and influence in the market. Very true about supply procurement... both upstream materials like epiwafers/substrates to ultimately compute. We're in a volatile
+      https://x.com/aleabitoreddit/status/2114519097526686033
+  [10-26 06:00] 📝原创 I've always defended X as the only platform to be on for financial discourse. But it's getting harder to when the owner constantly amplifies narratives of collapse… of companies whose interests conflict with his own at $SPCX or $TSLA. Would people be comfortable if $NVDA Jensen Huang owned $META? And then the timelines were dominated by his amplified narratives of $AVGO failing? I can't see how that would be healthy for grassroots discussion.
+      https://x.com/aleabitoreddit/status/2114477224208535600
+  [10-25 12:31] 📝原创 $NVDA Jensen Huang on photonics: adding scale-up to optical domain, “is going to be, well, 15x” to aggregate volume. Relating to $LITE, $COHR, and laser companies.. “I'm fairly certain the amount of optics that we need in the future will be several orders of magnitude” Huang added. We’re already in a CW laser bottleneck, but given the time/rate for capacity expansion, I definitely don’t see it meeting the scale Jensen envisions… Your leading merchant suppliers focusing new capacity toward UHP CPO lasers might also unintentionally make shortages around lower end ranges more severe… Since even if you don’t reallocate capacity (which Coherent implied they’d do to maximize margins), the demand f
+      https://x.com/aleabitoreddit/status/2114213351060554010
+  [10-26 18:52] ↩回复 @elvermo Thanks for spotlighting it! I don't think Elon is necessarily wrong, but using his reach to hurt smaller competitors might set an unhealthy precedent.
+      https://x.com/aleabitoreddit/status/2114671620711465417
+  [10-26 07:47] ↩回复 @Ngen704 He's allowed to comment on the state of the industry, but this is what my "For You" looks like BTW There's probably something off with X owner amplification if it's 10+ of the same Elon Musk post of Neocloud competitors are going to die in a row.
+      https://x.com/aleabitoreddit/status/2114504149127868641
+  [10-26 07:29] ↩回复 @JiminPuntaGorda @elonmusk I'm not here to blindly cheerlead or flip flop opinions every month like Chamath, so you're free to do what you want with your $1. I agree with you that Elon is the greatest inventor in the modern era. I have friends from DOGE, Optimus, $SPCX programs, and respect his visions for space, humanoid, to FSD. But respecting Elon doesn't mean ignoring the implications of his recent commentary on memory/neoclouds, and has nothing to do with politics or employee wealth.
+      https://x.com/aleabitoreddit/status/2114499541026455686
+  [10-26 07:14] ↩回复 @wannabepanacea Not actively. I've been pointing out issues with Neocloud/Colo financing since 2025 from $SLNH to $CRWV debt interest. And maintain my opinion only a few neoclouds would survive in a few years, given they build enough of a moat to differentiate themselves against hyperscalers. So I don't think Elon's comments are completely wrong about Neoclouds, but there's nuances. One example was $NBIS SOFR + 2.75% $3.5B facility with Citibank, which actually has better rates than GPU financing from $2T+ companies. So kinda hard to say neocloud financing has "entirely shut off" since this Citibank facility was announced 3D ago I'm not arguing the merits of Elon's claims here. There's some 
+      https://x.com/aleabitoreddit/status/2114495814538285526
+  [10-25 13:18] ↩回复 @Robertff8n Few things: - $SIVE is targeting T1 hyperscaler deployments for pluggables, CPO, NPO. Not quite sure what you mean by Tier 2. They have direct engagements with hyperscalers but currently are more upstream by qualifying with companies like Ayar, $JBL, $GFS, O-Net that eventually likely ends up -> $AMZN / $MSFT for example. On financing: - Colo players like $CIFR still need $1B+ of financing for their sites. - Neoclouds like $CRWV need billions of financing to buy GPUs. Higher rates + less support for financing makes it more challenging for these players. $SIVE already raised 700M SEK for their buildout and largely rely on external foundries, so they don't have financing constraint
+      https://x.com/aleabitoreddit/status/2114225154591207690
+  [10-25 12:57] ↩回复 @sillyuf08 $AXTI still the chokepoint of the entire optical buildout + demand for InP substrates will grow a lot. They have LTA supply agreements to $LITE / $COHR and probably ends up #1 vs. Sumitomo Electric. The main thing I'm watching is if they can pull a $SNDK style price hike. So far from some channel checks: - Q2 2026: 50-60% increase - Q3 2026: 10% increase - Q4 2026: 10%+ hike But from Coherent's SEC offering... it does look like there's a ceiling to how high % prices can go, which makes that case less likely. We'll see how it plays out
+      https://x.com/aleabitoreddit/status/2114219806706860495
+  [10-25 12:50] ↩回复 @axxm0 $AAOI is the perfect example. They're expanding laser manufacturing at 350%. But they said they can't produce enough lasers to even meet their own pluggable transceiver demand. So they had to turn away hyperscalers for CPO lasers. TBH if I were AOI, I'd reallocate toward CPO lasers and then buy lasers off merchant players like $SIVE. But I guess they want to be end-to-end vertically integrated.
+      https://x.com/aleabitoreddit/status/2114217916153373049
+
+  ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
+           ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
