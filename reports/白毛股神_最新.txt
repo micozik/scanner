@@ -4,29 +4,25 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6759条）
   存档最近同步：2026-10-27T16:28:25Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-10-27T16:28 UTC，已停更约43小时 → 启动实时补抓
-  实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ⚠️ 存档最新一条 2026-10-27T16:28 UTC，已停更约44小时 → 启动实时补抓
+  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误2：x.com profile: curl: (22) The requested URL returned error: 403
   实时补抓⑤[syndication]：2条
   ✅ 实时补抓新增 3 条（下面标【🔴实时】的就是存档里还没有的）
-  最近48小时：原创 5 条 / 回复 9 条（北京时间）
+  最近48小时：原创 3 条 / 回复 9 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    存储/HBM ×32 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    激光/光芯片/InP ×6 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    算力/云/数据中心 ×4 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-  提到的代码：$GOOGL×3 $LITE×2 $SKHY×2 $MU×2 $MRVL×1 $EOSE×1 $LWLG×1 $TSEM×1 $WYFI×1 $BRUN×1 $CBRS×1 $AMZN×1 $CIFR×1 $FLNC×1 $ALMU×1 $AAOI×1 $NVDA×1
+    存储/HBM ×24 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
+    激光/光芯片/InP ×13 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+    算力/云/数据中心 ×3 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+  提到的代码：$LITE×2 $GOOGL×2 $SIVE×1 $MRVL×1 $SKHY×1 $MU×1 $EOSE×1 $TSEM×1 $LWLG×1 $WYFI×1 $BRUN×1 $CBRS×1 $AMZN×1 $CIFR×1 $FLNC×1 $ALMU×1 $AAOI×1 $NVDA×1
 
   ── 原创推文（全文，新→旧）──
-  [10-29 10:00] 🔴实时📝原创 Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable.
+  [10-29 10:00] 🔴实时📝原创 ## Post ## Serenity on X: "Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable." * [](http://x.com/aleabitoreddit) Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable. * [](http://x.com/xbonkk) Looks like Serenity just woke up and got the news 😂 * [](http://x.com/Sofigoodboy) The a
       https://x.com/aleabitoreddit/status/2115624832947917083
   [10-28 10:11] 🔴实时📝原创 ## Post ## Serenity on X: "Woah, stellar earnings from and AI market projections... 1. SK Hynix: "Memory supply shortage to persist through 2030". 2. There's the $4.8B operating profit beat ($62.8B vs. ~$58B est)... 80% operating margins. So you had: - Revenue: $78.84B vs. $74.02B - Operating profit: $62.80B vs. $58.00B - Operating margin: 79.7% vs. 78.3% With forward projections of 3. "Our DRAM and HBM volumes through 2029 are effectively sold out." 4. Signed LTAs covering 50%+ of 2027–2028 capacity, while retaining pricing flexibility 5. The company intends to fulfill its commitment to return 50%+ of cumulative FCF for 2025-2027 6. "We have included deposits and other practical enforcement
       https://x.com/aleabitoreddit/status/2115265167919653233
   [10-27 22:51] 📝原创 I made a new “It’s All Over” portfolio today of even higher beta names than $AAOI. The requirements: 1. Fell off a cliff 2. Lower than when they announced their catalysts 3. Increasing fundamentals 4. Looks like the chart 5. Short interest spiking Stuff like $ALMU at $7,
       https://x.com/aleabitoreddit/status/2115094150626644115
-  [10-27 20:20] 📝原创 Oh look… more memory durability evidence for $MU and co. Following the news of $GOOGL, other CSPs such as Alibaba, Tencent, Bytedance, and are now negotiating memory LTAs with $SKHY and Samsung. Some customers are reportedly pushing for 10 year contracts as well, into 2035.
-      https://x.com/aleabitoreddit/status/2115056034763137169
-  [10-27 19:40] 📝原创 The S&amp;P 500 returns Nov -&gt; Jun following midterm elections apparently: - 21/21 times were positive - Avg. index gain was 16.6%. High-beta stocks historically outperformed even more… Very interesting, with Nov 3rd coming up, do you think 2026 will be an anomaly?
-      https://x.com/aleabitoreddit/status/2115045873734529050
   [10-28 00:28] ↩回复 @nisanyanviskisi $EOSE was added to this meme port just by looking at the chart...
       https://x.com/aleabitoreddit/status/2115118430785606077
   [10-28 00:15] ↩回复 @GusPaschal91721 Wow $LWLG crashed from $18-&gt;$4. I was pretty negative on it, but I'm surprised it's lower than when they announced a partnership with $TSEM. and even last year. Perfect addition to my "It's all over" portfolio
