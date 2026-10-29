@@ -1,0 +1,37 @@
+==================================================================
+📍【位置表 V2】60日位置 + 连板天数 + 缩量 | 北京 2026-10-29 10:53
+   决策卡第④项【位置】的数据源。取不到写【无数据】，绝不编数。
+==================================================================
+   清单载入 13 只 | 并发 8 线程 | 时间预算 150 秒
+   取数成功 1 / 13 只 | 实际耗时 9.7 秒
+
+------------------------------------------------------------------
+【持仓】
+------------------------------------------------------------------
+  ◆ 兆易创新(603986)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 工业富联(601138)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 雷赛智能(002979)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+
+------------------------------------------------------------------
+【观察】
+------------------------------------------------------------------
+  ◆ 康达新材(002669)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 东方电气(600875)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 先导智能(300450) 现价29.68 今-0.9%
+      60日-11.1% | 距高点-21.6% 距低点+8.3% 🟡中段
+      5日/60日量=1.10(常量)
+  ◆ 恩捷股份(002812)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 招商南油(601975)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 天能重工(300569)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 澜起科技(688008)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 沃格光电(603773)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 英维克(002837)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+  ◆ 同飞股份(300990)：【无数据】('Connection aborted.', RemoteDisconnected('Remote end close
+
+==================================================================
+⚠️ 怎么用（AI每次决断必须引用本表）：
+   · 距60日高点 > -3%   → 追高区，仓位砍半或不买
+   · 距60日低点 < +8%   → 埋伏区，同等条件优先
+   · 连板≥3天           → 位置已高，只在【产业周期型】才可考虑
+   · 5日/60日量 < 0.8   → 缩量没人注意，配合催化才是机会
+==================================================================

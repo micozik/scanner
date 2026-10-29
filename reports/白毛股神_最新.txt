@@ -4,14 +4,13 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6759条）
   存档最近同步：2026-10-27T16:28:25Z UTC（状态 ok）
-  最近72小时：原创 5 条 / 回复 10 条（北京时间）
+  最近48小时：原创 3 条 / 回复 9 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×10 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    存储/HBM ×9 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
-    算力/云/数据中心 ×7 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    衬底/封装材料 ×3 → 载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552
-  提到的代码：$GOOGL×2 $AAOI×2 $NVDA×2 $MU×2 $EOSE×1 $TSEM×1 $LWLG×1 $WYFI×1 $BRUN×1 $CBRS×1 $AMZN×1 $CIFR×1 $FLNC×1 $ALMU×1 $LITE×1 $SKHY×1 $ANT×1 $SPCX×1 $AXTI×1
+    存储/HBM ×6 → 存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309
+    算力/云/数据中心 ×3 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×3 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
+  提到的代码：$GOOGL×2 $EOSE×1 $TSEM×1 $LWLG×1 $WYFI×1 $BRUN×1 $CBRS×1 $AMZN×1 $CIFR×1 $FLNC×1 $AAOI×1 $ALMU×1 $NVDA×1 $LITE×1 $MU×1 $SKHY×1
 
   ── 原创推文（全文，新→旧）──
   [10-27 22:51] 📝原创 I made a new “It’s All Over” portfolio today of even higher beta names than $AAOI. The requirements: 1. Fell off a cliff 2. Lower than when they announced their catalysts 3. Increasing fundamentals 4. Looks like the chart 5. Short interest spiking Stuff like $ALMU at $7,
@@ -20,10 +19,6 @@
       https://x.com/aleabitoreddit/status/2115056034763137169
   [10-27 19:40] 📝原创 The S&amp;P 500 returns Nov -&gt; Jun following midterm elections apparently: - 21/21 times were positive - Avg. index gain was 16.6%. High-beta stocks historically outperformed even more… Very interesting, with Nov 3rd coming up, do you think 2026 will be an anomaly?
       https://x.com/aleabitoreddit/status/2115045873734529050
-  [10-27 00:14] 📝原创 TY $ANT for the positive $3.4B FCF for H1 2026. Still feels like all your AI infra names from $MU to $AAOI sold off way too hard. Considering the billions in financing raised by frontier labs to hyperscalers.. End up ultimately flowing back to GPUs, networking, to memory.
-      https://x.com/aleabitoreddit/status/2114752489476309203
-  [10-26 08:46] 📝原创 Just another $40B going into the "AI Infra" Bubble... Elon stated this $SPCX financing would primarily fund $NVDA GPU procurement H1 2027. Which indirectly increases demand for memory, networking, etc needed. In some other notes, VPEC today in UDN: "InP substrates is seriously in short supply" in regards to suppliers like $AXTI. - Morgan Stanley believes that InP substrates, EML and CW lasers will be the primary bottlenecks - VPEC emphasized that whoever can secure more raw material supply in the future will have greater pricing power and influence in the market. Very true about supply procurement... both upstream materials like epiwafers/substrates to ultimately compute. We're in a volatile
-      https://x.com/aleabitoreddit/status/2114519097526686033
   [10-28 00:28] ↩回复 @nisanyanviskisi $EOSE was added to this meme port just by looking at the chart...
       https://x.com/aleabitoreddit/status/2115118430785606077
   [10-28 00:15] ↩回复 @GusPaschal91721 Wow $LWLG crashed from $18-&gt;$4. I was pretty negative on it, but I'm surprised it's lower than when they announced a partnership with $TSEM. and even last year. Perfect addition to my "It's all over" portfolio
@@ -42,8 +37,6 @@
       https://x.com/aleabitoreddit/status/2115096629506457833
   [10-27 20:40] ↩回复 @JohnnyXAngelo I'm seeing a pattern here with hyperscalers... They act like VCs + Goldfish. Just requires one to go secure LTAs for memory or lasers with $LITE for the rest to pile in. Since they don't want their allocation to be crowded out. $NVDA is usually always first one... but if
       https://x.com/aleabitoreddit/status/2115060985396670793
-  [10-26 18:52] ↩回复 @elvermo Thanks for spotlighting it! I don't think Elon is necessarily wrong, but using his reach to hurt smaller competitors might set an unhealthy precedent.
-      https://x.com/aleabitoreddit/status/2114671620711465417
 
   ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
            ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
