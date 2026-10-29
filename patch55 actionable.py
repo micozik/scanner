@@ -13,6 +13,10 @@ patch55_actionable.py —— 【主线锁定 + 明日可执行信号】
   B.【业绩大增→明日候选】扫新闻+公告池里『净利润…增长X%』(X≥50) /『扭亏』，
      对上全市场快照拿到代码和今日涨幅：今日涨幅≤4% = ✅明日可买候选；>4% = ⏫今天已涨。
   插在【今日硬线索】正上方（报告第一屏），排在国家队雷达之后。
+v4 2026-10-29：鸣志电器10/27 17:12公告Q3净利+175%，当晚#940已标✅明日候选（当天-1.56%），
+  但10/28的报告新闻池已滚掉这条，候选就"消失"了，AI没再提 → 鸣志10/28-29继续涨。
+  改：候选存 reports/earnings_cands.json，之后3个交易日每份报告都列【业绩候选追踪】
+  （首次出现日、当时涨幅、今天涨幅、累计），候选不会再因为新闻滚动而丢。
 """
 import io, os, sys
 MARK = "patch55_actionable"
@@ -183,6 +187,36 @@ NEW = r'''    # ===== @@MARK@@：主线锁定 + 明日可执行信号 =====
                 _L55.append(f"   ⏫ {_nm}({_cd}) {_gs} ｜ 今日{_pc:+.2f}% → 今天已涨，不追")
         if _ok55:
             _L55.append("  ★明日候选代码（复制去查股票）：" + ",".join(_ok55[:12]))
+        # v4：候选持久化 + 3个交易日追踪
+        try:
+            _cp55 = "reports/earnings_cands.json"
+            try:
+                _cd55 = _j55.load(open(_cp55, encoding="utf-8"))
+            except Exception:
+                _cd55 = {}
+            _c2p55 = {v[0]: v[1] for v in _n2c55.values()}
+            for _g, _nm, _cd, _pc, _tt in _hits55:
+                if _cd and _cd not in _cd55:
+                    _cd55[_cd] = {"name": _nm, "g": _g, "d": _today55, "pc": _pc}
+            _days_all = sorted({v["d"] for v in _cd55.values()})
+            _keep_days = set(_days_all[-4:])
+            _cd55 = {k: v for k, v in _cd55.items() if v["d"] in _keep_days}
+            _old55 = sorted([(v["d"], k, v) for k, v in _cd55.items() if v["d"] != _today55], reverse=True)
+            if _old55:
+                _L55.append("")
+                _L55.append("  ── B2. 业绩候选追踪（前3个交易日标过的，今天怎样）──（v4：防鸣志那种候选第二天就丢）")
+                for _d, _k, _v in _old55[:20]:
+                    _now = _c2p55.get(_k)
+                    _gs = "扭亏" if (_v.get("g") or 0) >= 999 else ("+%.0f%%" % (_v.get("g") or 0))
+                    _fp = _v.get("pc")
+                    _fps = ("%+.2f%%" % _fp) if isinstance(_fp, (int, float)) else "?"
+                    _ns = ("今天%+.2f%%" % _now) if isinstance(_now, (int, float)) else "今天无快照"
+                    _L55.append(f"   {_d[5:]} {_v.get('name')}({_k}) {_gs} ｜ 当天{_fps} ｜ {_ns}")
+                _L55.append("  ★AI必做：这里的票如果在主线行业里、今天涨幅≤4%，照样算明日候选，不许因为新闻滚掉就不提")
+            os.makedirs("reports", exist_ok=True)
+            _j55.dump(_cd55, open(_cp55, "w", encoding="utf-8"), ensure_ascii=False)
+        except Exception as _e55b:
+            _L55.append(f"  [patch55 v4] 候选追踪失败：{type(_e55b).__name__}: {str(_e55b)[:60]}")
         _L55.append("  ★AI必做：主线里有业绩大增的 = 双重确认，优先；只有业绩没主线的 = 次选")
         _L55.append("=" * 60)
         try:

@@ -15,6 +15,14 @@ serenity_feed.py —— 白毛股神 Serenity (@aleabitoreddit) 全量信息源
   · build_section(hours) → 报告里的一节（最近N小时原创推文全文 + A股映射线索）
   · reports/白毛股神_最新.txt（单独一份，方便直接发给AI）
 用法：被 patch_usa54 注入到 A股 / 美股 两个扫描器里，每次扫描都跑。
+
+v2 2026-10-29：存档机器人10/28后停更（最新一条10-27 16:28 UTC），
+  谷歌/微软财报当晚她说了什么完全看不到。用户：『白毛的，想办法弄到资讯』。
+  → 加【实时补抓层】：存档最新一条距今>6小时，就在 GitHub Actions 里直接抓：
+     ④ x.com 公开主页 HTML + r.jina.ai 阅读器（用存档作者写好的解析器，
+        锁定在固定 commit，不跟随对方后续改动，防供应链风险）
+     ⑤ syndication.twitter.com 公开时间线（嵌入挂件用的接口，免登录）
+  抓到的按 id 去重合并进存档，报告里标【🔴实时】，并写明存档停更多少小时。
 """
 import datetime
 import html
@@ -91,6 +99,91 @@ def _load_substack(n=5):
     return out
 
 
+YAN_SHA = "37fe3956de4259479d22d46ebcb22a45372a86d9"
+YAN_FETCHER = ("https://raw.githubusercontent.com/yan-labs/serenity-aleabitoreddit/"
+               + YAN_SHA + "/scripts/public_x_profile.py")
+SYND_URL = "https://syndication.twitter.com/srv/timeline-profile/screen-name/aleabitoreddit"
+X_USER, X_UID, X_NAME = "aleabitoreddit", "1940360837547565056", "Serenity"
+
+
+def _live_xprofile(log):
+    """x.com 公开主页 + jina 阅读器（存档作者的解析器，锁定commit）。"""
+    import importlib.util
+    import tempfile
+    code = _get(YAN_FETCHER, timeout=30).text
+    d = tempfile.mkdtemp()
+    p = os.path.join(d, "public_x_profile.py")
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(code)
+    spec = importlib.util.spec_from_file_location("_sf_pxp", p)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    posts, diag = m.fetch_public_posts(X_USER, X_UID, X_NAME, limit=12)
+    errs = diag.get("errors") or []
+    log.append(f"  实时补抓④[x.com/jina]：{len(posts)}条（{diag.get('source') or diag.get('profile_source') or '?'}）"
+               + (f" 错误{len(errs)}：{str(errs[0])[:80]}" if errs else ""))
+    return posts
+
+
+def _live_synd(log):
+    """syndication 公开时间线（网页嵌入挂件接口）。"""
+    t = _get(SYND_URL, timeout=30).text
+    m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', t, re.S)
+    if not m:
+        log.append("  实时补抓⑤[syndication]：页面里没有时间线数据")
+        return []
+    j = json.loads(m.group(1))
+    ents = (((j.get("props") or {}).get("pageProps") or {}).get("timeline") or {}).get("entries") or []
+    out = []
+    for e in ents:
+        tw = ((e or {}).get("content") or {}).get("tweet") or {}
+        if not tw or not tw.get("id_str"):
+            continue
+        try:
+            dt = datetime.datetime.strptime(tw["created_at"], "%a %b %d %H:%M:%S %z %Y")
+            iso = dt.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        except Exception:
+            continue
+        out.append({"id": tw["id_str"], "text": tw.get("full_text") or tw.get("text") or "",
+                    "createdAtISO": iso,
+                    "isReply": bool(tw.get("in_reply_to_status_id_str")),
+                    "isRetweet": bool(tw.get("retweeted_status"))})
+    log.append(f"  实时补抓⑤[syndication]：{len(out)}条")
+    return out
+
+
+def _merge_live(data, log, stale_hours=6):
+    """存档停更超过 stale_hours 小时 → 实时补抓并按 id 去重合并。返回(合并后, 新增条数, 存档停更小时)。"""
+    latest = max((x.get("createdAtISO") or "" for x in data), default="")
+    age = None
+    try:
+        age = (datetime.datetime.utcnow()
+               - datetime.datetime.strptime(latest[:19], "%Y-%m-%dT%H:%M:%S")).total_seconds() / 3600
+    except Exception:
+        pass
+    if age is not None and age <= stale_hours:
+        return data, 0, age
+    log.append(f"  ⚠️ 存档最新一条 {latest[:16]} UTC，已停更约{age:.0f}小时 → 启动实时补抓" if age is not None
+               else "  ⚠️ 存档时间读不到 → 启动实时补抓")
+    seen = {str(x.get("id")) for x in data}
+    added = 0
+    for fn in (_live_xprofile, _live_synd):
+        try:
+            for p in fn(log):
+                pid = str(p.get("id") or "")
+                if pid and pid not in seen and p.get("createdAtISO"):
+                    p = dict(p)
+                    p["_live"] = True
+                    data.append(p)
+                    seen.add(pid)
+                    added += 1
+        except Exception as e:
+            log.append(f"  [实时补抓] {fn.__name__} 失败：{type(e).__name__}: {str(e)[:80]}")
+    if not added:
+        log.append("  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI")
+    return data, added, age
+
+
 def _bj(iso):
     try:
         dt = datetime.datetime.strptime(iso[:19], "%Y-%m-%dT%H:%M:%S")
@@ -112,6 +205,11 @@ def build_section(hours=48, max_posts=25, write_file=True):
         if st:
             L.append(f"  存档最近同步：{st.get('last_update_time', '?')} UTC"
                      f"（状态 {st.get('source_health', {}).get('status', '?')}）")
+        live_log = []
+        data, added, age = _merge_live(list(data), live_log)
+        L += live_log
+        if added:
+            L.append(f"  ✅ 实时补抓新增 {added} 条（下面标【🔴实时】的就是存档里还没有的）")
         if not data:
             L.append("  🔴 存档读不到 → 请用户截图她的X主页发给AI")
             return L
@@ -151,7 +249,7 @@ def build_section(hours=48, max_posts=25, write_file=True):
         for x in (orig + reps)[:max_posts]:
             bj = _bj(x.get("createdAtISO", ""))
             ts = bj.strftime("%m-%d %H:%M") if bj else "?"
-            kind = "↩回复" if x.get("isReply") else "📝原创"
+            kind = ("🔴实时" if x.get("_live") else "") + ("↩回复" if x.get("isReply") else "📝原创")
             txt = re.sub(r"https://t\.co/\S+", "", x.get("text", "")).strip()
             txt = re.sub(r"\s+", " ", txt)[:700]
             L.append(f"  [{ts}] {kind} {txt}")
