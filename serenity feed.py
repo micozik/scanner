@@ -41,22 +41,23 @@ SUBSTACK_RSS = "https://aleabitoreddit.substack.com/feed"
 
 # 她常谈的主题 → A股对应环节（只是找线索的方向，买前仍要过死穴四问）
 THEME_TO_A = [
-    ("存储/HBM", r"\bmemory\b|HBM|DRAM|NAND|\$MU\b|\$SNDK|SK ?Hynix|\$SKHY|Samsung",
-     "存储链：香农芯创300475 江波龙301308 佰维存储688525 兆易创新603986 德明利001309"),
+    # v4 2026-10-30「吃透白毛」：映射到【卖稀缺品、有定价权】的一方，不映射到【买稀缺品、成本被挤压】的一方
+    ("存储/HBM/NOR", r"\bmemory\b|HBM|DRAM|NAND|\bNOR\b|\$MU\b|\$SNDK|SK ?Hynix|\$SKHY|Samsung|\$ESMT",
+     "存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本"),
     ("激光/光芯片/InP", r"laser|\bCW\b|EML|DFB|InP|\$LITE|\$AAOI|\$SIVE|\$AXTI|\$COHR|photonic",
-     "光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428"),
+     "激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)"),
     ("CPO/光模块", r"\bCPO\b|\bNPO\b|transceiver|pluggable|1\.6T|3\.2T",
-     "光模块/CPO：中际旭创300308 新易盛300502 天孚通信300394"),
+     "光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块"),
     ("人形机器人/物理AI", r"humanoid|robot|physical AI|Optimus|Unitree|Agility|\$AGLT|\$CCXI|embodied",
-     "机器人链：雷赛智能002979 双环传动002472 拓普集团601689 绿的谐波688017 长盈精密300115"),
+     "机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility"),
     ("激光雷达", r"LiDAR|\$AEVA|FMCW",
      "激光雷达：禾赛(美股HSAI)/速腾(港股) → A股上游看光芯片"),
     ("算力/云/数据中心", r"capex|neocloud|\$NBIS|\$CRWV|\$IREN|data ?center|\$SPCX|GPU|\$NVDA",
      "算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837"),
     ("CPU/ARM", r"\bCPU\b|\$ARM\b|\$INTC|\$AMD\b",
      "CPU/接口：澜起科技688008 海光信息688041"),
-    ("衬底/封装材料", r"substrate|ABF|glass|T-?glass|PCB",
-     "载板/玻纤：深南电路002916 中材科技002080 凯盛科技600552"),
+    ("衬底/封装材料", r"substrate|ABF|glass|T-?glass|PCB|MLCC",
+     "载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408"),
 ]
 
 
@@ -351,8 +352,10 @@ def build_section(hours=48, max_posts=25, write_file=True):
                 L.append(f"  [{d}] {t}  {l}")
 
         L.append("")
-        L.append("  ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票")
-        L.append("           ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达")
+        L.append("  ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；")
+        L.append("    ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；")
+        L.append("    ④她的论点通常5-60个交易日才兑现，且A股映射近月大幅跑输美股对标→必须过我们的资金开关+20日线向上才买；")
+        L.append("    ⑤网上流传伪造截图（如『中际旭创拿下英伟达NPO订单』）→只认存档/实时抓到的原文；⑥她带杠杆、单月最大回撤−49%，不抄她的仓位和时点")
     except Exception as e:
         L.append(f"  [serenity_feed] 失败：{type(e).__name__}: {e}")
     finally:
