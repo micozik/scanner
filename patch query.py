@@ -261,6 +261,13 @@ def kline_info(ak, code):
              "streak": None, "volr": None}
         o["from_hi"] = (last / o["hi"] - 1) * 100
         o["from_lo"] = (last / o["lo"] - 1) * 100
+        # v4 2026-10-30：均线（买前必看20日线方向——招商轮船买在下行20日线下方的教训）
+        if len(closes) >= 25:
+            o["ma5"] = sum(closes[-5:]) / 5.0
+            o["ma10"] = sum(closes[-10:]) / 10.0
+            o["ma20"] = sum(closes[-20:]) / 20.0
+            o["ma20p"] = sum(closes[-25:-5]) / 20.0
+            o["d5"] = (last / closes[-6] - 1) * 100
         if cp is not None:
             pcts = [float(x) for x in list(df[cp])]
             lim = board_limit(code)
@@ -396,6 +403,43 @@ def _tx_ff(code):
                 % (dt, net / 1e4, (inn or 0) / 1e4, (outt or 0) / 1e4)]
     except Exception as e:
         note("资金[腾讯]失败 %s %s" % (code, str(e)[:60]))
+        return None
+
+
+def _sina_ff(code):
+    """v4 2026-10-30：新浪资金流向兜底（新浪快照在海外IP能通；腾讯ff_接口已返回空）。单位元。"""
+    try:
+        import json as _j, re as _r, urllib.request
+        url = ("https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+               "MoneyFlow.ssl_qsfx_zjlrqs?page=1&num=5&sort=opendate&asc=0&daima=" + _tx_mk(code))
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0",
+                                                   "Referer": "https://finance.sina.com.cn/"})
+        raw = urllib.request.urlopen(req, timeout=8).read()
+        try:
+            txt = raw.decode("gbk")
+        except Exception:
+            txt = raw.decode("utf-8", "ignore")
+        txt = txt.strip()
+        if not txt.startswith("["):
+            note("资金[新浪]非预期返回 %s %s" % (code, txt[:60]))
+            return None
+        txt = _r.sub(r'([{,])\s*([A-Za-z_][A-Za-z0-9_]*)\s*:', r'\1"\2":', txt)
+        rows = _j.loads(txt)
+        out = []
+        for r in rows[:5]:
+            def g(k):
+                try:
+                    return float(r.get(k) or 0)
+                except Exception:
+                    return 0.0
+            main = g("r0_net") + g("r1_net")
+            out.append("%s 主力%+.2f亿（新浪：超大单%+.2f 大单%+.2f）"
+                       % (str(r.get("opendate", ""))[:10], main / 1e8, g("r0_net") / 1e8, g("r1_net") / 1e8))
+        if out:
+            note("资金[新浪]兜底 %s" % code)
+        return out or None
+    except Exception as e:
+        note("资金[新浪]失败 %s %s" % (code, str(e)[:60]))
         return None
 
 
@@ -549,7 +593,7 @@ def run():
 
         def job(cd):
             k, e = kline_info(ak, cd)
-            return (cd, k, e, main_biz(ak, cd), fund_flow(ak, cd) or _tx_ff(cd))
+            return (cd, k, e, main_biz(ak, cd), fund_flow(ak, cd) or _sina_ff(cd) or _tx_ff(cd))
 
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             res = list(ex.map(job, stocks))
@@ -579,6 +623,21 @@ def run():
                     e2.append("5日/60日量=%.2f(%s)" % (k["volr"], t))
                 if e2:
                     w("   " + " ｜ ".join(e2))
+                if k.get("ma20"):
+                    up = k["ma20"] > k["ma20p"]
+                    above = k["last"] > k["ma20"]
+                    pct = s.get("pct") if s else None
+                    gate = []
+                    gate.append("✅站上20日线" if above else "❌在20日线下方")
+                    gate.append("✅20日线向上" if up else "❌20日线向下")
+                    gate.append(("✅5日涨%.1f%%" if k["d5"] <= 15 else "❌5日涨%.1f%%>15%%") % k["d5"])
+                    try:
+                        gate.append(("✅今日%+.1f%%" if float(pct) <= 4 else "❌今日%+.1f%%>4%%") % float(pct))
+                    except Exception:
+                        pass
+                    ok = above and up and k["d5"] <= 15
+                    w("   均线 MA5 %.2f ｜ MA10 %.2f ｜ MA20 %.2f(%s)" % (k["ma5"], k["ma10"], k["ma20"], "↗" if up else "↘"))
+                    w("   买点关：" + " ".join(gate) + (" → 🟢可考虑" if ok else " → 🔴不买"))
             else:
                 w("   K线位置【无数据】%s" % err)
             w("   ★主营构成★ " + (" / ".join(biz) if biz
