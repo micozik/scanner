@@ -4,20 +4,23 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6759条）
   存档最近同步：2026-10-27T16:28:25Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-10-27T16:28 UTC，已停更约62小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-10-27T16:28 UTC，已停更约63小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
   实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 2 条（下面标【🔴实时】的就是存档里还没有的）
-  最近48小时：原创 1 条 / 回复 0 条（北京时间）
+  ✅ 实时补抓新增 3 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 2 条 / 回复 0 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     激光/光芯片/InP ×10 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-  提到的代码：$MRVL×1 $SIVE×1 $LITE×1
+    CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
+  提到的代码：$MRVL×2 $INTC×1 $SIVE×1 $LITE×1
 
   ── 原创推文（全文，新→旧）──
+  [10-30 15:07] 🔴实时📝原创 Just large-cap investors in $INTC, $MRVL, and others… Finally getting a taste of what high beta investors endured over the past 3 months.
+      https://x.com/aleabitoreddit/status/2116064400381706600
   [10-29 10:00] 🔴实时📝原创 ## Post ## Serenity on X: "Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable." * [](https://x.com/aleabitoreddit) Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable. * [](https://x.com/xbonkk) Looks like Serenity just woke up and got the news 😂 * [](https://x.com/tengyanAI) imo 
       https://x.com/aleabitoreddit/status/2115624832947917083
 
