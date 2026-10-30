@@ -39,20 +39,28 @@ jobs:
           done
           echo "════ 应用完毕 ════"
 
-      - run: python scanner_usa.py
+      - run: |
+          touch /tmp/run_start
+          python scanner_usa.py
 
       - name: 提交美股报告
         if: always()
         run: |
           git config user.name "scanner-bot"
           git config user.email "scanner-bot@users.noreply.github.com"
-          git add -f reports/美股_最新.txt
-          git add reports/
-          if git diff --cached --quiet; then echo "无改动"; exit 0; fi
-          git commit -m "美股扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M') run#${{ github.run_number }}"
-          for i in 1 2 3; do
-            git pull --rebase --autostash origin main && git push && break
-            sleep 3
+          rm -rf /tmp/rp_backup; mkdir -p /tmp/rp_backup
+          # ★只带走本次新写的报告文件，reset 后原样复制回去：不会rebase冲突、不会覆盖别的工作流刚推的报告
+          (cd reports && find . -type f -newer /tmp/run_start -exec cp --parents {} /tmp/rp_backup/ \;)
+          echo "本次新写文件：$(find /tmp/rp_backup -type f | wc -l) 个"
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p reports; cp -a /tmp/rp_backup/. reports/
+            git add -A -f reports/
+            if git diff --staged --quiet; then echo "对齐后无差异"; exit 0; fi
+            git commit -q -m "美股扫描 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M') run#${{ github.run_number }}"
+            if git push origin HEAD:main; then echo "✅ 推送成功"; exit 0; fi
+            echo "⚠️ 推送失败，重试"; sleep $((i*5))
           done
           echo ""
           echo "════════════════════════════════════════════"

@@ -38,20 +38,26 @@ jobs:
       - name: 运行龙虎榜扫描
         env:
           BACKFILL: ${{ github.event.inputs.backfill }}
-        run: python scanner_lhb.py
-      - name: 提交报告（失败重试3次）
+        run: |
+          touch /tmp/run_start
+          python scanner_lhb.py
+      - name: 提交报告（reset+复制，不rebase）
+        if: always()
         run: |
           git config user.name  "scanner-bot"
           git config user.email "scanner-bot@users.noreply.github.com"
-          git add reports/
-          if git diff --staged --quiet; then
-            echo "无变化"; exit 0
-          fi
-          git commit -m "lhb $(date -u '+%Y-%m-%d %H:%M') UTC"
-          for i in 1 2 3; do
-            git fetch origin main || true
-            git rebase origin/main || git rebase --abort || true
+          rm -rf /tmp/rp_backup; mkdir -p /tmp/rp_backup
+          # ★只带走本次新写的报告文件，reset 后原样复制回去：不会rebase冲突、不会覆盖别的工作流刚推的报告
+          (cd reports && find . -type f -newer /tmp/run_start -exec cp --parents {} /tmp/rp_backup/ \;)
+          echo "本次新写文件：$(find /tmp/rp_backup -type f | wc -l) 个"
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p reports; cp -a /tmp/rp_backup/. reports/
+            git add -A -f reports/
+            if git diff --staged --quiet; then echo "对齐后无差异"; exit 0; fi
+            git commit -q -m "lhb $(date -u '+%Y-%m-%d %H:%M') UTC run#${{ github.run_number }}"
             if git push origin HEAD:main; then echo "✅ 推送成功"; exit 0; fi
-            sleep 10
+            echo "⚠️ 推送失败，重试"; sleep $((i*5))
           done
           exit 1
