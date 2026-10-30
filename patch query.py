@@ -432,9 +432,8 @@ def _sina_ff(code):
                     return float(r.get(k) or 0)
                 except Exception:
                     return 0.0
-            main = g("r0_net") + g("r1_net")
-            out.append("%s 主力%+.2f亿（新浪：超大单%+.2f 大单%+.2f）"
-                       % (str(r.get("opendate", ""))[:10], main / 1e8, g("r0_net") / 1e8, g("r1_net") / 1e8))
+            main = g("r0_net") + g("r1_net")   # 实测该接口只有 r0_net（=主力净流入），r1_net 为空
+            out.append("%s 主力%+.2f亿（新浪）" % (str(r.get("opendate", ""))[:10], main / 1e8))
         if out:
             note("资金[新浪]兜底 %s" % code)
         return out or None
