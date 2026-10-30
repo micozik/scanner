@@ -694,7 +694,9 @@ def _group_winrate():
         px = {}
         for _, r in sp.iterrows():
             try:
-                px[str(r[cc])[-6:]] = float(pd.to_numeric(r[cp], errors="coerce"))
+                _v = float(pd.to_numeric(r[cp], errors="coerce"))
+                if _v == _v and _v > 0:   # ★10/30：停牌/夜间为0或NaN的不算，防假-100%
+                    px[str(r[cc])[-6:]] = _v
             except Exception:
                 continue
         buckets = {}
@@ -1070,7 +1072,7 @@ def backtest_institution():
             r = spot[c_str.str.contains(cd, na=False)]
             if len(r) > 0:
                 v = pd.to_numeric(r.iloc[0][c_price], errors="coerce")
-                return float(v) if pd.notna(v) else None
+                return float(v) if (pd.notna(v) and float(v) > 0) else None
         except Exception:
             pass
         return None
