@@ -16,6 +16,8 @@ serenity_feed.py —— 白毛股神 Serenity (@aleabitoreddit) 全量信息源
   · reports/白毛股神_最新.txt（单独一份，方便直接发给AI）
 用法：被 patch_usa54 注入到 A股 / 美股 两个扫描器里，每次扫描都跑。
 
+v3 2026-10-30：v2两路（x.com 403、syndication 429）实测都被拦 → 加11个RSS镜像轮询 + syndication三地址退避重试，
+  每路成败都写进报告，用数据找出哪条路活着。
 v2 2026-10-29：存档机器人10/28后停更（最新一条10-27 16:28 UTC），
   谷歌/微软财报当晚她说了什么完全看不到。用户：『白毛的，想办法弄到资讯』。
   → 加【实时补抓层】：存档最新一条距今>6小时，就在 GitHub Actions 里直接抓：
@@ -125,12 +127,16 @@ def _live_xprofile(log):
     return posts
 
 
-def _live_synd(log):
-    """syndication 公开时间线（网页嵌入挂件接口）。"""
-    t = _get(SYND_URL, timeout=30).text
+SYND_URLS = [
+    "https://syndication.twitter.com/srv/timeline-profile/screen-name/aleabitoreddit",
+    "https://syndication.twitter.com/srv/timeline-profile/screen-name/aleabitoreddit?showReplies=true",
+    "https://syndication.twimg.com/srv/timeline-profile/screen-name/aleabitoreddit",
+]
+
+
+def _parse_synd(t):
     m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', t, re.S)
     if not m:
-        log.append("  实时补抓⑤[syndication]：页面里没有时间线数据")
         return []
     j = json.loads(m.group(1))
     ents = (((j.get("props") or {}).get("pageProps") or {}).get("timeline") or {}).get("entries") or []
@@ -148,8 +154,90 @@ def _live_synd(log):
                     "createdAtISO": iso,
                     "isReply": bool(tw.get("in_reply_to_status_id_str")),
                     "isRetweet": bool(tw.get("retweeted_status"))})
-    log.append(f"  实时补抓⑤[syndication]：{len(out)}条")
     return out
+
+
+def _live_synd(log):
+    """syndication 公开时间线（网页嵌入挂件接口）。v3：三个地址轮流试，429 退避重试。"""
+    import time
+    for u in SYND_URLS:
+        for attempt in range(2):
+            try:
+                r = __import__("requests").get(u, timeout=25, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
+                    "Accept-Language": "en-US,en;q=0.9"})
+                if r.status_code == 429:
+                    time.sleep(4 + attempt * 6)
+                    continue
+                r.raise_for_status()
+                out = _parse_synd(r.text)
+                log.append(f"  实时补抓⑤[syndication] {u.split('/')[2]}：{len(out)}条")
+                if out:
+                    return out
+                break
+            except Exception as e:
+                log.append(f"  实时补抓⑤[syndication] {u.split('/')[2]} 失败：{type(e).__name__}: {str(e)[:60]}")
+                break
+        else:
+            log.append(f"  实时补抓⑤[syndication] {u.split('/')[2]}：连续429（限流）")
+    return []
+
+
+# v3：RSS 镜像（nitter/RSSHub 类，各家死活不定，全部轮一遍，谁活用谁）
+RSS_MIRRORS = [
+    "https://nitter.net/aleabitoreddit/rss",
+    "https://xcancel.com/aleabitoreddit/rss",
+    "https://nitter.poast.org/aleabitoreddit/rss",
+    "https://nitter.privacydev.net/aleabitoreddit/rss",
+    "https://nitter.tiekoetter.com/aleabitoreddit/rss",
+    "https://nitter.space/aleabitoreddit/rss",
+    "https://lightbrd.com/aleabitoreddit/rss",
+    "https://nitter.kuuro.net/aleabitoreddit/rss",
+    "https://nuku.trabun.org/aleabitoreddit/rss",
+    "https://rsshub.app/twitter/user/aleabitoreddit",
+    "https://rsshub.rssforever.com/twitter/user/aleabitoreddit",
+]
+
+
+def _live_mirrors(log):
+    from email.utils import parsedate_to_datetime
+    ok_src, fails = None, []
+    for u in RSS_MIRRORS:
+        host = u.split("/")[2]
+        try:
+            r = __import__("requests").get(u, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+            if r.status_code != 200 or "<item" not in r.text:
+                fails.append(f"{host}:{r.status_code}")
+                continue
+            out = []
+            for it in re.findall(r"<item>(.*?)</item>", r.text, re.S)[:30]:
+                link = re.search(r"<link>(.*?)</link>", it, re.S)
+                sid = re.search(r"/status/(\d+)", link.group(1) if link else "")
+                d = re.search(r"<pubDate>(.*?)</pubDate>", it, re.S)
+                ttl = re.search(r"<title>(.*?)</title>", it, re.S)
+                desc = re.search(r"<description>(.*?)</description>", it, re.S)
+                if not sid or not d:
+                    continue
+                txt = html.unescape(re.sub(r"<!\[CDATA\[|\]\]>|<[^>]+>", " ",
+                                           (desc.group(1) if desc else (ttl.group(1) if ttl else "")))).strip()
+                try:
+                    iso = parsedate_to_datetime(d.group(1).strip()).astimezone(
+                        datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                except Exception:
+                    continue
+                t0 = html.unescape(ttl.group(1)) if ttl else ""
+                out.append({"id": sid.group(1), "text": re.sub(r"\s+", " ", txt)[:1500], "createdAtISO": iso,
+                            "isReply": t0.startswith("R to @") or txt.startswith("@"),
+                            "isRetweet": t0.startswith("RT by")})
+            if out:
+                ok_src = host
+                log.append(f"  实时补抓⑥[RSS镜像] ✅{host}：{len(out)}条（其余已试失败：{'、'.join(fails) or '无'}）")
+                return out
+            fails.append(f"{host}:空")
+        except Exception as e:
+            fails.append(f"{host}:{type(e).__name__}")
+    log.append("  实时补抓⑥[RSS镜像] 全部失败：" + "、".join(fails))
+    return []
 
 
 def _merge_live(data, log, stale_hours=6):
@@ -167,7 +255,7 @@ def _merge_live(data, log, stale_hours=6):
                else "  ⚠️ 存档时间读不到 → 启动实时补抓")
     seen = {str(x.get("id")) for x in data}
     added = 0
-    for fn in (_live_xprofile, _live_synd):
+    for fn in (_live_mirrors, _live_synd, _live_xprofile):
         try:
             for p in fn(log):
                 pid = str(p.get("id") or "")
