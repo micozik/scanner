@@ -4,7 +4,7 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6759条）
   存档最近同步：2026-10-27T16:28:25Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-10-27T16:28 UTC，已停更约63小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-10-27T16:28 UTC，已停更约70小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
@@ -14,15 +14,17 @@
   最近48小时：原创 2 条 / 回复 0 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×10 → 光芯片/衬底：源杰科技688498 长光华芯688048 仕佳光子688313 云南锗业002428
-    CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$MRVL×2 $INTC×1 $SIVE×1 $LITE×1
+    激光/光芯片/InP ×13 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
+  提到的代码：$MRVL×2 $SIVE×2 $AAOI×1 $TE×1 $INTC×1 $LITE×1
 
   ── 原创推文（全文，新→旧）──
-  [10-30 15:07] 🔴实时📝原创 Just large-cap investors in $INTC, $MRVL, and others… Finally getting a taste of what high beta investors endured over the past 3 months.
+  [10-30 15:07] 🔴实时📝原创 ## Post ## Serenity on X: "Just large-cap investors in $INTC, $MRVL, and others… Finally getting a taste of what high beta investors endured over the past 3 months." * [](https://x.com/aleabitoreddit) Just large-cap investors in $INTC, $MRVL, and others… Finally getting a taste of what high beta investors endured over the past 3 months. [](https://x.com/Wolfex_Yeat) Serenity these selloffs of the companies reporting earnings are absolutely brutal what are your thoughts on that ? Made with AI * [](https://x.com/JClaydog) I actually decided to 'de-risk' recently and added positions in Amazon, Intel, Google etc. So this is my bad guys, I've even cursed the mega caps now. * [](https://x.com/Pep_
       https://x.com/aleabitoreddit/status/2116064400381706600
   [10-29 10:00] 🔴实时📝原创 ## Post ## Serenity on X: "Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable." * [](https://x.com/aleabitoreddit) Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable. * [](https://x.com/xbonkk) Looks like Serenity just woke up and got the news 😂 * [](https://x.com/tengyanAI) imo 
       https://x.com/aleabitoreddit/status/2115624832947917083
 
-  ★AI必做：①她提到的美股环节 → 找A股同环节、还没涨的票
-           ②她直接点名的A股当天常20cm，不追；③她的战绩无独立审计，只当雷达
+  ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
+    ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
+    ④她的论点通常5-60个交易日才兑现，且A股映射近月大幅跑输美股对标→必须过我们的资金开关+20日线向上才买；
+    ⑤网上流传伪造截图（如『中际旭创拿下英伟达NPO订单』）→只认存档/实时抓到的原文；⑥她带杠杆、单月最大回撤−49%，不抄她的仓位和时点
