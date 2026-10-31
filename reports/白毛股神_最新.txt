@@ -2,30 +2,26 @@
 ============================================================
 🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
 ============================================================
-  来源：raw.githubusercontent.com 公开存档（共6759条）
-  存档最近同步：2026-10-27T16:28:25Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-10-27T16:28 UTC，已停更约80小时 → 启动实时补抓
+  来源：raw.githubusercontent.com 公开存档（共6763条）
+  存档最近同步：2026-10-30T17:29:59Z UTC（状态 ok）
+  ⚠️ 存档最新一条 2026-10-30T17:29 UTC，已停更约12小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
+  实时补抓⑤[syndication] syndication.twitter.com：2条
   实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 3 条（下面标【🔴实时】的就是存档里还没有的）
-  最近72小时：原创 3 条 / 回复 0 条（北京时间）
+  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
+  最近72小时：原创 2 条 / 回复 1 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    存储/HBM/NOR ×26 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    激光/光芯片/InP ×10 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    算力/云/数据中心 ×1 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-  提到的代码：$SIVE×1 $LITE×1 $MRVL×1 $MU×1 $SKHY×1 $GOOGL×1
+    激光/光芯片/InP ×3 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+  提到的代码：$LWLG×1 $LITE×1 $MRVL×1
 
   ── 原创推文（全文，新→旧）──
-  [10-31 01:29] 🔴实时📝原创 Trump: “This is Biden’s market”
+  [10-31 01:29] 📝原创 Trump: “This is Biden’s market”
       https://x.com/aleabitoreddit/status/2116221086107111712
-  [10-29 10:00] 🔴实时📝原创 ## Post ## Serenity on X: "Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable." * [](https://x.com/aleabitoreddit) Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable. * [](https://x.com/xbonkk) Looks like Serenity just woke up and got the news 😂 * [](https://x.com/tengyanAI) imo 
+  [10-29 10:00] 📝原创 Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable.
       https://x.com/aleabitoreddit/status/2115624832947917083
-  [10-28 10:11] 🔴实时📝原创 ## Post ## Serenity on X: "Woah, stellar earnings from and AI market projections... 1. SK Hynix: "Memory supply shortage to persist through 2030". 2. There's the $4.8B operating profit beat ($62.8B vs. ~$58B est)... 80% operating margins. So you had: - Revenue: $78.84B vs. $74.02B - Operating profit: $62.80B vs. $58.00B - Operating margin: 79.7% vs. 78.3% With forward projections of 3. "Our DRAM and HBM volumes through 2029 are effectively sold out." 4. Signed LTAs covering 50%+ of 2027–2028 capacity, while retaining pricing flexibility 5. The company intends to fulfill its commitment to return 50%+ of cumulative FCF for 2025-2027 6. "We have included deposits and other practical enforcement
-      https://x.com/aleabitoreddit/status/2115265167919653233
+  [10-30 13:42] ↩回复 @rob55178 I said that at $12. Now $LWLG is $4. But I do have small positions now as part of that “it’s all over” trade
+      https://x.com/aleabitoreddit/status/2116043028695781658
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
