@@ -640,6 +640,11 @@ def run():
                     except Exception:
                         pass
                     ok = above and up and k["d5"] <= 15
+                    try:   # ★11/01：今日涨>4%（含涨停）= 不追，原来漏判，泸州老窖涨停也显示🟢
+                        if float(pct) > 4:
+                            ok = False
+                    except Exception:
+                        pass
                     w("   均线 MA5 %.2f ｜ MA10 %.2f ｜ MA20 %.2f(%s)" % (k["ma5"], k["ma10"], k["ma20"], "↗" if up else "↘"))
                     w("   买点关：" + " ".join(gate) + (" → 🟢可考虑" if ok else " → 🔴不买"))
             else:
