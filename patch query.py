@@ -207,9 +207,14 @@ def _load_snapshot_once(ak):
     return {}
 
 
+_TK = [None]   # ★11/01：K线单独计时。东财快照有时要90秒+，把总预算吃光，导致均线/买点关整段缺失（q57）
+
+
 def kline_info(ak, code):
-    if over():
-        return None, "超时预算用尽"
+    if _TK[0] is None:
+        _TK[0] = time.time()
+    if time.time() - _TK[0] > 150:
+        return None, "K线预算用尽"
     end = datetime.datetime.now().strftime("%Y%m%d")
     start = (datetime.datetime.now()
              - datetime.timedelta(days=95)).strftime("%Y%m%d")
