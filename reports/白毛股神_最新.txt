@@ -4,11 +4,13 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6763条）
   存档最近同步：2026-10-30T17:29:59Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-10-30T17:29 UTC，已停更约56小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-10-30T17:29 UTC，已停更约60小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
   实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
   最近48小时：原创 0 条 / 回复 0 条（北京时间）
 
   ── 原创推文（全文，新→旧）──
