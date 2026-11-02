@@ -4,18 +4,16 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6763条）
   存档最近同步：2026-10-30T17:29:59Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-10-30T17:29 UTC，已停更约71小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-10-30T17:29 UTC，已停更约72小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
   实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
   🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近72小时：原创 1 条 / 回复 0 条（北京时间）
+  最近48小时：原创 0 条 / 回复 0 条（北京时间）
 
   ── 原创推文（全文，新→旧）──
-  [10-31 01:29] 📝原创 Trump: “This is Biden’s market”
-      https://x.com/aleabitoreddit/status/2116221086107111712
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
