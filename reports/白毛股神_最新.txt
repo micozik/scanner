@@ -4,22 +4,19 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6763条）
   存档最近同步：2026-10-30T17:29:59Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-10-30T17:29 UTC，已停更约12小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-10-30T17:29 UTC，已停更约56小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
   实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
-  最近72小时：原创 2 条 / 回复 1 条（北京时间）
-
-  ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×3 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-  提到的代码：$LWLG×1 $LITE×1 $MRVL×1
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
+  最近72小时：原创 1 条 / 回复 1 条（北京时间）
+  提到的代码：$LWLG×1
 
   ── 原创推文（全文，新→旧）──
   [10-31 01:29] 📝原创 Trump: “This is Biden’s market”
       https://x.com/aleabitoreddit/status/2116221086107111712
-  [10-29 10:00] 📝原创 Holy sht, $MRVL is in the final stages of a deal to acquire $LITE. Attempting to vertically integrate the most supply constrained chokepoints… with lasers. Is very big brain if they pull it off and suddenly makes other laser players more strategically valuable.
-      https://x.com/aleabitoreddit/status/2115624832947917083
   [10-30 13:42] ↩回复 @rob55178 I said that at $12. Now $LWLG is $4. But I do have small positions now as part of that “it’s all over” trade
       https://x.com/aleabitoreddit/status/2116043028695781658
 
