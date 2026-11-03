@@ -933,8 +933,8 @@ def _load_watchlist():
                         if len(_r) == 0:
                             _bad.append((_code, _name, "★代码在全市场查无此股★"))
                             continue
-                        _real = str(_r.iloc[0][_cn]).strip()
-                        _want = str(_name).strip()
+                        _real = str(_r.iloc[0][_cn]).replace(" ", "").replace("\u3000", "").strip()   # ★11/03 腾讯源"五 粮 液"带空格→假警报
+                        _want = str(_name).replace(" ", "").replace("\u3000", "").strip()
                         # ETF名称各源写法不一，只比前两字
                         if "ETF" in _want.upper():
                             if _want[:2] and _want[:2] not in _real:
