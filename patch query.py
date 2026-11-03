@@ -659,20 +659,29 @@ def deep_margin(code):
 
 
 def deep_industry(code):
-    """所属行业：新浪公司其他信息页"""
+    """所属行业/概念：新浪公司其他信息页（按表格单元格解析）"""
     import re as _r
     try:
         h = _http("https://vip.stock.finance.sina.com.cn/corp/go.php/vCI_CorpOtherInfo/stockid/%s/menu_num/2.phtml" % code)
-        t = _strip(h)
-        m = _r.search(r"所属行业板块\s*(?:行业\s*)?([一-龥A-Za-z]{2,12})", t)
-        inds = []
-        if m:
-            inds.append(m.group(1))
-        m2 = _r.search(r"所属概念板块(.{0,200})", t)
-        con = []
-        if m2:
-            con = [x for x in _r.findall(r"[一-龥A-Za-z0-9]{2,10}", m2.group(1))
-                   if x not in ("板块", "概念", "同概念个股", "所属概念板块", "点击查看")][:8]
+        cells = [_strip(x) for x in _r.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", h, _r.S)]
+        cells = [x for x in cells if x]
+        skip = ("板块名称", "同行业个股", "同概念个股", "点击查看", "所属行业板块", "所属概念板块", "所属系",
+                "所属指数", "板块信息", "行业", "概念", "")
+
+        def grab(mark, stops):
+            out = []
+            if mark not in cells:
+                return out
+            for x in cells[cells.index(mark) + 1:]:
+                if x in stops:
+                    break
+                if x not in skip and not x.isdigit() and len(x) <= 14 and x not in out:
+                    out.append(x)
+            return out[:8]
+        inds = grab("所属行业板块", ("所属概念板块", "所属系", "所属指数"))
+        con = grab("所属概念板块", ("所属系", "所属指数", "所属行业板块"))
+        if not inds and not con:
+            note("行业[新浪]解析不到 %s 单元格:%s" % (code, "|".join(cells[:14])[:120]))
         return inds, con
     except Exception as e:
         note("行业[新浪]失败 %s %s" % (code, str(e)[:50]))
@@ -706,8 +715,8 @@ def my_assets():
     for fn in ("我的清单.txt",):
         try:
             t = open(fn, encoding="utf-8").read()
-            a = _r.search(r"总资产\s*([\d.]+)", t)
-            c = _r.search(r"现金\s*([\d.]+)", t)
+            a = _r.search(r"^账户\s*\|\s*总资产\s*\|\s*([\d.]+)", t, _r.M)
+            c = _r.search(r"^账户\s*\|\s*现金\s*\|\s*([\d.]+)", t, _r.M)
             hold = _r.findall(r"^持仓\s*\|\s*(\d{6})", t, _r.M)
             return (float(a.group(1)) if a else None, float(c.group(1)) if c else None, hold)
         except Exception:
@@ -931,7 +940,11 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
         w("   ④限售解禁：前30天~后120天 无")
     else:
         w("   ④限售解禁：" + " ｜ ".join(ul[:4]))
-        sc.append(("解禁", -1, "窗口内有解禁（资本出货窗口）"))
+        _td = (datetime.datetime.utcnow() + datetime.timedelta(hours=8)).strftime("%Y-%m-%d")
+        if any(x[:10] >= _td for x in ul):
+            sc.append(("解禁", -1, "未来120天有解禁（资本出货窗口）"))
+        else:
+            w("      （已过的解禁，不扣分；看解禁后资金是否承接）")
     # ⑤ 两融
     mg = dp.get("margin")
     if mg and len(mg) >= 2:
@@ -983,11 +996,13 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
             else:
                 stop = max(last - 2 * atr, (k.get("ma20") or 0) * 0.97 if (k.get("ma20") or 0) < last else 0, k["lo"] * 0.97)
                 stop = min(stop, last - 1.2 * atr)
-            tgt = k["hi"] if k["hi"] > last * 1.05 else last + 3 * atr
+            _rs = sorted(x for x in (k.get("hi20"), k.get("ma60"), k.get("ma120"), k.get("hi"), k.get("boll_hi"))
+                         if x and x >= last * 1.03)
+            tgt = _rs[0] if _rs else last + 3 * atr   # 目标=第一道≥3%的压力位（不拿60日高画大饼）
             rr = (tgt - last) / (last - stop) if last > stop else None
             w("   ⑨ATR14 %.2f(%.1f%%) ｜ 止损 %.2f(%.1f%%) ｜ 目标 %.2f(%+.1f%%，%s) ｜ 赔率 %s"
               % (atr, atr / last * 100, stop, (stop / last - 1) * 100, tgt, (tgt / last - 1) * 100,
-                 "60日高" if k["hi"] > last * 1.05 else "3×ATR", ("%.1f:1" % rr) if rr else "—"))
+                 "第一压力位" if _rs else "3×ATR", ("%.1f:1" % rr) if rr else "—"))
             if TA:
                 risk = TA * 1e4 * 0.025
                 sh = int(risk / (last - stop) / 100) * 100 if last > stop else 0
@@ -1017,10 +1032,10 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
         pass
     if sm is not None:
         sc.append(("主力5日", 1 if sm > 0 else -1, "%+.2f亿" % sm))
-        if "派发" in tag:
+        if tag.startswith("🔴派发"):
             veto.append("资本视角=派发（散户接盘）")
             sc.append(("资本视角", -2, "派发"))
-        elif "吸筹" in tag:
+        elif tag.startswith("🟢吸筹"):
             sc.append(("资本视角", 1, "吸筹"))
     # ★综合结论
     tot = sum(x[1] for x in sc)
@@ -1032,9 +1047,9 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
         vd = "🟡观察（分数够但赔率/买点未齐，等回踩支撑）"
     else:
         vd = "🔴不买"
-    stage = ("资金方在【吸筹】阶段→可跟着埋伏" if "吸筹" in tag else
-             "资金方在【拉升】阶段→只在回踩MA10/MA20跟，不追" if "拉升" in tag else
-             "资金方在【派发】阶段→别当接盘侠" if "派发" in tag else
+    stage = ("资金方在【吸筹】阶段→可跟着埋伏" if tag.startswith("🟢吸筹") else
+             "资金方在【拉升】阶段→只在回踩MA10/MA20跟，不追" if tag.startswith("🟡拉升") else
+             "资金方在【派发】阶段→别当接盘侠" if tag.startswith("🔴派发") else
              "资金方在【出逃/砸盘】→等止跌信号" if tag else "资金阶段【无数据】")
     w("   ★综合结论★ %s ｜ 总分 %+d" % (vd, tot))
     w("      计分：" + " ".join("%s%+d(%s)" % (a, b, c) for a, b, c in sc))
@@ -1078,7 +1093,10 @@ def run():
         _save(L, bj)
         return
 
-    snap = load_snapshot(ak)
+    if all(q.replace(" ", "").isdigit() and len(q.replace(" ", "")) == 6 for q in items):
+        snap = {}   # ★11/03 全是代码：跳过新浪/东财快照（海外常失败白耗~100秒），直接腾讯补
+    else:
+        snap = load_snapshot(ak)
     n2c = {}
     for cd, v in snap.items():
         n2c[v["name"].replace(" ", "")] = cd
