@@ -34,6 +34,7 @@ jobs:
         run: |
           touch /tmp/run_start
           python backtest.py
+          python factor_search.py || echo 因子搜索失败
       - name: 提交报告（reset+复制，不rebase）
         if: always()
         run: |
