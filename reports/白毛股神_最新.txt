@@ -4,7 +4,7 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6772条）
   存档最近同步：2026-11-02T16:43:57Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-02T16:43 UTC，已停更约19小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-02T16:43 UTC，已停更约23小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:ConnectionError、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
@@ -17,7 +17,7 @@
     激光/光芯片/InP ×26 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
     CPO/光模块 ×2 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     算力/云/数据中心 ×1 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-  提到的代码：$MRVL×7 $LITE×6 $SIVE×3 $AAOI×3 $COHR×2 $NVDA×1 $CRDO×1 $SMTC×1 $MTSI×1
+  提到的代码：$MRVL×7 $LITE×6 $AAOI×3 $SIVE×3 $COHR×2 $NVDA×1 $CRDO×1 $MTSI×1 $SMTC×1
 
   ── 原创推文（全文，新→旧）──
   [11-03 00:43] 📝原创 $LITE standalone would likely be up on earnings after their new $5B CPO/NPO announcement (separate from $NVDA). The margins on that are likely 60%+… which shows how profitable laser players would be at scale. (Greensboro alone would be $5B revenue/year) In terms of the $MRVL
