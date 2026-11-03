@@ -1336,8 +1336,8 @@ def run():
         if _PICKS:
             import json as _jp
             os.makedirs("reports/picks", exist_ok=True)
-            with open("reports/picks/%s.json" % bj.strftime("%Y%m%d_%H%M%S"), "w", encoding="utf-8") as _f:
-                _jp.dump(_PICKS, _f, ensure_ascii=False, indent=1)
+            with open("reports/picks/%s.json" % bj.strftime("%Y%m%d_%H%M%S"), "w", encoding="utf-8") as _fh:
+                _jp.dump(_PICKS, _fh, ensure_ascii=False, indent=1)
             w("   📒 已记入选股样本库 %d 条（reports/picks/）" % len(_PICKS))
     except Exception as _e:
         w("   样本库写入失败 %s" % str(_e)[:50])
