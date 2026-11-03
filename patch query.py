@@ -672,13 +672,14 @@ def run():
             # ★11/03 资本视角：主力 vs 散户（主力净额的反面≈散户）。价涨+主力出＝派发给散户；价平/跌+主力进＝吸筹
             try:
                 import re as _re_ff
-                _vals = []
-                for _x in (ff or []):
-                    _m = _re_ff.search(r"主力([+-]?[\d.]+)亿", str(_x))
+                _dv = {}
+                for _x in (ff or []):   # ★11/03修：不同数据源顺序相反（东财旧→新、新浪新→旧），按日期排序取最近5天
+                    _m = _re_ff.search(r"(\d{4}-\d{2}-\d{2}).*?主力([+-]?[\d.]+)亿", str(_x))
                     if _m:
-                        _vals.append(float(_m.group(1)))
+                        _dv[_m.group(1)] = float(_m.group(2))
+                _vals = [_dv[d] for d in sorted(_dv)][-5:]
                 if len(_vals) >= 3 and k and k.get("d5") is not None:
-                    _sm = sum(_vals[:5])
+                    _sm = sum(_vals)
                     _d5 = k["d5"]
                     if _sm > 0 and _d5 <= 2:
                         _tag = "🟢吸筹（主力在买、价格没涨＝散户在卖给主力）"
@@ -688,7 +689,7 @@ def run():
                         _tag = "🟡拉升（主力边买边拉，留意放量滞涨＝转派发）"
                     else:
                         _tag = "⚪出逃/砸盘（主力卖、价格跌）"
-                    w("   资本视角：5日主力合计%+.2f亿 × 5日涨跌%+.1f%% → %s" % (_sm, _d5, _tag))
+                    w("   资本视角：近%d日主力合计%+.2f亿（截至%s）× 5日涨跌%+.1f%% → %s" % (len(_vals), _sm, sorted(_dv)[-1], _d5, _tag))
             except Exception:
                 pass
 
