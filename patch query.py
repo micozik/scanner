@@ -718,6 +718,57 @@ def deep_industry(code):
         return None, None
 
 
+def deep_pk(code):
+    """★11/03 第三口径：腾讯盘口大单占比（买盘大单/买盘小单/卖盘大单/卖盘小单）"""
+    try:
+        txt = _tx_get("https://qt.gtimg.cn/q=s_pk" + _tx_mk(code))
+        f = txt.split('="', 1)[1].split('"', 1)[0].split("~")
+        v = [float(x) for x in f[:4]]
+        return {"bb": v[0], "bs": v[1], "sb": v[2], "ss": v[3]}
+    except Exception as e:
+        note("盘口大单[腾讯]失败 %s %s" % (code, str(e)[:50]))
+        return None
+
+
+def deep_minute(code):
+    """★11/03 分时：腾讯当日分钟线 → 均价线、站上均价线时间占比、量能时间分布、尾盘30分钟、开盘竞价"""
+    try:
+        import json as _j
+        mk = _tx_mk(code)
+        raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/minute/query?code=" + mk)
+        dd = _j.loads(raw)["data"][mk]
+        rows = dd["data"]["data"]
+        pts = []
+        for r in rows:
+            a = r.split()
+            pts.append((a[0], float(a[1]), float(a[2]), float(a[3]) if len(a) > 3 else None))
+        qt = dd.get("qt", {}).get(mk, [])
+        prev = float(qt[4]) if len(qt) > 4 else None
+        op = float(qt[5]) if len(qt) > 5 else None
+        return {"pts": pts, "prev": prev, "open": op}
+    except Exception as e:
+        note("分时[腾讯]失败 %s %s" % (code, str(e)[:50]))
+        return None
+
+
+_PREV = {}
+
+
+def prev_verdicts():
+    """读样本库里每只股票最近一次结论（结论只说一次：变了必须写新事实）"""
+    if _PREV:
+        return _PREV
+    import glob as _g
+    for fn in sorted(_g.glob("reports/picks/*.json")):
+        try:
+            for p in json.load(open(fn, encoding="utf-8")):
+                _PREV[p["code"]] = p
+        except Exception:
+            pass
+    _PREV["__loaded__"] = 1
+    return _PREV
+
+
 _IDX = {}
 
 
@@ -761,7 +812,9 @@ def deep_all(ak, code):
                   ("news", lambda: deep_news(code)),
                   ("unlock", lambda: deep_unlock(ak, code)),
                   ("margin", lambda: deep_margin(code)),
-                  ("ind", lambda: deep_industry(code))):
+                  ("ind", lambda: deep_industry(code)),
+                  ("pk", lambda: deep_pk(code)),
+                  ("minute", lambda: deep_minute(code))):
         try:
             d[k] = fn()
         except Exception as e:
@@ -896,6 +949,66 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
         pass
     if cd in (HOLD or []):
         w("   📌 已持仓")
+    # ⓪b 第三口径：腾讯盘口大单
+    try:
+        pk = dp.get("pk")
+        if pk:
+            net = pk["bb"] - pk["sb"]
+            amt = (s or {}).get("amt")
+            est = (" ≈ 大单净%+.2f亿" % (net * float(amt) / 1e8)) if amt else ""
+            w("   ⓪b腾讯盘口：买盘大单%.0f%% 卖盘大单%.0f%% ｜ 买盘小单%.0f%% 卖盘小单%.0f%% → 大单净%+.0f个点%s（今日实时，第三口径）"
+              % (pk["bb"] * 100, pk["sb"] * 100, pk["bs"] * 100, pk["ss"] * 100, net * 100, est))
+            if sm is not None and abs(net) >= 0.03 and (net > 0) != (sm > 0):
+                w("      ⚠️ 今日大单方向与近5日主力方向相反 → 主力态度可能在转向，盯紧")
+        else:
+            w("   ⓪b腾讯盘口【无数据】")
+    except Exception:
+        pass
+    # ⑩ 分时（盘感）
+    try:
+        mn = dp.get("minute")
+        if mn and mn.get("pts"):
+            pts, prev, op = mn["pts"], mn["prev"], mn["open"]
+            above = n = 0
+            vwap = None
+            for t_, px, cv, ca in pts:
+                if cv and ca:
+                    vwap = ca / (cv * 100)
+                    n += 1
+                    above += 1 if px >= vwap else 0
+            last_px = pts[-1][1]
+            vols = []
+            pv_ = 0
+            for t_, px, cv, ca in pts:
+                vols.append((t_, cv - pv_))
+                pv_ = cv
+            tot = sum(v for _, v in vols) or 1
+            v_open = sum(v for t_, v in vols if t_ <= "1000") / tot * 100
+            v_tail = sum(v for t_, v in vols if t_ >= "1430") / tot * 100
+            p1430 = [px for t_, px, _, _ in pts if t_ <= "1430"]
+            tail = (last_px / p1430[-1] - 1) * 100 if p1430 and pts[-1][0] > "1430" else None
+            hi_t = max(pts, key=lambda x: x[1])[0]
+            lo_t = min(pts, key=lambda x: x[1])[0]
+            gap = (op / prev - 1) * 100 if op and prev else None
+            w("   ⑩分时：竞价开盘%s ｜ 均价线%s 现价%s（%s）｜ 站上均价线时间%.0f%% ｜ 最高%s 最低%s"
+              % (("%+.2f%%" % gap) if gap is not None else "—", ("%.2f" % vwap) if vwap else "—", last_px,
+                 "线上" if vwap and last_px >= vwap else "线下", (above / n * 100) if n else 0,
+                 hi_t[:2] + ":" + hi_t[2:], lo_t[:2] + ":" + lo_t[2:]))
+            msg = []
+            if n and above / n >= 0.7:
+                msg.append("全天被托在均价线上=资金控盘强")
+            elif n and above / n <= 0.3:
+                msg.append("全天压在均价线下=抛压重")
+            if tail is not None:
+                msg.append("尾盘30分钟%+.2f%%%s" % (tail, "（尾盘拉升，留意是否做收盘价）" if tail > 1 else ("（尾盘跳水=资金撤）" if tail < -1 else "")))
+            msg.append("早盘30分钟量占%.0f%% 尾盘量占%.0f%%" % (v_open, v_tail))
+            if hi_t < "1000" and last_px < max(p for _, p, _, _ in pts) * 0.98:
+                msg.append("⚠️冲高回落（早盘高点后回落>2%=诱多/出货嫌疑）")
+            w("      " + " ｜ ".join(msg))
+        else:
+            w("   ⑩分时【无数据】")
+    except Exception as _e:
+        w("   ⑩分时异常 %s" % str(_e)[:40])
     # ① 估值
     v = dp.get("val")
     if v:
@@ -1109,6 +1222,17 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
                        "verdict": vd[:1] + ("可买" if "可买" in vd else ("观察" if "观察" in vd else "不买")),
                        "score": tot, "stop": locals().get("stop"), "target": locals().get("tgt"), "rr": rr,
                        "veto": veto, "stage": tag[:4] if tag else ""})
+    except Exception:
+        pass
+    try:
+        pvv = prev_verdicts().get(cd)
+        if pvv:
+            vnow = vd[:1] + ("可买" if "可买" in vd else ("观察" if "观察" in vd else "不买"))
+            if pvv.get("verdict") != vnow:
+                w("   🔴结论变了：上次 %s %s@%s → 本次 %s ——必须写出是哪条新事实（价格破位/新消息/资金反转），没有新事实就沿用上次结论"
+                  % (pvv.get("t"), pvv.get("verdict"), pvv.get("price"), vnow))
+            else:
+                w("   ✅与上次结论一致（%s %s@%s）" % (pvv.get("t"), pvv.get("verdict"), pvv.get("price")))
     except Exception:
         pass
     w("   ★综合结论★ %s ｜ 总分 %+d" % (vd, tot))
