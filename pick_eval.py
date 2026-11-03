@@ -64,14 +64,16 @@ def main():
     w("   样本=每次查股票的★综合结论★（同一天同一只取当天第一次结论）")
     w("=" * 64)
     seen = {}
-    for fn in sorted(glob.glob("reports/picks/*.json")):
+    allp = []
+    for fn in glob.glob("reports/picks/*.json"):
         try:
-            for p in json.load(open(fn, encoding="utf-8")):
-                key = (p["t"][:10], p["code"])
-                if key not in seen and p.get("price"):
-                    seen[key] = p
+            allp += [p for p in json.load(open(fn, encoding="utf-8")) if p.get("price")]
         except Exception:
             pass
+    for p in sorted(allp, key=lambda x: x["t"]):   # 按结论时间排序，同一天同一只取最早那条
+        key = (p["t"][:10], p["code"])
+        if key not in seen:
+            seen[key] = p
     samples = list(seen.values())
     groups = {}
     detail = []
