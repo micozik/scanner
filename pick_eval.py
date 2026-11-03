@@ -43,6 +43,18 @@ def kline(code):
     return k
 
 
+_IX = []
+
+
+def _idx():
+    if not _IX:
+        url = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000300,day,,,80,qfq"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://gu.qq.com/"})
+        d = json.loads(urllib.request.urlopen(req, timeout=8).read().decode("utf-8", "ignore"))["data"]["sh000300"]
+        _IX.extend((r[0], float(r[2])) for r in (d.get("qfqday") or d.get("day") or []))
+    return _IX
+
+
 def main():
     L = []
     w = L.append
@@ -80,6 +92,14 @@ def main():
             if tg and h >= tg:
                 res["first"] = "先到目标"
                 break
+        try:   # 同期沪深300 T+5，算超额（跑不赢指数=白忙）
+            hk = _idx()
+            hi_ = [i for i, r in enumerate(hk) if r[0] > d0]
+            h0 = [r for r in hk if r[0] <= d0]
+            if len(hi_) >= 5 and h0 and res["T+5"] is not None:
+                res["ex5"] = res["T+5"] - (hk[hi_[4]][1] / h0[-1][1] - 1) * 100
+        except Exception:
+            pass
         v = p.get("verdict", "?")
         groups.setdefault(v, []).append(res)
         detail.append((p, res))
@@ -98,14 +118,18 @@ def main():
         a1, a3, a5, a10 = avg("T+1"), avg("T+3"), avg("T+5"), avg("T+10")
         x5 = [r["T+5"] for r in rs if r["T+5"] is not None]
         wr = (sum(1 for x in x5 if x > 0) / len(x5) * 100) if x5 else None
+        ex = [r["ex5"] for r in rs if r.get("ex5") is not None]
+        mx_loss = min(x5) if x5 else None
         ft = sum(1 for r in rs if r["first"] == "先到目标")
         fs = sum(1 for r in rs if r["first"] == "先碰止损")
         f = lambda t: ("%+6.2f%%" % t[0]) if t[0] is not None else "   —  "
-        w("  %-4s %4d  %s %s %s  %s  %s   %d/%d" % (v, len(rs), f(a1), f(a3), f(a5),
-                                                ("%5.0f%%" % wr) if wr is not None else "  —  ", f(a10), ft, fs))
+        w("  %-4s %4d  %s %s %s  %s  %s   %d/%d ｜ 超额沪深300(T+5)%s ｜ 最大单笔%s" % (
+            v, len(rs), f(a1), f(a3), f(a5), ("%5.0f%%" % wr) if wr is not None else "  —  ", f(a10), ft, fs,
+            ("%+.2f%%" % (sum(ex) / len(ex))) if ex else "—", ("%+.1f%%" % mx_loss) if mx_loss is not None else "—"))
     w("")
     w("  ⚠️ 每组T+5样本<20条时结论不可信")
-    w("  ★🟢可买 合格标准：T+5胜率≥60% 且 T+5平均≥+2% 且 比🔴不买组高≥2个点 且 先到目标>先碰止损 —— 达不到就改打分规则")
+    w("  ★🟢可买 合格标准（全部满足，≥30条才算数）：T+5胜率≥70% ｜ T+5平均≥+4% ｜ 跑赢沪深300≥+3个点 ｜")
+    w("     先到目标:先碰止损≥2:1 ｜ 比🔴不买组高≥4个点 ｜ 最大单笔亏损不超过止损位 —— 达不到就收紧打分，宁可少出🟢")
     # ★11/03 用户："高于15%你觉得就成功？代表我有85%失败" → 涨停命中率只是辅助，
     #   真正的成绩=按规则买卖的模拟交易：胜率、平均每笔收益、盈亏比
     #   规则：D日收盘预测 → D+1 开盘高开在区间内才买（主板+2~+7%，20cm +3~+10%）
@@ -155,7 +179,16 @@ def main():
         plr = (sum(wins) / len(wins)) / abs(sum(loss) / len(loss)) if wins and loss else None
         w("  成交%d笔（另有%d只竞价不符没买）｜ 胜率%.0f%% ｜ 每笔平均%+.2f%% ｜ 盈亏比%s" % (
             len(done), sum(1 for t in trades if t[4].startswith("未买")), wr, avg, ("%.2f" % plr) if plr else "—"))
-        w("  ★可用标准：成交≥30笔 且 胜率≥55% 且 每笔平均≥+1% 且 盈亏比≥1.5 —— 达不到不许重仓")
+        w("  ★可用标准（全部满足）：成交≥50笔 ｜ 胜率≥65% ｜ 每笔平均≥+3%（扣成本）｜ 盈亏比≥2 ｜ 最多连亏3笔 ｜")
+        w("     比\"随便买昨日涨停股\"的基准高≥2个点 —— 达不到不许实盘，只记录")
+        try:
+            _st, _mx = 0, 0
+            for _r in rs:
+                _st = _st + 1 if _r <= 0 else 0
+                _mx = max(_mx, _st)
+            w("  最长连亏 %d 笔" % _mx)
+        except Exception:
+            pass
         for d0, x, gap, ret, why in done[-10:]:
             w("    %s %s(%s) 高开%+.1f%% → %+.2f%% %s" % (d0, x["name"], x["code"], gap, ret, why))
     else:
@@ -165,6 +198,10 @@ def main():
         n = sum(v["n"] for v in zh.values())
         h = sum(v["hit"] for v in zh.values())
         ap = [v["avg_pct"] for v in zh.values() if v.get("avg_pct") is not None]
+        bp = [v["base_avg"] for v in zh.values() if v.get("base_avg") is not None]
+        if bp:
+            w("")
+            w("【基准】随便买一只昨日涨停股，次日平均 %+.2f%%（%d天）——我们的候选必须明显跑赢它" % (sum(bp) / len(bp), len(bp)))
         w("")
         w("【涨停猎手·辅助】%d天 预测%d只 次日涨停%d只 涨停命中率%s（只是辅助，不是成绩）｜ 次日平均%s" % (
             len(zh), n, h, ("%.0f%%" % (h / n * 100)) if n else "—", ("%+.2f%%" % (sum(ap) / len(ap))) if ap else "—"))

@@ -24,6 +24,7 @@ PRED_DIR = os.path.join(OUT_DIR, "zt_pred")
 HIT_FILE = os.path.join(OUT_DIR, "zt_hit.json")
 IND_HIST = os.path.join(OUT_DIR, "zt_ind_hist.json")
 L = []
+BASE = [None]
 
 
 def w(s=""):
@@ -167,6 +168,7 @@ def run_hunt():
         vals = [x for x in vals if x is not None]
         if vals:
             avg = sum(vals) / len(vals)
+            BASE[0] = avg   # 基准：随便买一只昨日涨停股的次日平均收益（我们的候选必须明显跑赢它）
             red = sum(1 for x in vals if x > 0) / len(vals) * 100
             w("  昨日涨停%d只 → 今日平均%+.2f%% ｜ 红盘率%.0f%%" % (len(vals), avg, red))
             mood += (1 if avg > 2 else (0 if avg > 0 else -2)) + (1 if red >= 60 else (-1 if red < 45 else 0))
@@ -334,7 +336,7 @@ def run_hunt():
                 pass
             h = [c for c in codes if c in zt_codes]
             pcs = [pct_map[c] for c in codes if pct_map.get(c) is not None]
-            hits[ds] = {"pred_from": prevf[-1][:8], "n": len(codes), "hit": len(h), "hit_codes": h,
+            hits[ds] = {"pred_from": prevf[-1][:8], "n": len(codes), "hit": len(h), "hit_codes": h, "base_avg": BASE[0],
                         "avg_pct": (sum(pcs) / len(pcs)) if pcs else None}
             save_json(HIT_FILE, hits)
             w("  %s预测%d只 → 今日涨停%d只 %s ｜ 今日平均涨幅%s" % (
