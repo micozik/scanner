@@ -505,7 +505,11 @@ def _http(url, ref="https://finance.sina.com.cn/", timeout=8):
     import urllib.request
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
                                                "Referer": ref})
-    raw = urllib.request.urlopen(req, timeout=timeout).read()
+    try:
+        raw = urllib.request.urlopen(req, timeout=timeout).read()
+    except Exception:
+        time.sleep(1.5)   # SSL握手偶发失败，重试一次
+        raw = urllib.request.urlopen(req, timeout=timeout).read()
     for enc in ("gbk", "utf-8"):
         try:
             return raw.decode(enc)
@@ -1170,6 +1174,17 @@ def run():
             k, e = kline_info(ak, cd)
             _em = fund_flow(ak, cd)
             _sn = _sina_ff(cd)
+            # ★11/03 东财资金离谱值校验：五粮液日成交~18亿，东财却给出单日-69亿 → 单日主力净额绝对值>当日成交额1.5倍=脏数据，弃用
+            try:
+                import re as _rq
+                _amt = (snap.get(cd) or {}).get("amt")
+                if _em and _amt:
+                    _mx = max(abs(float(_rq.search(r"主力([+-]?[\d.]+)亿", x).group(1))) for x in _em)
+                    if _mx * 1e8 > 1.5 * float(_amt):
+                        note("资金[东财]离谱值%.1f亿>成交额%.1f亿×1.5，弃用改新浪 %s" % (_mx, float(_amt) / 1e8, cd))
+                        _em = None
+            except Exception:
+                pass
             dd = deep_all(ak, cd)
             dd["sina_ff"] = _sn if _em else None   # ★11/03 两个口径交叉验证（同一天东财+0.02亿 vs 新浪+10.7亿）
             return (cd, k, e, main_biz(ak, cd), _em or _sn or _tx_ff(cd), dd)
