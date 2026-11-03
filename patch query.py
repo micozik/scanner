@@ -778,11 +778,12 @@ def index_ret(sym="sh000300"):
         return _IDX[sym]
     try:
         import json as _j
-        raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,30,qfq" % sym)
+        raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,70,qfq" % sym)
         dd = _j.loads(raw)["data"][sym]
         rows = dd.get("qfqday") or dd.get("day") or []
         c = [float(r[2]) for r in rows]
-        r = {"d5": (c[-1] / c[-6] - 1) * 100, "d20": (c[-1] / c[-21] - 1) * 100, "today": (c[-1] / c[-2] - 1) * 100}
+        r = {"d5": (c[-1] / c[-6] - 1) * 100, "d20": (c[-1] / c[-21] - 1) * 100, "today": (c[-1] / c[-2] - 1) * 100,
+             "ma60": sum(c[-60:]) / 60 if len(c) >= 60 else None, "last": c[-1]}
     except Exception as e:
         note("指数[腾讯]失败 %s %s" % (sym, str(e)[:50]))
         r = None
@@ -1202,6 +1203,26 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
             sc.append(("资本视角", -2, "派发"))
         elif tag.startswith("🟢吸筹"):
             sc.append(("资本视角", 1, "吸筹"))
+    # ⑪ 大盘环境（11/03 回测：800只×2.5年，大盘环境是影响最大的单一因素）
+    try:
+        if hs and hs.get("ma60"):
+            strong = hs["last"] > hs["ma60"]
+            w("   ⑪大盘环境：沪深300 %s60日线（%.0f vs %.0f）→ %s" % ("在" if strong else "跌破", hs["last"], hs["ma60"],
+                                                          "强市" if strong else "弱市"))
+            if not strong and ok:
+                w("      回测：弱市里的趋势单 7107笔 胜率52% 每笔−0.13%（加赔率≥2：胜率40% −0.53%）→ 趋势单在弱市历史上不赚钱，必须靠政策/资金关撑，仓位从严")
+                sc.append(("大盘", -1, "弱市趋势单历史负期望"))
+            elif not strong and okb:
+                w("      回测：弱市里的超跌单 3740笔 胜率40% 每笔+0.60% → 弱市超跌单略有优势")
+                sc.append(("大盘", 1, "弱市超跌单历史正期望"))
+            elif strong and ok:
+                w("      回测：强市趋势单 20443笔 胜率57% 每笔+0.64%（加赔率≥2：+1.55%）")
+                sc.append(("大盘", 1, "强市趋势单历史正期望"))
+            elif strong and okb:
+                w("      回测：强市超跌单 1801笔 胜率31% 每笔−0.60% → 强市别抄底")
+                sc.append(("大盘", -1, "强市超跌单历史负期望"))
+    except Exception:
+        pass
     # ★综合结论
     tot = sum(x[1] for x in sc)
     if veto:
