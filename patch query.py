@@ -318,20 +318,46 @@ def kline_info(ak, code):
 
 
 def main_biz(ak, code):
-    for fn in (lambda: ak.stock_zygc_em(symbol=code),
-               lambda: ak.stock_zygc_ym(symbol=code)):
-        try:
-            df = fn()
-            if df is None or len(df) == 0:
-                continue
-            ci = col(df, "主营构成", "分类", "项目")
-            cr = col(df, "收入比例", "占比", "营收占比")
-            if not ci:
-                continue
-            return ["%s %s" % (str(r[ci]), str(r[cr]) if cr else "")
-                    for _, r in df.head(6).iterrows()]
-        except Exception:
-            continue
+    """主营构成：东财(代码要带 SH/SZ 前缀，原来传6位一直失败) → 同花顺主营介绍兜底"""
+    try:
+        df = ak.stock_zygc_em(symbol=_tx_mk(code).upper())
+        if df is not None and len(df):
+            cd_ = col(df, "报告日期")
+            if cd_:
+                df = df[df[cd_].astype(str) == str(sorted(df[cd_].astype(str))[-1])]
+            ct = col(df, "分类类型")
+            if ct is not None:
+                for pref in ("按产品分类", "按行业分类"):
+                    sub = df[df[ct].astype(str) == pref]
+                    if len(sub):
+                        df = sub
+                        break
+            ci = col(df, "主营构成")
+            cr = col(df, "收入比例")
+            cm = col(df, "毛利率")
+            if ci:
+                out = []
+                for _, r in df.head(6).iterrows():
+                    try:
+                        out.append("%s 占%.0f%%%s" % (r[ci], float(r[cr]) * 100,
+                                                     (" 毛利%.0f%%" % (float(r[cm]) * 100)) if cm else ""))
+                    except Exception:
+                        out.append(str(r[ci]))
+                return out
+    except Exception as e:
+        note("主营[东财]失败 %s %s" % (code, str(e)[:40]))
+    try:
+        df = ak.stock_zyjs_ths(symbol=code)
+        if df is not None and len(df):
+            r = df.iloc[0]
+            out = []
+            for c in ("主营业务", "产品类型", "产品名称"):
+                if c in df.columns and str(r[c]) not in ("", "nan", "None"):
+                    out.append("%s：%s" % (c, str(r[c])[:60]))
+            if out:
+                return out
+    except Exception as e:
+        note("主营[同花顺]失败 %s %s" % (code, str(e)[:40]))
     return None
 
 
@@ -675,7 +701,7 @@ def deep_industry(code):
             for x in cells[cells.index(mark) + 1:]:
                 if x in stops:
                     break
-                if x not in skip and not x.isdigit() and len(x) <= 14 and x not in out:
+                if x not in skip and not x.isdigit() and not x.startswith("备注") and len(x) <= 14 and x not in out:
                     out.append(x)
             return out[:8]
         inds = grab("所属行业板块", ("所属概念板块", "所属系", "所属指数"))
@@ -842,6 +868,25 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
     pct = s.get("pct") if s else None
     last = (k or {}).get("last") or (s or {}).get("price")
     w("   ┄┄┄┄┄┄┄┄ 深查（估值/基本面/消息/解禁/两融/行业/强弱/支撑压力/仓位）┄┄┄┄┄┄┄┄")
+    try:
+        import re as _r
+        sf = dp.get("sina_ff")
+        if sf:
+            vv = {}
+            for x in sf:
+                m_ = _r.search(r"(\d{4}-\d{2}-\d{2}).*?主力([+-]?[\d.]+)亿", str(x))
+                if m_:
+                    vv[m_.group(1)] = float(m_.group(2))
+            if vv:
+                ss = sum(vv[d] for d in sorted(vv)[-5:])
+                agree = (ss > 0) == ((sm or 0) > 0)
+                w("   ⓪资金交叉验证：新浪口径5日%+.2f亿 vs 东财口径%+.2f亿 → %s" % (
+                    ss, sm or 0, "✅方向一致" if agree else "⚠️方向打架＝大单/超大单分歧，主力态度不明，资本视角降级为参考"))
+                if not agree:
+                    sm = None
+                    tag = ""
+    except Exception:
+        pass
     if cd in (HOLD or []):
         w("   📌 已持仓")
     # ① 估值
@@ -1123,7 +1168,11 @@ def run():
 
         def job(cd):
             k, e = kline_info(ak, cd)
-            return (cd, k, e, main_biz(ak, cd), fund_flow(ak, cd) or _sina_ff(cd) or _tx_ff(cd), deep_all(ak, cd))
+            _em = fund_flow(ak, cd)
+            _sn = _sina_ff(cd)
+            dd = deep_all(ak, cd)
+            dd["sina_ff"] = _sn if _em else None   # ★11/03 两个口径交叉验证（同一天东财+0.02亿 vs 新浪+10.7亿）
+            return (cd, k, e, main_biz(ak, cd), _em or _sn or _tx_ff(cd), dd)
 
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             res = list(ex.map(job, stocks))
