@@ -207,7 +207,35 @@ def run_hunt():
     if not intraday:
         hist[ds] = ind_cnt
         save_json(IND_HIST, dict(sorted(hist.items())[-30:]))
+    # 历史不足2天：直接回拉前几个交易日的涨停池补齐（首次上线时库是空的）
+    try:
+        dd = datetime.datetime.strptime(ds, "%Y%m%d")
+        got = 0
+        for _ in range(7):
+            dd -= datetime.timedelta(days=1)
+            k = dd.strftime("%Y%m%d")
+            if dd.weekday() >= 5:
+                continue
+            if k not in hist:
+                try:
+                    pz = retry(lambda: ak.stock_zt_pool_em(date=k), n=2)
+                    ci = col(pz, "所属行业") if pz is not None and len(pz) else None
+                    if ci:
+                        cnt = {}
+                        for v in pz[ci]:
+                            cnt[str(v)] = cnt.get(str(v), 0) + 1
+                        hist[k] = cnt
+                except Exception:
+                    pass
+            if k in hist:
+                got += 1
+            if got >= 2:
+                break
+        save_json(IND_HIST, dict(sorted(hist.items())[-30:]))
+    except Exception:
+        pass
     prev_days = [k for k in sorted(hist) if k < ds][-2:]
+    w("  （对比日：%s）" % "、".join(prev_days))
     main = {}
     for k, v in sorted(ind_cnt.items(), key=lambda x: -x[1])[:10]:
         streak = sum(1 for d in prev_days if hist.get(d, {}).get(k, 0) >= 2)
