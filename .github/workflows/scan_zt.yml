@@ -37,6 +37,7 @@ jobs:
         run: |
           touch /tmp/run_start
           python scanner_zt.py
+          python pick_eval.py || echo "命中率统计失败（不影响猎手）"
       - name: 提交报告（reset+复制，不rebase）
         if: always()
         run: |

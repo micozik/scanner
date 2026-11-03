@@ -865,6 +865,9 @@ def _yi(v):
     return ("%.2f亿" % (v / 1e8)) if abs(v) >= 1e6 else ("%.2f" % v)
 
 
+_PICKS = []   # ★11/03 选股样本库：每次查股票的结论都记下，pick_eval.py 算命中率
+
+
 def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
     """★11/03 深查输出 + 综合结论（一次查完就有结论）"""
     dp = dp or {}
@@ -1100,6 +1103,14 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
              "资金方在【拉升】阶段→只在回踩MA10/MA20跟，不追" if tag.startswith("🟡拉升") else
              "资金方在【派发】阶段→别当接盘侠" if tag.startswith("🔴派发") else
              "资金方在【出逃/砸盘】→等止跌信号" if tag else "资金阶段【无数据】")
+    try:
+        _PICKS.append({"t": (datetime.datetime.utcnow() + datetime.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M"),
+                       "code": cd, "name": (s or {}).get("name"), "price": last,
+                       "verdict": vd[:1] + ("可买" if "可买" in vd else ("观察" if "观察" in vd else "不买")),
+                       "score": tot, "stop": locals().get("stop"), "target": locals().get("tgt"), "rr": rr,
+                       "veto": veto, "stage": tag[:4] if tag else ""})
+    except Exception:
+        pass
     w("   ★综合结论★ %s ｜ 总分 %+d" % (vd, tot))
     w("      计分：" + " ".join("%s%+d(%s)" % (a, b, c) for a, b, c in sc))
     w("      站位：" + stage)
@@ -1321,6 +1332,15 @@ def run():
     w("   那两项仍需截图。位置/连板/缩量/板块成分 以后不用再截。")
     for s in _LOG[:8]:
         w("     · %s" % s)
+    try:
+        if _PICKS:
+            import json as _jp
+            os.makedirs("reports/picks", exist_ok=True)
+            with open("reports/picks/%s.json" % bj.strftime("%Y%m%d_%H%M%S"), "w", encoding="utf-8") as _f:
+                _jp.dump(_PICKS, _f, ensure_ascii=False, indent=1)
+            w("   📒 已记入选股样本库 %d 条（reports/picks/）" % len(_PICKS))
+    except Exception as _e:
+        w("   样本库写入失败 %s" % str(_e)[:50])
     w("   耗时 %.1f 秒" % (time.time() - _T0))
     w("=" * 68)
     _save(L, bj)
