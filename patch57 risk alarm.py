@@ -38,12 +38,25 @@ NEW = r'''    # ===== @@MARK@@：持仓风险预警·提前量 =====
                 "=" * 60]
         # --- 持仓：读 我的清单.txt ---
         _hold57 = []
+        _LEAD57 = {}
+
+        def _lead_chg57(sym):
+            """领先指标当日涨跌幅：6位代码=A股（腾讯K线）；其他=外盘期货代码（akshare 新浪外盘，如 OIL=布伦特）"""
+            if _re57.fullmatch(r"\d{6}", sym):
+                r = _k57(sym)
+                return sym, (r[-1][1] / r[-2][1] - 1) * 100
+            _df = ak.futures_foreign_commodity_realtime(symbol=[sym])
+            _c = pick_col(_df, ["涨跌幅", "change_percent"])
+            _n = pick_col(_df, ["名称", "name"])
+            return (str(_df.iloc[0][_n]) if _n else sym), float(_df.iloc[0][_c])
         for _fn in ("我的清单.txt", "我的清单 .txt"):
             if os.path.exists(_fn):
                 for _ln in open(_fn, encoding="utf-8"):  # scanner 没有 import io
                     _p = [x.strip() for x in _ln.split("|")]
                     if len(_p) >= 6 and _p[0] == "持仓" and _re57.fullmatch(r"\d{6}", _p[1]):
                         try:
+                            _lead = _p[12] if len(_p) >= 13 else ""   # ★11/03 第13列=领先指标（如 OIL / 600519）
+                            _LEAD57[_p[1]] = _lead
                             _hold57.append((_p[1], _p[2], float(_p[3]), float(_p[5])))
                         except Exception:
                             pass
@@ -91,6 +104,17 @@ NEW = r'''    # ===== @@MARK@@：持仓风险预警·提前量 =====
                         _sig.append(f"跑输板块{_chg - _spc:.1f}个点")
                     if _sfl <= -20 and _spc < -1:
                         _sig.append("板块大额净流出且下跌")
+                # ★11/03 领先指标背离：驱动先动、股价还没跟 = 危险提前量（11/2布伦特−2.8%而招商还+1.5%，那天就该走）
+                _ld = _LEAD57.get(_cd) or ""
+                if _ld:
+                    try:
+                        _ln, _lc = _lead_chg57(_ld)
+                        _info += f"｜领先指标{_ln}{_lc:+.2f}%"
+                        if _lc <= -2 and _chg > -1:
+                            _sig.append(f"领先指标背离（{_ln}{_lc:+.1f}%，股价未跟）")
+                            _sig.append("领先指标背离（双倍权重）")
+                    except Exception as _le:
+                        _info += f"｜领先指标{_ld}取不到({type(_le).__name__})"
                 _dist = (_px / _stop - 1) * 100 if _stop else 99
                 _info += f"｜距止损{_stop}：{_dist:+.1f}%"
                 if _dist <= 2:

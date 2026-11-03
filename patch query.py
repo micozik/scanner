@@ -273,6 +273,9 @@ def kline_info(ak, code):
             o["ma20"] = sum(closes[-20:]) / 20.0
             o["ma20p"] = sum(closes[-25:-5]) / 20.0
             o["d5"] = (last / closes[-6] - 1) * 100
+            _m20 = o["ma20"]
+            _sd = (sum((c - _m20) ** 2 for c in closes[-20:]) / 20.0) ** 0.5
+            o["boll_lo"] = _m20 - 2 * _sd   # ★11/03：布林下轨，超跌错杀单用（招商10/23正好打到下轨15.87）
         if cp is not None:
             pcts = [float(x) for x in list(df[cp])]
             lim = board_limit(code)
@@ -646,7 +649,20 @@ def run():
                     except Exception:
                         pass
                     w("   均线 MA5 %.2f ｜ MA10 %.2f ｜ MA20 %.2f(%s)" % (k["ma5"], k["ma10"], k["ma20"], "↗" if up else "↘"))
-                    w("   买点关：" + " ".join(gate) + (" → 🟢可考虑" if ok else " → 🔴不买"))
+                    w("   买点关（趋势单）：" + " ".join(gate) + (" → 🟢可考虑" if ok else " → 🔴不买"))
+                    # ★11/03 第二种买法：超跌错杀单（招商10/23从22.85跌到15.97、打到布林下轨，驱动VLCC运价却在60年新高——趋势关会把它挡掉）
+                    try:
+                        b1 = k["from_hi"] <= -25
+                        b2 = k["from_lo"] <= 5 or (k.get("boll_lo") and k["last"] <= k["boll_lo"] * 1.02)
+                        b3 = (k.get("volr") is not None and k["volr"] <= 1.0) or (pct is not None and float(pct) > 0)
+                        bg = ["%s距60日高%.0f%%" % ("✅" if b1 else "❌", k["from_hi"]),
+                              "%s贴近60日低/布林下轨(%.2f)" % ("✅" if b2 else "❌", k.get("boll_lo") or 0),
+                              "%s抛压衰竭(缩量或收红)" % ("✅" if b3 else "❌")]
+                        okb = b1 and b2 and b3
+                        w("   超跌关（错杀单）：" + " ".join(bg) + (
+                            " → 🟢可埋伏（AI须确认驱动仍在高位/改善；止损=60日低下3%%≈%.2f）" % (k["lo"] * 0.97) if okb else " → —"))
+                    except Exception:
+                        pass
             else:
                 w("   K线位置【无数据】%s" % err)
             w("   ★主营构成★ " + (" / ".join(biz) if biz
