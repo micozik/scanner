@@ -217,7 +217,7 @@ def kline_info(ak, code):
         return None, "K线预算用尽"
     end = datetime.datetime.now().strftime("%Y%m%d")
     start = (datetime.datetime.now()
-             - datetime.timedelta(days=95)).strftime("%Y%m%d")
+             - datetime.timedelta(days=200)).strftime("%Y%m%d")   # ★11/03 拉长到200天：要MA60/MA120
     df, err = None, ""
     for fn in (
         lambda: ak.stock_zh_a_hist(symbol=code, period="daily",
@@ -239,13 +239,13 @@ def kline_info(ak, code):
             import json as _j
             import pandas as _pd
             mk = _tx_mk(code)
-            raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,100,qfq" % mk)
+            raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,140,qfq" % mk)
             dd = _j.loads(raw)["data"][mk]
             rows = dd.get("qfqday") or dd.get("day") or []
             recs, prev = [], None
             for r in rows:
                 c = float(r[2])
-                recs.append({"收盘": c, "成交量": float(r[5]),
+                recs.append({"收盘": c, "成交量": float(r[5]), "最高": float(r[3]), "最低": float(r[4]),
                              "涨跌幅": ((c / prev - 1) * 100) if prev else 0.0})
                 prev = c
             if len(recs) > 5:
@@ -259,7 +259,8 @@ def kline_info(ak, code):
         cc = col(df, "收盘", "close")
         cp = col(df, "涨跌幅", "pct_chg")
         cv = col(df, "成交量", "volume")
-        closes = [float(x) for x in list(df[cc])[-60:]]
+        allc = [float(x) for x in list(df[cc])]
+        closes = allc[-60:]
         last = closes[-1]
         o = {"last": last, "d60": (last / closes[0] - 1) * 100,
              "hi": max(closes), "lo": min(closes),
@@ -276,6 +277,25 @@ def kline_info(ak, code):
             _m20 = o["ma20"]
             _sd = (sum((c - _m20) ** 2 for c in closes[-20:]) / 20.0) ** 0.5
             o["boll_lo"] = _m20 - 2 * _sd   # ★11/03：布林下轨，超跌错杀单用（招商10/23正好打到下轨15.87）
+            o["boll_hi"] = _m20 + 2 * _sd
+        # ★11/03 深查：MA60/MA120 + ATR14（止损/仓位用）
+        try:
+            o["ma60"] = sum(allc[-60:]) / 60.0 if len(allc) >= 60 else None
+            o["ma120"] = sum(allc[-120:]) / 120.0 if len(allc) >= 120 else None
+            o["d20"] = (last / allc[-21] - 1) * 100 if len(allc) >= 21 else None
+            ch, cl_ = col(df, "最高", "high"), col(df, "最低", "low")
+            if ch is not None and cl_ is not None:
+                hs = [float(x) for x in list(df[ch])]
+                ls = [float(x) for x in list(df[cl_])]
+                trs = []
+                for i in range(max(1, len(allc) - 14), len(allc)):
+                    trs.append(max(hs[i] - ls[i], abs(hs[i] - allc[i - 1]), abs(ls[i] - allc[i - 1])))
+                if trs:
+                    o["atr"] = sum(trs) / len(trs)
+                o["hi20"] = max(hs[-20:])
+                o["lo20"] = min(ls[-20:])
+        except Exception:
+            pass
         if cp is not None:
             pcts = [float(x) for x in list(df[cp])]
             lim = board_limit(code)
@@ -450,6 +470,267 @@ def _sina_ff(code):
         return None
 
 
+# ════════════════════════════════════════════════════════════════════
+# ★11/03 深查模块（Zikye：查一次就要有结论，100%全面）
+#   估值 / 基本面 / 新闻公告 / 解禁 / 两融 / 行业板块 / 相对强弱 / 止损仓位 / 综合结论
+#   每项独立 try，取不到就写【无数据】+原因，绝不编数
+# ════════════════════════════════════════════════════════════════════
+def _http(url, ref="https://finance.sina.com.cn/", timeout=8):
+    import urllib.request
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                                               "Referer": ref})
+    raw = urllib.request.urlopen(req, timeout=timeout).read()
+    for enc in ("gbk", "utf-8"):
+        try:
+            return raw.decode(enc)
+        except Exception:
+            pass
+    return raw.decode("utf-8", "ignore")
+
+
+def _strip(h):
+    import re as _r
+    return _r.sub(r"\s+", " ", _r.sub(r"<[^>]+>", " ", h.replace("&nbsp;", " "))).strip()
+
+
+def deep_valuation(code):
+    """腾讯行情：PE(TTM)/PE静/PB/总市值/流通市值/量比/振幅/涨跌停价"""
+    try:
+        txt = _tx_get("https://qt.gtimg.cn/q=" + _tx_mk(code))
+        f = txt.split('="', 1)[1].split('"', 1)[0].split("~")
+
+        def fl(i):
+            try:
+                return float(f[i])
+            except Exception:
+                return None
+        return {"pe": fl(39), "pe_d": fl(52) if len(f) > 52 else None, "pe_s": fl(53) if len(f) > 53 else None,
+                "pb": fl(46), "mv": fl(45), "fmv": fl(44), "lb": fl(49), "zf": fl(43),
+                "zt": fl(47), "dt": fl(48)}
+    except Exception as e:
+        note("估值[腾讯]失败 %s %s" % (code, str(e)[:50]))
+        return None
+
+
+_FIN_KEYS = [("营业总收入", "营收"), ("营业收入", "营收"), ("归母净利润", "归母净利"),
+             ("归属于母公司所有者的净利润", "归母净利"), ("净利润", "净利"),
+             ("扣非净利润", "扣非"), ("毛利率", "毛利率"), ("销售毛利率", "毛利率"),
+             ("净资产收益率", "ROE"), ("ROE", "ROE"), ("经营现金流量净额", "经营现金流"),
+             ("每股经营现金流", "每股经营现金流"), ("资产负债率", "负债率")]
+
+
+def deep_fin(ak, code):
+    """基本面：新浪关键指标（stock_financial_abstract）→ 同花顺兜底。返回[(名称,[(期,值)...])]"""
+    out = []
+    try:
+        df = ak.stock_financial_abstract(symbol=code)
+        if df is not None and len(df):
+            dcols = [c for c in df.columns if str(c)[:2] in ("20", "19") and len(str(c)) == 8][:5]
+            ncol = "指标" if "指标" in df.columns else df.columns[1]
+            seen = set()
+            for k, lab in _FIN_KEYS:
+                if lab in seen:
+                    continue
+                hit = df[df[ncol].astype(str) == k]
+                if len(hit):
+                    r = hit.iloc[0]
+                    vals = []
+                    for c in dcols:
+                        try:
+                            vals.append((str(c), float(r[c])))
+                        except Exception:
+                            pass
+                    if vals:
+                        out.append((lab, vals))
+                        seen.add(lab)
+            if out:
+                return out, "新浪"
+    except Exception as e:
+        note("基本面[新浪]失败 %s %s" % (code, str(e)[:60]))
+    try:
+        df = ak.stock_financial_abstract_ths(symbol=code, indicator="按报告期")
+        if df is not None and len(df):
+            df = df.tail(5).iloc[::-1] if str(df.iloc[0, 0]) < str(df.iloc[-1, 0]) else df.head(5)
+            pc = df.columns[0]
+            for c in df.columns[1:]:
+                cs = str(c)
+                lab = None
+                for k, l2 in [("营业总收入", "营收"), ("净利润", "净利"), ("扣非净利润", "扣非"),
+                              ("销售毛利率", "毛利率"), ("净资产收益率", "ROE"), ("每股经营现金流", "每股经营现金流"),
+                              ("资产负债率", "负债率"), ("净利润同比增长率", "净利同比"), ("营业总收入同比增长率", "营收同比")]:
+                    if cs == k:
+                        lab = l2
+                if lab:
+                    out.append((lab, [(str(r[pc]), str(r[c])) for _, r in df.iterrows()]))
+            if out:
+                return out, "同花顺"
+    except Exception as e:
+        note("基本面[同花顺]失败 %s %s" % (code, str(e)[:60]))
+    return None, ""
+
+
+_BAD = ("减持", "解禁", "质押", "问询", "立案", "处罚", "预亏", "首亏", "下修", "亏损", "终止", "诉讼", "冻结",
+        "退市", "风险提示", "监管", "警示", "违规", "延期", "下滑", "暴跌", "辞职")
+_GOOD = ("增持", "回购", "中标", "预增", "扭亏", "分红", "派息", "合同", "签约", "获批", "突破", "订单",
+         "创新高", "大增", "战略合作", "入股", "举牌", "超预期")
+
+
+def _flag(t):
+    b = [k for k in _BAD if k in t]
+    g = [k for k in _GOOD if k in t]
+    return ("🔴" if b else ("🟢" if g else "·")), b, g
+
+
+def deep_news(code, days=12):
+    """新浪个股新闻 + 公告，近N天，自动标红绿"""
+    import re as _r
+    lim = (datetime.datetime.utcnow() + datetime.timedelta(hours=8) - datetime.timedelta(days=days)).strftime("%Y-%m-%d")
+    news, ann = [], []
+    pat = _r.compile(r"(\d{4}-\d{2}-\d{2})(?:\s|&nbsp;)*(?:\d{2}:\d{2})?(?:\s|&nbsp;)*<a[^>]*>([^<]{4,120})</a>")
+    try:
+        h = _http("https://vip.stock.finance.sina.com.cn/corp/go.php/vCB_AllNewsStock/symbol/%s.phtml" % _tx_mk(code))
+        for d, t in pat.findall(h):
+            if d >= lim:
+                news.append((d, t.strip()))
+    except Exception as e:
+        note("新闻[新浪]失败 %s %s" % (code, str(e)[:50]))
+        news = None
+    try:
+        h = _http("https://vip.stock.finance.sina.com.cn/corp/go.php/vCB_AllBulletin/stockid/%s.phtml" % code)
+        for d, t in pat.findall(h):
+            if d >= lim:
+                ann.append((d, t.strip()))
+    except Exception as e:
+        note("公告[新浪]失败 %s %s" % (code, str(e)[:50]))
+        ann = None
+    return news, ann
+
+
+def deep_unlock(ak, code):
+    """限售解禁（未来/近期）：大额解禁=资本出货窗口"""
+    try:
+        df = ak.stock_restricted_release_queue_sina(symbol=code)
+        if df is None or not len(df):
+            return []
+        today = (datetime.datetime.utcnow() + datetime.timedelta(hours=8)).date()
+        cd_ = col(df, "解禁日期", "上市日期")
+        cn = col(df, "解禁数量", "解禁数量(万股)")
+        cr = col(df, "解禁股流通市值", "占总股本比例", "解禁市值")
+        out = []
+        for _, r in df.iterrows():
+            try:
+                d = datetime.datetime.strptime(str(r[cd_])[:10], "%Y-%m-%d").date()
+            except Exception:
+                continue
+            if -30 <= (d - today).days <= 120:
+                out.append("%s 解禁%s %s" % (d, r[cn] if cn else "", ("占比/市值 %s" % r[cr]) if cr else ""))
+        return out
+    except Exception as e:
+        note("解禁失败 %s %s" % (code, str(e)[:50]))
+        return None
+
+
+def deep_margin(code):
+    """两融：新浪融资融券明细页，取近10个交易日融资余额趋势"""
+    import re as _r
+    try:
+        end = (datetime.datetime.utcnow() + datetime.timedelta(hours=8))
+        bd = (end - datetime.timedelta(days=25)).strftime("%Y-%m-%d")
+        h = _http("https://vip.stock.finance.sina.com.cn/q/go.php/vInvestConsult/kind/rzrq/index.phtml"
+                  "?symbol=%s&bdate=%s&edate=%s" % (_tx_mk(code), bd, end.strftime("%Y-%m-%d")))
+        rows = []
+        for tr in _r.findall(r"<tr[^>]*>(.*?)</tr>", h, _r.S):
+            tds = [_strip(x) for x in _r.findall(r"<td[^>]*>(.*?)</td>", tr, _r.S)]
+            if len(tds) >= 3 and _r.match(r"\d{4}-\d{2}-\d{2}", tds[1] if len(tds) > 1 else ""):
+                tds = tds[1:]
+            if len(tds) >= 3 and _r.match(r"\d{4}-\d{2}-\d{2}$", tds[0]):
+                try:
+                    rows.append((tds[0], float(tds[1].replace(",", ""))))
+                except Exception:
+                    pass
+        if not rows:
+            note("两融[新浪]无表 %s 片段:%s" % (code, _strip(h)[:80]))
+            return None
+        rows = sorted(set(rows))[-10:]
+        return rows
+    except Exception as e:
+        note("两融[新浪]失败 %s %s" % (code, str(e)[:50]))
+        return None
+
+
+def deep_industry(code):
+    """所属行业：新浪公司其他信息页"""
+    import re as _r
+    try:
+        h = _http("https://vip.stock.finance.sina.com.cn/corp/go.php/vCI_CorpOtherInfo/stockid/%s/menu_num/2.phtml" % code)
+        t = _strip(h)
+        m = _r.search(r"所属行业板块\s*(?:行业\s*)?([一-龥A-Za-z]{2,12})", t)
+        inds = []
+        if m:
+            inds.append(m.group(1))
+        m2 = _r.search(r"所属概念板块(.{0,200})", t)
+        con = []
+        if m2:
+            con = [x for x in _r.findall(r"[一-龥A-Za-z0-9]{2,10}", m2.group(1))
+                   if x not in ("板块", "概念", "同概念个股", "所属概念板块", "点击查看")][:8]
+        return inds, con
+    except Exception as e:
+        note("行业[新浪]失败 %s %s" % (code, str(e)[:50]))
+        return None, None
+
+
+_IDX = {}
+
+
+def index_ret(sym="sh000300"):
+    """指数5日/20日涨跌（相对强弱基准），腾讯K线"""
+    if sym in _IDX:
+        return _IDX[sym]
+    try:
+        import json as _j
+        raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,30,qfq" % sym)
+        dd = _j.loads(raw)["data"][sym]
+        rows = dd.get("qfqday") or dd.get("day") or []
+        c = [float(r[2]) for r in rows]
+        r = {"d5": (c[-1] / c[-6] - 1) * 100, "d20": (c[-1] / c[-21] - 1) * 100, "today": (c[-1] / c[-2] - 1) * 100}
+    except Exception as e:
+        note("指数[腾讯]失败 %s %s" % (sym, str(e)[:50]))
+        r = None
+    _IDX[sym] = r
+    return r
+
+
+def my_assets():
+    """从 我的清单.txt 读 总资产/现金（万）"""
+    import re as _r
+    for fn in ("我的清单.txt",):
+        try:
+            t = open(fn, encoding="utf-8").read()
+            a = _r.search(r"总资产\s*([\d.]+)", t)
+            c = _r.search(r"现金\s*([\d.]+)", t)
+            hold = _r.findall(r"^持仓\s*\|\s*(\d{6})", t, _r.M)
+            return (float(a.group(1)) if a else None, float(c.group(1)) if c else None, hold)
+        except Exception:
+            pass
+    return None, None, []
+
+
+def deep_all(ak, code):
+    d = {}
+    for k, fn in (("val", lambda: deep_valuation(code)),
+                  ("fin", lambda: deep_fin(ak, code)),
+                  ("news", lambda: deep_news(code)),
+                  ("unlock", lambda: deep_unlock(ak, code)),
+                  ("margin", lambda: deep_margin(code)),
+                  ("ind", lambda: deep_industry(code))):
+        try:
+            d[k] = fn()
+        except Exception as e:
+            d[k] = None
+            note("深查%s异常 %s %s" % (k, code, str(e)[:40]))
+    return d
+
+
 def board_detail(ak, name):
     tries = []
     try:
@@ -537,6 +818,230 @@ def _save(L, bj):
         print("🔴 patch_query: 写文件失败 %s" % e)
 
 
+def _yi(v):
+    try:
+        v = float(v)
+    except Exception:
+        return str(v)
+    return ("%.2f亿" % (v / 1e8)) if abs(v) >= 1e6 else ("%.2f" % v)
+
+
+def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
+    """★11/03 深查输出 + 综合结论（一次查完就有结论）"""
+    dp = dp or {}
+    sc, veto = [], []
+    pct = s.get("pct") if s else None
+    last = (k or {}).get("last") or (s or {}).get("price")
+    w("   ┄┄┄┄┄┄┄┄ 深查（估值/基本面/消息/解禁/两融/行业/强弱/支撑压力/仓位）┄┄┄┄┄┄┄┄")
+    if cd in (HOLD or []):
+        w("   📌 已持仓")
+    # ① 估值
+    v = dp.get("val")
+    if v:
+        w("   ①估值：PE(TTM)%s ｜ PE动%s ｜ PE静%s ｜ PB %s ｜ 总市值%s亿 流通%s亿 ｜ 量比%s ｜ 振幅%s%% ｜ 涨停%s 跌停%s"
+          % tuple(_f(v.get(x)) for x in ("pe", "pe_d", "pe_s", "pb", "mv", "fmv", "lb", "zf", "zt", "dt")))
+        pe = v.get("pe")
+        if pe is None or pe <= 0:
+            sc.append(("估值", -1, "亏损/PE无效"))
+        elif pe > 80:
+            sc.append(("估值", -1, "PE%.0f偏贵，靠故事撑" % pe))
+        elif pe < 25:
+            sc.append(("估值", 1, "PE%.0f不贵" % pe))
+        else:
+            sc.append(("估值", 0, "PE%.0f中性" % pe))
+    else:
+        w("   ①估值【无数据】")
+    # ② 基本面
+    fin = dp.get("fin") or (None, "")
+    rows, src = (fin if isinstance(fin, tuple) else (None, ""))
+    if rows:
+        w("   ②基本面（%s，最近5期，累计口径）：" % src)
+        m = dict(rows)
+        for lab, vals in rows:
+            w("      %s：%s" % (lab, "  ".join("%s:%s" % (p[2:] if len(p) == 8 else p, _yi(x)) for p, x in vals)))
+        try:
+            ni = m.get("归母净利") or m.get("净利")
+            if ni and len(ni) >= 5 and ni[0][0][4:] == ni[4][0][4:] and ni[4][1]:
+                yoy = (ni[0][1] / ni[4][1] - 1) * 100 * (1 if ni[4][1] > 0 else -1)
+                w("      → 净利同比 %+.1f%%（%s vs %s）" % (yoy, ni[0][0], ni[4][0]))
+                sc.append(("业绩", 1 if yoy > 10 else (-1 if yoy < -10 else 0), "净利同比%+.0f%%" % yoy))
+            elif m.get("净利同比"):
+                y = float(str(m["净利同比"][0][1]).replace("%", ""))
+                sc.append(("业绩", 1 if y > 10 else (-1 if y < -10 else 0), "净利同比%+.0f%%" % y))
+            gm = m.get("毛利率")
+            if gm and len(gm) >= 5 and src == "新浪":
+                dg = gm[0][1] - gm[4][1]
+                w("      → 毛利率同比 %+.2f个点（%.2f%%→%.2f%%）" % (dg, gm[4][1], gm[0][1]))
+                if dg <= -2:
+                    sc.append(("毛利", -1, "毛利率同比降%.1f点（宁德教训：降价换量）" % -dg))
+                elif dg >= 1:
+                    sc.append(("毛利", 1, "毛利率同比升%.1f点" % dg))
+            cf = m.get("经营现金流")
+            if cf and ni and src == "新浪" and ni[0][1]:
+                r = cf[0][1] / ni[0][1]
+                w("      → 经营现金流/净利 = %.2f（<0.5 利润含金量差）" % r)
+                if r < 0.5:
+                    sc.append(("现金流", -1, "现金流/净利%.2f" % r))
+                elif r > 1:
+                    sc.append(("现金流", 1, "现金流/净利%.2f" % r))
+        except Exception as e:
+            note("基本面计算异常 %s %s" % (cd, str(e)[:40]))
+    else:
+        w("   ②基本面【无数据】（新浪/同花顺都没取到）")
+    # ③ 新闻 + 公告
+    nw = dp.get("news") or (None, None)
+    news, ann = nw if isinstance(nw, tuple) else (None, None)
+    hard = ("减持", "立案", "处罚", "预亏", "首亏", "退市", "冻结")
+    for title, lst, cap in (("③公告(近12天)", ann, 8), ("③新闻(近12天)", news, 8)):
+        if lst is None:
+            w("   %s【无数据】" % title)
+            continue
+        if not lst:
+            w("   %s：无" % title)
+            continue
+        w("   %s：%d条" % (title, len(lst)))
+        nb = ng = 0
+        seen = set()
+        for d, t in lst:
+            if t in seen:
+                continue
+            seen.add(t)
+            fl, b, g = _flag(t)
+            nb += 1 if b else 0
+            ng += 1 if g else 0
+            if len(seen) <= cap:
+                w("      %s %s %s" % (fl, d[5:], t[:46]))
+            if "公告" in title and any(x in t for x in hard) and "完成" not in t and "结束" not in t:
+                veto.append("公告风险：%s" % t[:24])
+        if "公告" in title:
+            if nb:
+                sc.append(("公告", -1, "%d条负面公告" % nb))
+            elif ng:
+                sc.append(("公告", 1, "%d条正面公告" % ng))
+        else:
+            if nb > ng:
+                sc.append(("新闻", -1, "负面%d>正面%d" % (nb, ng)))
+            elif ng > nb:
+                sc.append(("新闻", 1, "正面%d>负面%d" % (ng, nb)))
+    # ④ 解禁
+    ul = dp.get("unlock")
+    if ul is None:
+        w("   ④限售解禁【无数据】")
+    elif not ul:
+        w("   ④限售解禁：前30天~后120天 无")
+    else:
+        w("   ④限售解禁：" + " ｜ ".join(ul[:4]))
+        sc.append(("解禁", -1, "窗口内有解禁（资本出货窗口）"))
+    # ⑤ 两融
+    mg = dp.get("margin")
+    if mg and len(mg) >= 2:
+        ch = (mg[-1][1] / mg[0][1] - 1) * 100 if mg[0][1] else 0
+        w("   ⑤融资余额：%s %s → %s %s（%+.1f%%，%d天）" % (mg[0][0][5:], _yi(mg[0][1]), mg[-1][0][5:], _yi(mg[-1][1]), ch, len(mg)))
+        sc.append(("两融", 1 if ch > 3 else (-1 if ch < -3 else 0), "融资余额%+.1f%%" % ch))
+    else:
+        w("   ⑤融资余额【无数据】（非两融标的或页面取不到）")
+    # ⑥ 行业概念
+    ind = dp.get("ind") or (None, None)
+    inds, con = ind if isinstance(ind, tuple) else (None, None)
+    if inds or con:
+        w("   ⑥行业：%s ｜ 概念：%s" % ("、".join(inds or []) or "—", "、".join(con or []) or "—"))
+    else:
+        w("   ⑥行业/概念【无数据】")
+    # ⑦ 相对强弱
+    if k and k.get("d20") is not None and hs:
+        r5, r20 = k["d5"] - hs["d5"], k["d20"] - hs["d20"]
+        t = "   ⑦相对强弱：5日%+.1f%% / 20日%+.1f%% ｜ 沪深300 5日%+.1f%% / 20日%+.1f%% → 超额 5日%+.1f / 20日%+.1f" % (
+            k["d5"], k["d20"], hs["d5"], hs["d20"], r5, r20)
+        if cy:
+            t += " ｜ 创业板20日%+.1f%%" % cy["d20"]
+        w(t)
+        sc.append(("强弱", 1 if r20 > 0 else -1, "20日跑%s大盘%.1f点" % ("赢" if r20 > 0 else "输", abs(r20))))
+    else:
+        w("   ⑦相对强弱【无数据】")
+    # ⑧ 支撑压力
+    rr = None
+    if k and last:
+        sup, res_ = [], []
+        for nm, x in (("MA5", k.get("ma5")), ("MA10", k.get("ma10")), ("MA20", k.get("ma20")), ("MA60", k.get("ma60")),
+                      ("MA120", k.get("ma120")), ("布林下轨", k.get("boll_lo")), ("布林上轨", k.get("boll_hi")),
+                      ("20日低", k.get("lo20")), ("20日高", k.get("hi20")), ("60日低", k.get("lo")), ("60日高", k.get("hi"))):
+            if x:
+                (sup if x < last else res_).append((x, nm))
+        sup.sort(reverse=True)
+        res_.sort()
+        w("   ⑧支撑：" + " ".join("%s %.2f" % (n, x) for x, n in sup[:4]) + " ｜ 压力：" + (
+            " ".join("%s %.2f" % (n, x) for x, n in res_[:4]) or "无（新高区）"))
+        if k.get("ma60") and k.get("ma120"):
+            w("      长周期：MA60 %.2f %s MA120 %.2f → %s" % (k["ma60"], ">" if k["ma60"] > k["ma120"] else "<", k["ma120"],
+                                                         "长多排列" if last > k["ma60"] > k["ma120"] else (
+                                                             "长空排列" if last < k["ma60"] < k["ma120"] else "长周期纠缠")))
+        # ⑨ 止损 / 目标 / 仓位
+        atr = k.get("atr")
+        if atr:
+            if okb:
+                stop = k["lo"] * 0.97
+            else:
+                stop = max(last - 2 * atr, (k.get("ma20") or 0) * 0.97 if (k.get("ma20") or 0) < last else 0, k["lo"] * 0.97)
+                stop = min(stop, last - 1.2 * atr)
+            tgt = k["hi"] if k["hi"] > last * 1.05 else last + 3 * atr
+            rr = (tgt - last) / (last - stop) if last > stop else None
+            w("   ⑨ATR14 %.2f(%.1f%%) ｜ 止损 %.2f(%.1f%%) ｜ 目标 %.2f(%+.1f%%，%s) ｜ 赔率 %s"
+              % (atr, atr / last * 100, stop, (stop / last - 1) * 100, tgt, (tgt / last - 1) * 100,
+                 "60日高" if k["hi"] > last * 1.05 else "3×ATR", ("%.1f:1" % rr) if rr else "—"))
+            if TA:
+                risk = TA * 1e4 * 0.025
+                sh = int(risk / (last - stop) / 100) * 100 if last > stop else 0
+                cap = int((CASH or 0) * 1e4 / last / 100) * 100 if CASH else sh
+                sh2 = min(sh, cap) if cap else sh
+                w("      仓位：总资产%.2f万×2.5%%=单笔最多亏%.0f元 → 最多%d股≈%.1f万（现金%.2f万可买%d股）%s"
+                  % (TA, risk, sh, sh * last / 1e4, CASH or 0, cap,
+                     " ⚠️不足5万门槛＝止损太宽，等更近买点" if sh2 * last < 5e4 else ""))
+                w("      建议股数：%d股≈%.1f万" % (sh2, sh2 * last / 1e4))
+            if rr is not None:
+                sc.append(("赔率", 1 if rr >= 2 else (-1 if rr < 1.5 else 0), "%.1f:1" % rr))
+        else:
+            w("   ⑨止损/仓位【无数据】（缺最高最低价）")
+    # ⑩ 趋势/资金
+    if ok:
+        sc.append(("趋势", 2, "趋势单买点成立"))
+    elif okb:
+        sc.append(("超跌", 2, "超跌错杀单成立"))
+    elif k and k.get("ma20"):
+        sc.append(("买点", -1, "两种买点都不成立"))
+        if last < k["ma20"] and k["ma20"] < k.get("ma20p", k["ma20"]):
+            veto.append("在下行20日线下方且不满足超跌")
+    try:
+        if pct is not None and float(pct) > 4:
+            veto.append("今日+%.1f%%>4%%不追" % float(pct))
+    except Exception:
+        pass
+    if sm is not None:
+        sc.append(("主力5日", 1 if sm > 0 else -1, "%+.2f亿" % sm))
+        if "派发" in tag:
+            veto.append("资本视角=派发（散户接盘）")
+            sc.append(("资本视角", -2, "派发"))
+        elif "吸筹" in tag:
+            sc.append(("资本视角", 1, "吸筹"))
+    # ★综合结论
+    tot = sum(x[1] for x in sc)
+    if veto:
+        vd = "🔴不买（否决：%s）" % "；".join(veto)
+    elif tot >= 4 and rr and rr >= 2:
+        vd = "🟢可买"
+    elif tot >= 2:
+        vd = "🟡观察（分数够但赔率/买点未齐，等回踩支撑）"
+    else:
+        vd = "🔴不买"
+    stage = ("资金方在【吸筹】阶段→可跟着埋伏" if "吸筹" in tag else
+             "资金方在【拉升】阶段→只在回踩MA10/MA20跟，不追" if "拉升" in tag else
+             "资金方在【派发】阶段→别当接盘侠" if "派发" in tag else
+             "资金方在【出逃/砸盘】→等止跌信号" if tag else "资金阶段【无数据】")
+    w("   ★综合结论★ %s ｜ 总分 %+d" % (vd, tot))
+    w("      计分：" + " ".join("%s%+d(%s)" % (a, b, c) for a, b, c in sc))
+    w("      站位：" + stage)
+    w("      AI必须补完再下结论：①驱动/故事还在不在（世界新闻、美/韩/日映射）②板块处于资金方哪一步 ③下一个催化剂日期+两种结果赔率")
+
+
 def run():
     bj = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
     L = []
@@ -600,12 +1105,18 @@ def run():
 
         def job(cd):
             k, e = kline_info(ak, cd)
-            return (cd, k, e, main_biz(ak, cd), fund_flow(ak, cd) or _sina_ff(cd) or _tx_ff(cd))
+            return (cd, k, e, main_biz(ak, cd), fund_flow(ak, cd) or _sina_ff(cd) or _tx_ff(cd), deep_all(ak, cd))
 
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
             res = list(ex.map(job, stocks))
+        _hs = index_ret("sh000300")
+        _cy = index_ret("sz399006")
+        _TA, _CASH, _HOLD = my_assets()
 
-        for cd, k, err, biz, ff in res:
+        for cd, k, err, biz, ff, dp in res:
+            ok = okb = None
+            _sm = None
+            _tag = ""
             s = snap.get(cd, {})
             w("")
             w("─" * 68)
@@ -692,6 +1203,10 @@ def run():
                     w("   资本视角：近%d日主力合计%+.2f亿（截至%s）× 5日涨跌%+.1f%% → %s" % (len(_vals), _sm, sorted(_dv)[-1], _d5, _tag))
             except Exception:
                 pass
+            try:
+                _deep_out(w, cd, s, k, dp, ok, okb, _sm, _tag, _hs, _cy, _TA, _CASH, _HOLD)
+            except Exception as _e:
+                w("   深查输出异常：%s" % str(_e)[:80])
 
     for b in boards:
         if over():
