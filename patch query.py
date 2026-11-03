@@ -669,6 +669,28 @@ def run():
                                else "【无数据】→ ⚠️需截 F10→简况"))
             w("   个股资金 " + (" ｜ ".join(ff) if ff
                             else "【无数据】→ ⚠️需截 F10→资金"))
+            # ★11/03 资本视角：主力 vs 散户（主力净额的反面≈散户）。价涨+主力出＝派发给散户；价平/跌+主力进＝吸筹
+            try:
+                import re as _re_ff
+                _vals = []
+                for _x in (ff or []):
+                    _m = _re_ff.search(r"主力([+-]?[\d.]+)亿", str(_x))
+                    if _m:
+                        _vals.append(float(_m.group(1)))
+                if len(_vals) >= 3 and k and k.get("d5") is not None:
+                    _sm = sum(_vals[:5])
+                    _d5 = k["d5"]
+                    if _sm > 0 and _d5 <= 2:
+                        _tag = "🟢吸筹（主力在买、价格没涨＝散户在卖给主力）"
+                    elif _sm < 0 and _d5 >= 3:
+                        _tag = "🔴派发（价格在涨、主力在卖＝散户在接盘）"
+                    elif _sm > 0 and _d5 > 2:
+                        _tag = "🟡拉升（主力边买边拉，留意放量滞涨＝转派发）"
+                    else:
+                        _tag = "⚪出逃/砸盘（主力卖、价格跌）"
+                    w("   资本视角：5日主力合计%+.2f亿 × 5日涨跌%+.1f%% → %s" % (_sm, _d5, _tag))
+            except Exception:
+                pass
 
     for b in boards:
         if over():
