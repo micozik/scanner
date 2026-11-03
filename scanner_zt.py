@@ -348,7 +348,7 @@ def run_hunt():
                 len(hits), tot_n, tot_h, tot_h / tot_n * 100,
                 ("%+.2f%%" % (sum(aps) / len(aps))) if aps else "—"))
             if len(hits) < 10:
-                w("  （样本<10天，命中率还不可信，接力单先小比例验证）")
+                w("  （涨停命中率只是辅助；真正成绩看《选股命中率》里的模拟交易：胜率/每笔平均/盈亏比）")
         else:
             w("  首次运行，明天开始对账")
     except Exception as e:

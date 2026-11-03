@@ -36,7 +36,7 @@ def kline(code):
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://gu.qq.com/"})
         d = json.loads(urllib.request.urlopen(req, timeout=8).read().decode("utf-8", "ignore"))["data"][m]
         rows = d.get("qfqday") or d.get("day") or []
-        k = [(r[0], float(r[2]), float(r[3]), float(r[4])) for r in rows]   # 日期 收 高 低
+        k = [(r[0], float(r[2]), float(r[3]), float(r[4]), float(r[1])) for r in rows]   # 日期 收 高 低 开
     except Exception:
         k = []
     _K[code] = k
@@ -73,7 +73,7 @@ def main():
                 res["T+%d" % n] = (k[idx[n - 1]][1] / p["price"] - 1) * 100
         st, tg = p.get("stop"), p.get("target")
         for i in idx:
-            _, c, h, l_ = k[i]
+            _, c, h, l_ = k[i][:4]
             if st and l_ <= st:
                 res["first"] = "先碰止损"
                 break
@@ -104,14 +104,69 @@ def main():
         w("  %-4s %4d  %s %s %s  %s  %s   %d/%d" % (v, len(rs), f(a1), f(a3), f(a5),
                                                 ("%5.0f%%" % wr) if wr is not None else "  —  ", f(a10), ft, fs))
     w("")
-    w("  ⚠️ 每组T+5样本<20条时结论不可信；🟢可买 若不明显好于 🔴不买 → 打分规则要改")
+    w("  ⚠️ 每组T+5样本<20条时结论不可信")
+    w("  ★🟢可买 合格标准：T+5胜率≥60% 且 T+5平均≥+2% 且 比🔴不买组高≥2个点 且 先到目标>先碰止损 —— 达不到就改打分规则")
+    # ★11/03 用户："高于15%你觉得就成功？代表我有85%失败" → 涨停命中率只是辅助，
+    #   真正的成绩=按规则买卖的模拟交易：胜率、平均每笔收益、盈亏比
+    #   规则：D日收盘预测 → D+1 开盘高开在区间内才买（主板+2~+7%，20cm +3~+10%）
+    #         → 当天最低碰到 昨收×0.97 止损；否则 D+2 开盘卖出（接力单不恋战）
+    w("")
+    w("【涨停接力·模拟交易】（买卖规则见代码注释；扣双边成本0.2%）")
+    trades = []
+    for fn in sorted(glob.glob("reports/zt_pred/*.json")):
+        try:
+            pdj = json.load(open(fn, encoding="utf-8"))
+        except Exception:
+            continue
+        d0 = pdj.get("date", "")
+        d0s = "%s-%s-%s" % (d0[:4], d0[4:6], d0[6:8])
+        for x in pdj.get("top", [])[:8]:
+            k = kline(x["code"])
+            i0 = [i for i, r in enumerate(k) if r[0] == d0s]
+            if not i0 or i0[0] + 1 >= len(k):
+                continue
+            i = i0[0]
+            prev = k[i][1]
+            o1, c1, h1, l1 = k[i + 1][4], k[i + 1][1], k[i + 1][2], k[i + 1][3]
+            gap = (o1 / prev - 1) * 100
+            big = x["code"].startswith(("30", "68"))
+            lo, hi = (3, 10) if big else (2, 7)
+            if not (lo <= gap <= hi):
+                trades.append((d0, x, gap, None, "未买(竞价不符)"))
+                continue
+            stop = prev * 0.97
+            if l1 <= stop:
+                ret = (stop / o1 - 1) * 100 - 0.2
+                why = "当天止损"
+            elif i + 2 < len(k):
+                ret = (k[i + 2][4] / o1 - 1) * 100 - 0.2
+                why = "次日开盘卖"
+            else:
+                trades.append((d0, x, gap, None, "持有中(待次日)"))
+                continue
+            trades.append((d0, x, gap, ret, why))
+    done = [t for t in trades if t[3] is not None]
+    if done:
+        rs = [t[3] for t in done]
+        wins = [r for r in rs if r > 0]
+        loss = [r for r in rs if r <= 0]
+        wr = len(wins) / len(rs) * 100
+        avg = sum(rs) / len(rs)
+        plr = (sum(wins) / len(wins)) / abs(sum(loss) / len(loss)) if wins and loss else None
+        w("  成交%d笔（另有%d只竞价不符没买）｜ 胜率%.0f%% ｜ 每笔平均%+.2f%% ｜ 盈亏比%s" % (
+            len(done), sum(1 for t in trades if t[4].startswith("未买")), wr, avg, ("%.2f" % plr) if plr else "—"))
+        w("  ★可用标准：成交≥30笔 且 胜率≥55% 且 每笔平均≥+1% 且 盈亏比≥1.5 —— 达不到不许重仓")
+        for d0, x, gap, ret, why in done[-10:]:
+            w("    %s %s(%s) 高开%+.1f%% → %+.2f%% %s" % (d0, x["name"], x["code"], gap, ret, why))
+    else:
+        w("  还没有成交样本（预测后需要2个交易日才能结算）")
     try:
         zh = json.load(open("reports/zt_hit.json", encoding="utf-8"))
         n = sum(v["n"] for v in zh.values())
         h = sum(v["hit"] for v in zh.values())
         ap = [v["avg_pct"] for v in zh.values() if v.get("avg_pct") is not None]
         w("")
-        w("【涨停猎手】%d天 预测%d只 次日涨停%d只 命中率%s ｜ 次日平均%s" % (
+        w("【涨停猎手·辅助】%d天 预测%d只 次日涨停%d只 涨停命中率%s（只是辅助，不是成绩）｜ 次日平均%s" % (
             len(zh), n, h, ("%.0f%%" % (h / n * 100)) if n else "—", ("%+.2f%%" % (sum(ap) / len(ap))) if ap else "—"))
     except Exception:
         w("")
