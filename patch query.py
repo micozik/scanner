@@ -981,6 +981,8 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
             for t_, px, cv, ca in pts:
                 if cv and ca:
                     vwap = ca / (cv * 100)
+                    if vwap < px * 0.2:   # ★11/04 科创板分钟线成交量单位是股不是手（中微均价线显示2.16）
+                        vwap *= 100
                     n += 1
                     above += 1 if px >= vwap else 0
             last_px = pts[-1][1]
