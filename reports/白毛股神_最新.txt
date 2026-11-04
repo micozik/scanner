@@ -4,26 +4,30 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6783条）
   存档最近同步：2026-11-03T17:06:27Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-03T17:06 UTC，已停更约13小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-03T17:06 UTC，已停更约19小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 11 条 / 回复 9 条（北京时间）
+  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ✅ 实时补抓新增 2 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 11 条 / 回复 8 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×55 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    存储/HBM/NOR ×8 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    算力/云/数据中心 ×6 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×50 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    存储/HBM/NOR ×10 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    算力/云/数据中心 ×8 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     人形机器人/物理AI ×5 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
     CPO/光模块 ×3 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     衬底/封装材料 ×2 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$LITE×10 $MRVL×9 $AAOI×5 $SIVE×5 $COHR×4 $NBIS×2 $AEHR×2 $NVDA×2 $CRDO×2 $SMTC×2 $AXTI×1 $CIFR×1 $FN×1 $CCXI×1 $AGLT×1 $AMZN×1 $CIEN×1 $JBL×1 $POET×1 $ESMT×1
+  提到的代码：$LITE×8 $MRVL×7 $AAOI×4 $SIVE×4 $NVDA×3 $COHR×3 $NBIS×2 $AEHR×2 $CRDO×2 $SMTC×2 $CRWV×1 $TSM×1 $AXTI×1 $CIFR×1 $FN×1 $AMZN×1 $AGLT×1 $CCXI×1 $CIEN×1 $JBL×1
 
   ── 原创推文（全文，新→旧）──
+  [11-04 15:40] 🔴实时📝原创 ちいかわって日本で人気すぎて、お店に入ることすらできないんだけど ちいかわの株のコールオプションって、どこかで買えないの？w
+      https://x.com/aleabitoreddit/status/2117884722076643829
+  [11-04 12:25] 🔴实时📝原创 The rhetoric on X and from Elon leans overwhelmingly apocalyptic on Democrats winning. It's a mini bubble here, but I think people forget AI is bipartisan national security priority, and that $NVDA's historic rally + AI buildout acceleration happened under the Biden admin. Anyone can extrapolate a politician's negative view on AI to doompost indexes or that " $CRWV is going to go down". But in all reality, even with a Democratic governor, we'll likely just see some headwinds to individual developers, and incentives like "clean-energy tax credits" moving to other areas in AI like solar manufacturing. Rather than any market-wide doomsday scenario that the opposing party likes to portray. Even 
+      https://x.com/aleabitoreddit/status/2117835682702110999
   [11-04 01:06] 📝原创 $AAOI signs $194.4M/year contract with Yuunan Germanium. This is for 2027 alone, with a 5 year contract. Given an implied total of ~$970M in InP substrates over 5 years (before price hikes) Hmm just some thoughts: - AOI laser capacity expansion seems bigger than what’s disclosed based on procurement patterns? 180K wafers seems like an extreme amount compared to what’s needed for lasers within their own transceivers… if they can consume all of that So maybe we’ll hear about a new UHP laser contracts in earnings, after $LITE announced a $5B contract. - read through on $AXTI is positive, given they’ll probably be #1 in InP substrates manufacturing scale in the future + have contracts with $LITE
       https://x.com/aleabitoreddit/status/2117664715811995717
   [11-03 23:27] 📝原创 Glad to see high beta AI semis like $AEHR or $FN rallying after earnings. I wonder if anyone previously on leverage is still alive to see a potential recovery?
@@ -42,10 +46,6 @@
       https://x.com/aleabitoreddit/status/2117296667108278605
   [11-02 21:59] 📝原创 Following the Lumentum / Marvell deal: My opinion is that independent Western laser players, like $AAOI, $COHR, and $SIVE became a lot more strategically valuable. $MTSI and $SMTC should get some attention too as emerging laser players in 2027. If I had to guess: 1.
       https://x.com/aleabitoreddit/status/2117255303301612014
-  [11-02 20:17] 📝原创 $MRVL actually did it and bought $LITE, no way.
-      https://x.com/aleabitoreddit/status/2117229519178498541
-  [11-02 19:43] 📝原创 We've finally made it to November... holy crap October was brutal. Per Morgan Stanley data, the recent hedge fund de-grossing was the highest in the past 10 years. Exceeding the: - 2016 Chinese stock market crash - 2018 Volmageddon - March 2020 COVID crash - 2021 Archegos
-      https://x.com/aleabitoreddit/status/2117220957622255727
   [11-04 00:05] ↩回复 @IkaKnight_ Yeah H1 2026 was more fun, everyone now is depressed and bearish… So recoveries like $NBIS and $CIFR give everyone PTSD. I’m hoping this is the fabled midterm election rally and not another selloff
       https://x.com/aleabitoreddit/status/2117649322330468542
   [11-03 17:55] ↩回复 @riverio1e $CIEN was another company that explicitly cited bottlenecks with lasers last month... Wanlian Securities also flagged Ciena today as a candidate for supplier diversification following the $MRVL / $LITE acquisition... with other laser manufacturers gaining share. So I think $SIVE has a tremendous opportunity for market capture in the coming months.
@@ -62,8 +62,6 @@
       https://x.com/aleabitoreddit/status/2117233515104464961
   [11-02 20:29] ↩回复 @JaeKim1089208 I actually thought $MRVL would buy $SIVE given smaller MC, but they went ahead and bought $LITE instead. Since it looked like Marvell was heading the Broadcom direction with vertical integration and needed lasers. As you said, $SIVE / $AAOI are much more strategically valuable
       https://x.com/aleabitoreddit/status/2117232605146034649
-  [11-02 20:14] ↩回复 @MarzoIndustries Considering $LITE (that is sold out into 2029) is going to get swallowed up by $MRVL next week. I see $AAOI / $SIVE / $COHR are going to be a lot more strategically valuable in the West. Both for M&amp;A prospects (which deserves a premium) so companies can vertically integrate
-      https://x.com/aleabitoreddit/status/2117228754489807320
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
