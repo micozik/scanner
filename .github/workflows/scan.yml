@@ -54,7 +54,7 @@ jobs:
           ls -1 patch*.py 2>/dev/null || echo "（没有任何 patch 文件）"
           echo "════ 开始应用 ════"
           for f in patch*.py; do
-            if [ -f "$f" ]; then echo "--- $f ---"; python "$f"; fi
+            if [ -f "$f" ]; then echo "--- $f ---"; timeout 150 python "$f" || echo "⚠️ $f 失败/超时，已跳过（11/04 patch usdate 因 mini_racer 崩溃拖垮整轮扫描）"; fi
           done
           echo "════ 补丁应用完毕 ════"
 
