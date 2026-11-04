@@ -4,26 +4,26 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6783条）
   存档最近同步：2026-11-03T17:06:27Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-03T17:06 UTC，已停更约19小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-03T17:06 UTC，已停更约23小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 2 条（下面标【🔴实时】的就是存档里还没有的）
-  最近48小时：原创 11 条 / 回复 8 条（北京时间）
+  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ✅ 实时补抓新增 4 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 11 条 / 回复 4 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×50 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    激光/光芯片/InP ×31 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    人形机器人/物理AI ×12 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
     存储/HBM/NOR ×10 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    算力/云/数据中心 ×8 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    人形机器人/物理AI ×5 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
+    算力/云/数据中心 ×9 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     CPO/光模块 ×3 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     衬底/封装材料 ×2 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$LITE×8 $MRVL×7 $AAOI×4 $SIVE×4 $NVDA×3 $COHR×3 $NBIS×2 $AEHR×2 $CRDO×2 $SMTC×2 $CRWV×1 $TSM×1 $AXTI×1 $CIFR×1 $FN×1 $AMZN×1 $AGLT×1 $CCXI×1 $CIEN×1 $JBL×1
+  提到的代码：$LITE×5 $NVDA×4 $MRVL×3 $AMZN×2 $AGLT×2 $AAOI×2 $COHR×2 $NBIS×2 $AEHR×2 $SIVE×2 $TSM×1 $CRWV×1 $AXTI×1 $CIFR×1 $FN×1 $CCXI×1 $CIEN×1 $JBL×1 $CRDO×1 $SMTC×1
 
   ── 原创推文（全文，新→旧）──
+  [11-04 23:04] 🔴实时📝原创 ## Post ## Serenity on X: "I knew about clean energy and healthcare… but apparently Democrats winning were positive for humanoids too?" ## Conversation * [](https://x.com/aleabitoreddit) I knew about clean energy and healthcare… but apparently Democrats winning were positive for humanoids too? [](https://x.com/aleabitoreddit) Agility Robotics merger is now approved! $AGLT is expected to begin trading November 5th, following the November 4 closing... As the first US pure-play humanoid company! The company is backed by $NVDA, $AMZN, Foxconn, Softbank, and others... to automate human work in warehouses * [](https://x.com/TheStockDon) ofc, they can have toddler looking robots to play with.. * []
+      https://x.com/aleabitoreddit/status/2117996413879828556
   [11-04 15:40] 🔴实时📝原创 ちいかわって日本で人気すぎて、お店に入ることすらできないんだけど ちいかわの株のコールオプションって、どこかで買えないの？w
       https://x.com/aleabitoreddit/status/2117884722076643829
   [11-04 12:25] 🔴实时📝原创 The rhetoric on X and from Elon leans overwhelmingly apocalyptic on Democrats winning. It's a mini bubble here, but I think people forget AI is bipartisan national security priority, and that $NVDA's historic rally + AI buildout acceleration happened under the Biden admin. Anyone can extrapolate a politician's negative view on AI to doompost indexes or that " $CRWV is going to go down". But in all reality, even with a Democratic governor, we'll likely just see some headwinds to individual developers, and incentives like "clean-energy tax credits" moving to other areas in AI like solar manufacturing. Rather than any market-wide doomsday scenario that the opposing party likes to portray. Even 
@@ -44,8 +44,6 @@
       https://x.com/aleabitoreddit/status/2117437833820672397
   [11-03 00:43] 📝原创 $LITE standalone would likely be up on earnings after their new $5B CPO/NPO announcement (separate from $NVDA). The margins on that are likely 60%+… which shows how profitable laser players would be at scale. (Greensboro alone would be $5B revenue/year) In terms of the $MRVL
       https://x.com/aleabitoreddit/status/2117296667108278605
-  [11-02 21:59] 📝原创 Following the Lumentum / Marvell deal: My opinion is that independent Western laser players, like $AAOI, $COHR, and $SIVE became a lot more strategically valuable. $MTSI and $SMTC should get some attention too as emerging laser players in 2027. If I had to guess: 1.
-      https://x.com/aleabitoreddit/status/2117255303301612014
   [11-04 00:05] ↩回复 @IkaKnight_ Yeah H1 2026 was more fun, everyone now is depressed and bearish… So recoveries like $NBIS and $CIFR give everyone PTSD. I’m hoping this is the fabled midterm election rally and not another selloff
       https://x.com/aleabitoreddit/status/2117649322330468542
   [11-03 17:55] ↩回复 @riverio1e $CIEN was another company that explicitly cited bottlenecks with lasers last month... Wanlian Securities also flagged Ciena today as a candidate for supplier diversification following the $MRVL / $LITE acquisition... with other laser manufacturers gaining share. So I think $SIVE has a tremendous opportunity for market capture in the coming months.
@@ -54,14 +52,6 @@
       https://x.com/aleabitoreddit/status/2117494464243790000
   [11-03 10:44] ↩回复 @Dreamfyre43 All of $AEHR customers saying "In fact, that’s kind of everybody right now. Ship as quickly as you can." doesn't quite sound like any potential order cancellations lol. Genuine earnings beat, lot of orders faster than revenue recognition, and overall demand acceleration. Then there's upside: -"We believe this customer represents one of the largest potential burn-in system opportunities Aehr has ever pursued" From a "major supplier of AI accelerators, CPUs, and network processors", which sounds more like $AMD given historical context. - $AEHR saw acceleration from multiple silicon-photonics customers. - Guidance was stated to be conservative, since $AEHR was not supply-constraine
       https://x.com/aleabitoreddit/status/2117447704662208721
-  [11-02 22:29] ↩回复 @Ericbaofu 中国其实早就有类似 $MRVL 收购 $LITE 的案例了，比如东山精密收购索尔思光电。 不过国内监管环境不太一样，更多还是为了发展自主技术，减少对西方供应链的依赖。 剑桥科技也是个例子，投资了不少国内激光器厂商，来保障供应和扩充产能。 我觉得这次收购对中际旭创和新易盛的战略影响不会太大
-      https://x.com/aleabitoreddit/status/2117262767040463102
-  [11-02 22:15] ↩回复 @steeluu To my knowledge, $CRDO doesn't have in-house CW DFB laser manufacturing capabilities, so not quite... Dustphotonics integrates external CW lasers so Credo is another potential $MRVL for the need to M&amp;A laser companies. They did another with Hyperlume earlier but that was for
-      https://x.com/aleabitoreddit/status/2117259390185345372
-  [11-02 20:33] ↩回复 @jacobsimon2002 Well.. that was before $MRVL crashed. The deal is 4.5x Marvell shares for every Lumentum share. 4.5x * 196 = $882 (floating), so you're getting that for $LITE, which is still more than current prices. If Marvell recovers, so does Lumentum shares now
-      https://x.com/aleabitoreddit/status/2117233515104464961
-  [11-02 20:29] ↩回复 @JaeKim1089208 I actually thought $MRVL would buy $SIVE given smaller MC, but they went ahead and bought $LITE instead. Since it looked like Marvell was heading the Broadcom direction with vertical integration and needed lasers. As you said, $SIVE / $AAOI are much more strategically valuable
-      https://x.com/aleabitoreddit/status/2117232605146034649
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
