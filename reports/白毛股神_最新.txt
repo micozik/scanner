@@ -4,12 +4,14 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6783条）
   存档最近同步：2026-11-03T17:06:27Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-03T17:06 UTC，已停更约8小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-03T17:06 UTC，已停更约13小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：2条
-  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
-  最近72小时：原创 11 条 / 回复 9 条（北京时间）
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
+  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
+  最近48小时：原创 11 条 / 回复 9 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     激光/光芯片/InP ×55 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
@@ -19,7 +21,7 @@
     CPO/光模块 ×3 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     衬底/封装材料 ×2 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$LITE×10 $MRVL×9 $AAOI×5 $SIVE×5 $COHR×4 $NBIS×2 $AEHR×2 $NVDA×2 $CRDO×2 $SMTC×2 $AXTI×1 $CIFR×1 $FN×1 $AMZN×1 $AGLT×1 $CCXI×1 $CIEN×1 $JBL×1 $POET×1 $ESMT×1
+  提到的代码：$LITE×10 $MRVL×9 $AAOI×5 $SIVE×5 $COHR×4 $NBIS×2 $AEHR×2 $NVDA×2 $CRDO×2 $SMTC×2 $AXTI×1 $CIFR×1 $FN×1 $CCXI×1 $AGLT×1 $AMZN×1 $CIEN×1 $JBL×1 $POET×1 $ESMT×1
 
   ── 原创推文（全文，新→旧）──
   [11-04 01:06] 📝原创 $AAOI signs $194.4M/year contract with Yuunan Germanium. This is for 2027 alone, with a 5 year contract. Given an implied total of ~$970M in InP substrates over 5 years (before price hikes) Hmm just some thoughts: - AOI laser capacity expansion seems bigger than what’s disclosed based on procurement patterns? 180K wafers seems like an extreme amount compared to what’s needed for lasers within their own transceivers… if they can consume all of that So maybe we’ll hear about a new UHP laser contracts in earnings, after $LITE announced a $5B contract. - read through on $AXTI is positive, given they’ll probably be #1 in InP substrates manufacturing scale in the future + have contracts with $LITE
