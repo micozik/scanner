@@ -4,24 +4,22 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6787条）
   存档最近同步：2026-11-04T18:16:19Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-04T18:16 UTC，已停更约18小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-04T18:16 UTC，已停更约22小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
+  实时补抓⑤[syndication] syndication.twitter.com：2条
   实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 7 条 / 回复 1 条（北京时间）
+  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 5 条 / 回复 1 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     激光/光芯片/InP ×27 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
     存储/HBM/NOR ×14 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    算力/云/数据中心 ×9 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    算力/云/数据中心 ×8 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     CPO/光模块 ×8 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    人形机器人/物理AI ×7 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
     衬底/封装材料 ×3 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
+    人形机器人/物理AI ×2 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$AAOI×4 $AMZN×3 $NBIS×2 $CRWD×2 $NVDA×2 $LITE×2 $CIFR×2 $MU×2 $NET×1 $NOK×1 $ATS×1 $SIVE×1 $AMD×1 $SNDK×1 $NOW×1 $GOOGL×1 $TSLA×1 $ESMT×1 $SKHY×1 $DUOL×1
+  提到的代码：$AAOI×4 $NBIS×2 $AMZN×2 $CRWD×2 $LITE×2 $MU×2 $CIFR×2 $NOK×1 $NET×1 $SIVE×1 $NVDA×1 $AMD×1 $ATS×1 $ESMT×1 $TSLA×1 $NOW×1 $SKHY×1 $GOOGL×1 $SNDK×1 $DUOL×1
 
   ── 原创推文（全文，新→旧）──
   [11-05 02:16] 📝原创 ## Post ## Serenity on X: "Cyberoffense/defense is probably going to eat up a TON of compute and end up a continuous compute-intensive arms race. Even $AMZN CEO thinks cybersecurity would take up 20% of tokens consumed for the next year. It's literally a problem of how much you throw at compute for vulnerability discovery + model capability, from of my chats w/ Horizon3. And this is going to become a nation state issue, as seen with the implications already with PHP to vulnerabilities with banks/infrastructure from AI swarms. But people see this and throw money at $CRWD, $NET, and others, which I was saying was a bubble. If it's a compute issue, the economics go to the infra, from neoclouds 
@@ -34,10 +32,6 @@
       https://x.com/aleabitoreddit/status/2118004727053218010
   [11-04 01:06] 📝原创 $AAOI signs $194.4M/year contract with Yuunan Germanium. This is for 2027 alone, with a 5 year contract. Given an implied total of ~$970M in InP substrates over 5 years (before price hikes) Hmm just some thoughts: - AOI laser capacity expansion seems bigger than what’s disclosed based on procurement patterns? 180K wafers seems like an extreme amount compared to what’s needed for lasers within their own transceivers… if they can consume all of that So maybe we’ll hear about a new UHP laser contracts in earnings, after $LITE announced a $5B contract. - read through on $AXTI is positive, given they’ll probably be #1 in InP substrates manufacturing scale in the future + have contracts with $LITE
       https://x.com/aleabitoreddit/status/2117664715811995717
-  [11-03 23:27] 📝原创 Glad to see high beta AI semis like $AEHR or $FN rallying after earnings. I wonder if anyone previously on leverage is still alive to see a potential recovery?
-      https://x.com/aleabitoreddit/status/2117639781572366705
-  [11-03 23:06] 📝原创 Agility Robotics merger is now approved! $AGLT is expected to begin trading November 5th, following the November 4 closing... As the first US pure-play humanoid company! The company is backed by $NVDA, $AMZN, Foxconn, Softbank, and others... to automate human work in warehouses and manufacturing. ~61.48% of the 41.4M public shares were redeemed (~25.45M shares), leaving ~15.95M public shares tradeable. Given heavily reduced share count, as a warning, the stock may experience significant volatility. Disclosure: Not a recommendation, purchased $CCXI shares today after seeing the news and currently hold a position.
-      https://x.com/aleabitoreddit/status/2117634458778247210
   [11-04 00:05] ↩回复 @IkaKnight_ Yeah H1 2026 was more fun, everyone now is depressed and bearish… So recoveries like $NBIS and $CIFR give everyone PTSD. I’m hoping this is the fabled midterm election rally and not another selloff
       https://x.com/aleabitoreddit/status/2117649322330468542
 
