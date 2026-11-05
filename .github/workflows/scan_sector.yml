@@ -1,0 +1,62 @@
+name: 板块深扫
+
+# 2026-11-05：板块 → 全部成分股按"抢先"打分 → 前8只自动跑查股票深查
+# 用法：Actions → 板块深扫 → Run workflow → 填板块名（逗号分隔，最多5个）例：光伏, 储能, 存储
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scan-sector
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      s:
+        description: '板块名（逗号分隔，最多5个）例：光伏, 储能, 存储'
+        required: true
+        default: ''
+
+jobs:
+  sector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install akshare pandas requests lxml beautifulsoup4
+      - name: 板块深扫
+        env:
+          SECTORS: ${{ github.event.inputs.s }}
+        run: timeout 420 python sector_scan.py || echo "⚠️ 深扫超时/失败"
+      - name: 前8只交给查股票深查
+        env:
+          QUERY_MODE: '1'
+        run: |
+          TOP=$(cat reports/_sector_top.txt 2>/dev/null || true)
+          if [ -z "$TOP" ]; then echo "没有≥4分的候选，跳过深查"; exit 0; fi
+          echo "深查：$TOP"
+          QUERY_TEXT="$TOP" timeout 360 python "patch query.py" || echo "⚠️ 深查超时/失败"
+      - name: 提交结果
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          if [ -z "$(git status --porcelain reports/)" ]; then echo "无变化"; exit 0; fi
+          for i in 1 2 3; do
+            git stash push -u reports/ || true
+            git fetch origin main
+            git reset --hard origin/main
+            git stash pop || git checkout --theirs . || true
+            git add -A reports/
+            if [ -z "$(git diff --staged --name-only)" ]; then echo "对齐后无差异"; exit 0; fi
+            git commit -m "sector $(date -u '+%Y-%m-%d %H:%M') UTC"
+            if git push origin HEAD:main; then echo "✅ 推送成功"; exit 0; fi
+            sleep 8
+          done
+          exit 0
