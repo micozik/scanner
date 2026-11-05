@@ -42,7 +42,7 @@ jobs:
           TOP=$(cat reports/_sector_top.txt 2>/dev/null || true)
           if [ -z "$TOP" ]; then echo "没有≥4分的候选，跳过深查"; exit 0; fi
           echo "深查：$TOP"
-          QUERY_TEXT="$TOP" timeout 360 python "patch query.py" || echo "⚠️ 深查超时/失败"
+          QUERY_TEXT="$TOP" GITHUB_RUN_NUMBER="s${{ github.run_number }}" timeout 360 python "patch query.py" || echo "⚠️ 深查超时/失败"
       - name: 提交结果
         run: |
           git config user.name "scanner-bot"

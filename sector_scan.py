@@ -293,10 +293,10 @@ def main():
                 got.update(cons_em(ak, q))
         w("")
         w("◆ 板块【%s】成分 %d 只（源：%s）" % (q, len(got), "；".join(LOG[-3:]) if LOG else "—"))
-        for cd, nm in got.items():
+        for cd, nm in list(got.items())[:160]:   # ★每个板块最多160只，避免前面的板块把名额吃光
             pool.setdefault(cd, nm)
             sec_of.setdefault(cd, q)
-    codes = [c for c in pool if not c.startswith(("8", "4", "92"))][:400]
+    codes = [c for c in pool if not c.startswith(("8", "4", "92"))][:800]
     qt = tx_quote(codes)
     keep = [c for c in codes if c in qt and qt[c]["price"] and "ST" not in qt[c]["name"].upper()
             and (qt[c]["amt"] or 0) >= 1.0]
@@ -324,9 +324,58 @@ def main():
                 ("%.0f" % qd["pe"]) if qd.get("pe") else "—", "、".join(why)))
         if len(rs) > 40:
             w("  …其余 %d 只分数更低，略" % (len(rs) - 40))
-    top = [r for r in rows if r[0] >= 4][:8]
+    # ★主营相关性：新浪概念成分很杂（光伏概念里混进医药股）→ 每板块前15只查主营，关键词不沾边的剔掉
+    rel = {}
+
+    def _biz(c):
+        try:
+            df = ak.stock_zyjs_ths(symbol=c)
+            if df is not None and len(df):
+                return " ".join(str(x) for x in df.iloc[0].tolist())
+        except Exception:
+            pass
+        return ""
+    cand = []
+    for q in secs:
+        cand += [r[1] for r in [x for x in rows if sec_of.get(x[1]) == q][:15]]
+    if ak is not None and cand:
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            for c, b in zip(cand, ex.map(_biz, cand)):
+                rel[c] = b
+    KW = {q: [nz(x) for x in names_for(q)] + [q] for q in secs}
+    KW_EXTRA = {"光伏": ["组件", "硅片", "电池片", "逆变器", "光伏玻璃", "胶膜", "多晶硅"],
+                "储能": ["储能", "电池", "逆变器", "PCS"], "存储": ["存储", "DRAM", "NAND", "NOR", "闪存", "内存"],
+                "半导体设备": ["刻蚀", "薄膜沉积", "CMP", "清洗设备", "半导体设备", "晶圆", "光刻"],
+                "风电": ["风电", "风机", "叶片", "塔筒", "海缆", "风力"], "半导体": ["芯片", "晶圆", "封测", "集成电路"],
+                "证券": ["证券", "经纪"], "电池": ["锂电", "电池", "正极", "负极", "隔膜", "电解液"]}
+
+    def related(c):
+        q = sec_of.get(c)
+        b = rel.get(c, "")
+        if not b:
+            return None
+        ks = KW.get(q, []) + KW_EXTRA.get(q, [])
+        return any(k and k in b for k in ks)
     w("")
-    w("★★ 全场前%d只（≥4分）→ 自动交给查股票深查 ★★" % len(top))
+    w("【主营相关性核对】（每板块前15只；❌=挂在概念里但主业不沾边，剔除）")
+    for q in secs:
+        ln = []
+        for x in [r for r in rows if sec_of.get(r[1]) == q][:15]:
+            rr = related(x[1])
+            ln.append("%s%s" % (x[2]["name"], "✅" if rr else ("❌" if rr is False else "?")))
+        w("  %s：%s" % (q, " ".join(ln)))
+    top = []
+    for q in secs:
+        n = 0
+        for r in [x for x in rows if sec_of.get(x[1]) == q]:
+            if r[0] >= 4 and related(r[1]) is not False:
+                top.append(r)
+                n += 1
+                if n >= 2:
+                    break
+    top = sorted(top, key=lambda x: -x[0])[:8]
+    w("")
+    w("★★ 每板块前2只（≥4分且主营相关）共%d只 → 自动交给查股票深查 ★★" % len(top))
     for s, c, qd, f, why in top:
         w("  %+d %s(%s) [%s] %s" % (s, qd["name"], c, sec_of.get(c), "、".join(why)))
     if not top:
