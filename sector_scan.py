@@ -18,6 +18,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 T0 = time.time()
+SEEDSET = set()
 LOG = []
 L = []
 
@@ -56,6 +57,20 @@ SYN = {
     "医药": ["创新药", "医药", "生物医药", "化学制药"],
     "航空": ["航空", "民航", "机场"],
 }
+
+
+# ★11/05 晚：新浪概念太杂/东财限流时用的自建产业链名单（主业确认过，算"主营相关✅"）
+SEED = {
+    "存储": "603986,301308,688525,001309,300042,688008,300223,688110,688766,300302,000021,688416,688123,300672,300475",
+    "储能": "300274,300750,300014,002074,300438,688063,002518,300068,002335,300827,688390,605117,300763,688676,002121",
+    "半导体设备": "002371,688012,688072,688120,688082,300567,688037,688200,603690,688361,300316,688147,300604,688630",
+    "电网设备": "600406,600089,601179,600312,000400,002028,601877,002270,688676,300001,600468,603606,600522,600487,002309",
+    "光伏": "601012,600438,688223,002459,300274,603806,688599,600732,002865,300763,605117,601865,002129,300118",
+    "风电": "002202,601615,603606,300129,002531,603218,300772,601016,603985,002487,688349",
+}
+SEED["电网"] = SEED["电网设备"]
+SEED["芯片设备"] = SEED["半导体设备"]
+SEED["存储芯片"] = SEED["存储"]
 
 
 def names_for(q):
@@ -287,13 +302,25 @@ def main():
         got = {}
         if all(code_of(x) for x in [q]) and len(code_of(q)) == 6 and q.isdigit():
             got = {q: q}
+        seed_codes = []
+        for sk, sv in SEED.items():
+            if sk == q or sk in q or q in sk:
+                seed_codes = sv.split(",")
+                break
+        if not got and seed_codes and q in ("存储", "储能", "半导体设备", "芯片设备", "存储芯片", "电网", "电网设备"):
+            got = {c: c for c in seed_codes}          # 新浪概念对这些板块太杂/取不到 → 只用自建名单
+            note("【%s】用自建产业链名单%d只" % (q, len(got)))
         if not got and ak is not None:
             got = cons_sina(ak, q)
             if len(got) < 5:
                 got.update(cons_em(ak, q))
+        for c in seed_codes:
+            got.setdefault(c, c)
+            SEEDSET.add(c)
         w("")
         w("◆ 板块【%s】成分 %d 只（源：%s）" % (q, len(got), "；".join(LOG[-3:]) if LOG else "—"))
-        for cd, nm in list(got.items())[:160]:   # ★每个板块最多160只，避免前面的板块把名额吃光
+        _ordered = [x for x in got.items() if x[0] in SEEDSET] + [x for x in got.items() if x[0] not in SEEDSET]
+        for cd, nm in _ordered[:160]:   # ★每个板块最多160只，避免前面的板块把名额吃光
             pool.setdefault(cd, nm)
             sec_of.setdefault(cd, q)
     codes = [c for c in pool if not c.startswith(("8", "4", "92"))][:800]
@@ -350,6 +377,8 @@ def main():
                 "证券": ["证券", "经纪"], "电池": ["锂电", "电池", "正极", "负极", "隔膜", "电解液"]}
 
     def related(c):
+        if c in SEEDSET:
+            return True
         q = sec_of.get(c)
         b = rel.get(c, "")
         if not b:
