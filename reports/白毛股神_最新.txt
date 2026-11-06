@@ -4,7 +4,7 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6787条）
   存档最近同步：2026-11-04T18:16:19Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-04T18:16 UTC，已停更约36小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-04T18:16 UTC，已停更约42小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
@@ -21,7 +21,7 @@
     人形机器人/物理AI ×2 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
     衬底/封装材料 ×1 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$AAOI×3 $CRWD×2 $AMZN×2 $MU×2 $NET×1 $NOK×1 $NBIS×1 $SIVE×1 $LITE×1 $AMD×1 $NVDA×1 $ATS×1 $CIFR×1 $GOOGL×1 $NOW×1 $TSLA×1 $ESMT×1 $SKHY×1 $SNDK×1 $DUOL×1
+  提到的代码：$AAOI×3 $AMZN×2 $CRWD×2 $MU×2 $NET×1 $NBIS×1 $NOK×1 $LITE×1 $NVDA×1 $AMD×1 $ATS×1 $SIVE×1 $NOW×1 $CIFR×1 $TSLA×1 $ESMT×1 $GOOGL×1 $SNDK×1 $SKHY×1 $DUOL×1
 
   ── 原创推文（全文，新→旧）──
   [11-05 02:16] 📝原创 ## Post ## Serenity on X: "Cyberoffense/defense is probably going to eat up a TON of compute and end up a continuous compute-intensive arms race. Even $AMZN CEO thinks cybersecurity would take up 20% of tokens consumed for the next year. It's literally a problem of how much you throw at compute for vulnerability discovery + model capability, from of my chats w/ Horizon3. And this is going to become a nation state issue, as seen with the implications already with PHP to vulnerabilities with banks/infrastructure from AI swarms. But people see this and throw money at $CRWD, $NET, and others, which I was saying was a bubble. If it's a compute issue, the economics go to the infra, from neoclouds 
