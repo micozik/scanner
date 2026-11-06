@@ -970,6 +970,10 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
                 _lim = board_limit(cd)
                 if pct is not None and float(pct) >= _lim - 0.3:
                     w("      ⚠️ 今天涨停：封板后成交几乎都被记成卖盘，这个口径失真，不作判断依据")
+                elif pct is not None and float(pct) <= -(_lim - 1.0):
+                    # ★11/06 东山精密跌停附近：本口径算出"大单净+16亿"，东财主力口径却是"净流出−16.69亿全场第一"
+                    #   跌停/贴近跌停时成交多是卖方砸向买一挂单，被记成"买盘" → 方向反了
+                    w("      🔴 今天跌停或贴近跌停：卖单砸向买一挂单会被记成'买盘'，本口径方向可能完全相反（11/06东山精密实测：本口径+16亿 vs 东财主力−16.7亿），不作判断依据")
             except Exception:
                 pass
             if sm is not None and abs(net) >= 0.03 and (net > 0) != (sm > 0):
