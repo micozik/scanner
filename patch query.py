@@ -1090,7 +1090,7 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
             cf = m.get("经营现金流")
             if cf and ni and src == "新浪" and ni[0][1]:
                 r = cf[0][1] / ni[0][1]
-                w("      → 经营现金流/净利 = %.2f（<0.5 利润含金量差）" % r)
+                w("      → 经营现金流/净利 = %.2f（%s）" % (r, "🔴<0.5 利润含金量差，不做中线" if r < 0.5 else "✅≥0.5 利润有现金支撑"))
                 if r < 0.5:
                     sc.append(("现金流", -1, "现金流/净利%.2f" % r))
                 elif r > 1:
