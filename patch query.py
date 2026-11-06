@@ -929,6 +929,23 @@ def _yi(v):
 _PICKS = []   # ★11/03 选股样本库：每次查股票的结论都记下，pick_eval.py 算命中率
 
 
+
+def _switch_state():
+    """★11/06 硬闸：读最新A股扫描的"今日资金开关"。用户："你每次说写进去，但是好像都不遵守"
+    → 规则不靠自觉，写进代码：资金开关🔴时，任何新买入结论强制🔴。"""
+    try:
+        import glob as _g
+        fs = sorted(_g.glob("reports/r*.txt"), key=lambda x: int("".join(c for c in os.path.basename(x) if c.isdigit()) or 0))
+        for fn in reversed(fs[-3:]):
+            txt = open(fn, encoding="utf-8", errors="ignore").read(6000)
+            m = re.search(r"(\d{4}-\d{2}-\d{2}) \d{2}:\d{2}", txt)
+            sw = re.search(r"今日资金开关：(\S+)", txt)
+            if sw:
+                return (m.group(1) if m else ""), sw.group(1)
+    except Exception:
+        pass
+    return "", ""
+
 def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
     """★11/03 深查输出 + 综合结论（一次查完就有结论）"""
     dp = dp or {}
@@ -1240,6 +1257,19 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
             elif strong and okb:
                 w("      回测：强市超跌单 1801笔 胜率31% 每笔−0.60% → 强市别抄底")
                 sc.append(("大盘", -1, "强市超跌单历史负期望"))
+    except Exception:
+        pass
+    # ★11/06 硬闸①：资金开关🔴 → 不开新仓（持仓只按卖出规则管理）
+    try:
+        _sd, _sw = _switch_state()
+        if _sw.startswith("🔴"):
+            veto.append("资金开关🔴关（%s扫描）——弱势不开新仓" % _sd[5:])
+    except Exception:
+        pass
+    # ★11/06 硬闸②：贴近跌停 → 盘口口径失真、承接无法确认，不买
+    try:
+        if pct is not None and float(pct) <= -(board_limit(cd) - 1.0):
+            veto.append("贴近跌停（%.1f%%）资金承接无法确认" % float(pct))
     except Exception:
         pass
     # ★综合结论
