@@ -2,26 +2,54 @@
 ============================================================
 🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
 ============================================================
-  来源：raw.githubusercontent.com 公开存档（共6787条）
-  存档最近同步：2026-11-04T18:16:19Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-04T18:16 UTC，已停更约45小时 → 启动实时补抓
+  来源：raw.githubusercontent.com 公开存档（共6810条）
+  存档最近同步：2026-11-06T15:25:35Z UTC（状态 ok）
+  ⚠️ 存档最新一条 2026-11-06T15:25 UTC，已停更约9小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
   实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
-  最近48小时：原创 4 条 / 回复 0 条（北京时间）
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
+  最近72小时：原创 17 条 / 回复 10 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×17 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    存储/HBM/NOR ×14 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    算力/云/数据中心 ×7 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    CPO/光模块 ×7 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    人形机器人/物理AI ×2 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
-    衬底/封装材料 ×1 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
-    CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$AAOI×3 $AMZN×2 $CRWD×2 $MU×2 $NET×1 $NOK×1 $NBIS×1 $SIVE×1 $ATS×1 $AMD×1 $NVDA×1 $LITE×1 $TSLA×1 $CIFR×1 $SKHY×1 $GOOGL×1 $NOW×1 $ESMT×1 $SNDK×1 $DUOL×1
+    激光/光芯片/InP ×64 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    存储/HBM/NOR ×21 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    算力/云/数据中心 ×20 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    CPO/光模块 ×19 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
+    CPU/ARM ×4 → CPU/接口：澜起科技688008 海光信息688041
+    衬底/封装材料 ×3 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
+    人形机器人/物理AI ×3 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
+  提到的代码：$LITE×5 $AAOI×5 $SPCX×4 $COHR×4 $NBIS×3 $SIVE×3 $MU×3 $RKLB×2 $SKHY×2 $TSM×2 $AMD×2 $INTC×2 $NVDA×2 $GOOGL×2 $CBRS×2 $TSLA×2 $MRVL×2 $AMZN×2 $CRWD×2 $ASTS×1
 
   ── 原创推文（全文，新→旧）──
+  [11-06 23:25] 📝原创 Woah, this caught my attention today. Apparently $ASTS decided to build their own medium/heavy lift reusable rockets. Could be a potential competitor to $RKLB Neutron or $SPCX Falcon 9? "Starting in late 2028, the use of the Blacklift rocket will complete AST SpaceMobile's end-to-end vertical integration" But it kinda seems extremely difficult, capital intensive, and takes very long to do... But more valuable if they can pull it off Does anyone in the Spacemob think this is realistically achievable given AST capabilities?
+      https://x.com/aleabitoreddit/status/2118726497129423273
+  [11-06 20:33] 📝原创 In response to the recent market volatility across $TSM to $SKHY to Innolight: - Taiwan to restrict borrowed share short selling from 30% -> 3% relative to order volumes (90% reduction), effective Nov 9th. Taiwan is separately raising its minimum collateral requirement from 90% to 130% for margin short selling. And authorized the $15.3B stabilization fund for Government buying in the stock market. - South Korea to waive 140% margin-loan collateral maintenance for 3 months to reduce forced selling, effective Nov 9th. - China introduced a series of stock-market support package aimed at stabilizing equities. People's Bank of China introduced a $15 billion liquidity-swap operation for securities
+      https://x.com/aleabitoreddit/status/2118683089383874576
+  [11-06 15:24] 📝原创 Everyone’s a long term investor for 2027, 2028, or 2029 onward Until their portfolio experiences volatility months in. I still think: - $RKLB could end up the next $SPCX - $NBIS has the potential to be the next hyperscaler - $SIVE has moonshot potential to be the next $LITE - 1-3x P/E memory companies and $AXTI substrate bottlenecks are more durable than markets think And that it’s stupid to sell single digit fwd P/E AI companies or promising longs. And rotate that into 5% growth towel resellers at 47x P/E. Or 180x cyber companies, just because they’re going up. I’ve seen $AMD go from the $3 valley of doom to $400 as people thought it could be the next $INTC / $NVDA. And been through the Bit
+      https://x.com/aleabitoreddit/status/2118605467459199016
+  [11-06 14:00] 📝原创 Kinda wild to see how fast Anthropic is growing that they’ve now exceeded $80B run rate as of October. The number materially exceeded expectations in the $70B range +- few billion). Anthropic should still probably follow what YMTC’s example in China and delay their IPO. Would probably be helpful with liquidity with other AI companies amid current liquidations.
+      https://x.com/aleabitoreddit/status/2118584259619520787
+  [11-06 13:00] 📝原创 $AAOI earnings: - $1B-$1.5B LTA disclosed with a hyperscaler customer - 2nd LTA coming soon, worth 5x+ more (implying $5B-$7.5B), in its final stages. This LTA explicitly includes lasers, very material for AOI that they're moving to supplying merchant lasers. - "The demand is exceptional, unprecedented. I do not know what kind of superlatives to use to describe the amount of demand that we are seeing out there in the industry" Yeah this commentary doesn't sound like any optical demand would slowed down if it's "exceptional + unprecedented" - Rejected hyperscaler slowdowns from political changes with little effect. - AOI Can only meet 80% of demand, in case there's a kind of reduction, the de
+      https://x.com/aleabitoreddit/status/2118569237128286343
+  [11-06 04:52] 📝原创 $GLXY CEO after pushing back on Texas political uncertainty: "I see a massive disconnect between where Galaxy trades and what I believe this company is worth. That’s why I’m buying more stock, starting today." Good vote of confidence to see colo executives calling out fundamental disconnects amid sector liquidations. Then putting their own capital behind their statement.
+      https://x.com/aleabitoreddit/status/2118446295274901803
+  [11-06 03:18] 📝原创 $GOOGL formally announces a new $17 Billion DC in Wyoming. Google also announced they’re using $BE fuel cells for this project. Guess this news means it’s all over for the AI buildout.
+      https://x.com/aleabitoreddit/status/2118422637320007721
+  [11-06 01:07] 📝原创 Don’t look at the indexes
+      https://x.com/aleabitoreddit/status/2118389649941160083
+  [11-06 00:54] 📝原创 RT @andrewdfeldman: Last week, a short seller, @CulperResearch, published a report arguing that @cerebras wafers wear out after about two y…
+      https://x.com/aleabitoreddit/status/2118386579853267313
+  [11-05 17:19] 📝原创 Citadel in October: Tech companies created an AI bubble reminiscent of the dot-com crash. Citadel in November: “The setup has improved” Earnings continue to beat while AI infrastructure valuations compressed sharply.
+      https://x.com/aleabitoreddit/status/2118272043288547413
+  [11-05 15:41] 📝原创 I think this is the time for AI companies to appoint representatives on X. To directly combat misleading AI narratives affecting ecosystem valuations and their financing ability. The financial incentives to amplify overblown fears are enormous. Both from well-capitalized executives who benefit from smaller competitors collapsing. And from firms aiming to profit off deleveraging the AI trade. It shouldn’t take quarterly earnings to finally push back against false rumors of oversupply or buildout delays.
+      https://x.com/aleabitoreddit/status/2118247436733055110
+  [11-05 12:36] 📝原创 $COHR earnings transcript TLDR: Q: On $LITE + $MRVL merger. A. Customers will prefer an independent optical supplier without competitive conflicts (opportunity for other merchant laser suppliers) Q: Loop Capital asked about 2028 laser industry oversupply. A: No oversupply risk by 2028. Coherent’s entire current internal InP production is consumed by its own products while its expanding capacity. Q: On Chinese laser competition for CPO UHP lasers A: “We really only have one competitor” (hinting at $LITE). Q: On financing concerns for capacity expansion during this market scare A: Customer LTAs have prepayments, which are used for product capacity orders 2027 completely sold out, LTAs extend t
+      https://x.com/aleabitoreddit/status/2118200689453314341
+  [11-05 02:36] 📝原创 New SEC filing discloses $INTC CEO buying $9.71M worth of Intel shares at $64.7 under his family trust. Pretty large vote of confidence after the 49.9% drop this month. Reminds me of the time the former $TSM chairman bought $7.8M of $MU back in the $300's.
+      https://x.com/aleabitoreddit/status/2118049698733064433
   [11-05 02:16] 📝原创 ## Post ## Serenity on X: "Cyberoffense/defense is probably going to eat up a TON of compute and end up a continuous compute-intensive arms race. Even $AMZN CEO thinks cybersecurity would take up 20% of tokens consumed for the next year. It's literally a problem of how much you throw at compute for vulnerability discovery + model capability, from of my chats w/ Horizon3. And this is going to become a nation state issue, as seen with the implications already with PHP to vulnerabilities with banks/infrastructure from AI swarms. But people see this and throw money at $CRWD, $NET, and others, which I was saying was a bubble. If it's a compute issue, the economics go to the infra, from neoclouds 
       https://x.com/aleabitoreddit/status/2118044688829845703
   [11-05 01:40] 📝原创 [](https://x.com/aleabitoreddit) For companies like $SIVE / $AAOI, the demand imbalance for lasers are so severe That even a 20-30% overall demand reduction from a hypothetical DC slowdown would likely not eliminate the shortage. We're seeing this before the next architectural shifts, where $NVDA Jensen Huang expects 15x optical volume for CPO scale-up. And as more hyperscalers commit to NPO as seen with $LITE new $5B UHP laser contracts. I'd argue this is more nuanced since I can't say the same for finished 800G/1.6T pluggables or lower end 70mW-100mW laser ranges that are currently bottlenecks. But this argument is more toward higher spec lasers. $AAOI is vertically integrated and has 300-
@@ -30,6 +58,22 @@
       https://x.com/aleabitoreddit/status/2118015527440515458
   [11-04 23:37] 📝原创 We’re seeing the great rotation into safe, quality assets. $DUOL +34.86% $MU -4.41%
       https://x.com/aleabitoreddit/status/2118004727053218010
+  [11-06 14:07] ↩回复 @wannabepanacea I mean considering all the market liquidations now, another mega-IPO during this time wouldn’t be the best idea… $SPCX in June was a good example, soaking up a ton of market liquidity from growth names. OpenAI postponed theirs into 2027 and reactions were fine
+      https://x.com/aleabitoreddit/status/2118586028944687282
+  [11-06 13:05] ↩回复 @Jsjsjsjd88 $IREN 90% GPU capex prepayment on a 5Y contract is exceptionally bullish and surprising to say the least... Especially given market concerns over Neocloud financing.
+      https://x.com/aleabitoreddit/status/2118570510783246410
+  [11-06 01:37] ↩回复 @InvEnProceso_ I wasn’t using much leverage before, but I actually introduced it on this drop today. Kinda feels like -20% capitulation periods like these are the time you use leverage, rather than chasing the top. Definitely not a recommendation to others on how to position or trade. We’ll see how things end up.
+      https://x.com/aleabitoreddit/status/2118397193354899865
+  [11-06 00:57] ↩回复 @andrewdfeldman @CulperResearch @cerebras Glad to see a direct response from $CBRS about the short report
+      https://x.com/aleabitoreddit/status/2118387249087918591
+  [11-05 16:41] ↩回复 @rupakrt Why does it take some random anime character on X to push back against AI narratives? When you have all these companies worth billions, or even trillions, staying silent while their valuations crash. Depressed valuations does in fact trigger reflexive pressure on financing and counterparty confidence.
+      https://x.com/aleabitoreddit/status/2118262426101547280
+  [11-05 16:24] ↩回复 @Dubbiosismo @elonmusk Elon is the perfect example though, on what you should do to dispute the BS If there’s a false WSJ report or X post on $TSLA or $SPCX… Even if it’s something as little as space datacenters won’t work, he just calls it out real time. I’m not saying every industry executive should do this, but at least hire a representative to defend against misleading narratives
+      https://x.com/aleabitoreddit/status/2118258090328162483
+  [11-05 16:06] ↩回复 @ValueSpectre I’m just calling out what I see with a failure in corporate communication, when so much is at stake. I’m really not sure why SK Hynix/Samsung representing SK’s economy let narratives of memory oversupply be dominated by their own customers on X. Or why $CBRS, which lost billions in valuation after the short seller report, is waiting for an analyst question in earnings to fix the damage Or why many of the “guppies” that would face a death in the Neocloud market aren’t actively fighting back against that claim here. A lot of narratives and claims originated and were distributed via X. Even if you don’t like Elon or X, even the Democratic Party combats narratives here as seen with
+      https://x.com/aleabitoreddit/status/2118253723244007677
+  [11-05 15:12] ↩回复 @acceler8future That’s just blatantly false, there’s heavy industry doubts if MicroLED are even commercializable for CPO. Also regarding $COHR on optical demand: “We continue to see no signs of attenuation in demand.” Laser demand is independently as strong as memory, and Coherent / Lumentum wouldn’t be signing $20B or $5B LTAs left and right.
+      https://x.com/aleabitoreddit/status/2118240089025413421
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
