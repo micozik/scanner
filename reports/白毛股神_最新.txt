@@ -2,33 +2,29 @@
 ============================================================
 🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
 ============================================================
-  来源：raw.githubusercontent.com 公开存档（共6829条）
-  存档最近同步：2026-11-07T17:11:34Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-07T17:11 UTC，已停更约37小时 → 启动实时补抓
+  来源：raw.githubusercontent.com 公开存档（共6830条）
+  存档最近同步：2026-11-08T09:35:19Z UTC（状态 ok）
+  ⚠️ 存档最新一条 2026-11-08T09:35 UTC，已停更约27小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
+  实时补抓⑤[syndication] syndication.twitter.com：2条
   实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 4 条 / 回复 14 条（北京时间）
+  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 3 条 / 回复 12 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    存储/HBM/NOR ×10 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    存储/HBM/NOR ×12 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
     算力/云/数据中心 ×9 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    激光/光芯片/InP ×7 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    激光/光芯片/InP ×9 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
     CPO/光模块 ×5 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-  提到的代码：$MU×3 $NVDA×3 $TSM×1 $MSFT×1 $IREN×1 $TWST×1 $SPCX×1 $NBIS×1 $LITE×1 $MRVL×1 $SIVE×1 $AAOI×1 $POET×1 $AMZN×1 $GOOGL×1
+  提到的代码：$LITE×2 $MU×2 $NVDA×2 $POET×1 $COHR×1 $ESMT×1 $TSM×1 $MSFT×1 $IREN×1 $TWST×1 $SPCX×1 $NBIS×1 $MRVL×1 $SIVE×1 $AAOI×1
 
   ── 原创推文（全文，新→旧）──
+  [11-08 17:35] 📝原创 [](https://x.com/aleabitoreddit) It think it's stupid that "AI Bubble" gets used over and over. In infra names you have: - 1-3x fwd P/E memory companies from Samsung to $ESMT. With HBM players now having hyperscaler multi-year price floor LTAs. - Optical companies like $POET traded -$97M under net cash. Valuing the operating business very negatively, not even at $0. - While AI companies with larger premiums continue to record demand over the next 3-5 years. Such as the new $20B LTAs signed w/ $COHR to $5B LTAs signed w/ $LITE. Can someone in the media honestly see negative EV high-beta optical companies, where 2 years of burnrate would still value the company below $0. or single digit memory
+      https://x.com/aleabitoreddit/status/2119363124147191823
   [11-08 00:01] 📝原创 A $TSM Spokesperson has reportedly denied exploring 3D DRAM per Tom's Hardware. After a report yesterday from The Information stated TSMC's production plans were from $NVDA's request. The implications would have put TSMC in competition with $MU, SK Hynix, and Samsung and set
       https://x.com/aleabitoreddit/status/2119097842363211968
   [11-07 22:40] 📝原创 I'm going to give a contrarian take on Neoclouds like $NBIS and say the theme looks compelling after the valuation crash. Since there's a reason why Elon's $SPCX is heavily focused on this market full of "guppies" that would die: He sees how attractive the economics are after
       https://x.com/aleabitoreddit/status/2119077473107472729
-  [11-07 20:05] 📝原创 今年收益率仍有 +594.4% YTD，不过巴菲特大概睡得比我安稳。 我那套面向2027–2028年的光电子和存储投资逻辑，看来大家已经等不及了，提前一年就叫我交卷打分。 不过，巴菲特的投资组合规模大得多，他那19%的收益率，我还真比不了。
-      https://x.com/aleabitoreddit/status/2119038604819468364
-  [11-07 19:04] 📝原创 Some industry commentary regarding a few claims recently on memory + Softbank Turbine defaulting. - On claims that LTAs are "meaningless while prices fall": $MU: "strategic customer agreements cannot be unilaterally canceled. Customers are obligated to pay for their committed
-      https://x.com/aleabitoreddit/status/2119023086502805730
   [11-08 01:11] ↩回复 @jukan05 Yep! That's a fair example with onsemi. But I'm not quite sure it's appropriate to extrapolate from historical examples of mutually agreed contract changes. And apply that to today's memory market and assume $MU would make concessions if demand/pricing ever drops. Micron
       https://x.com/aleabitoreddit/status/2119115555093557488
   [11-08 00:22] ↩回复 @pepemoonboy Thanks Pepe! Hope you're doing well too and it's always fun to see your support from time to time. The scale of my drawdown was actually very extreme, so a bit stressful... But I'm still directionally long. Hoping for a recovery in 2027.
@@ -53,10 +49,6 @@
       https://x.com/aleabitoreddit/status/2119047141746418066
   [11-07 20:23] ↩回复 @NenadVacuum My cost averages are a lot different. My memory longs were once up +450%, but many are probably down to +50-100% unrealized. I still hold those. Just tax lost harvesting a bit of my $AAOI position over time was a few million realized losses (I'm still long, this is just tax
       https://x.com/aleabitoreddit/status/2119043029369762209
-  [11-07 19:36] ↩回复 @soulernauts I think we've reached extreme market dislocation territory. $POET as one example traded close to -$98M under their net cash on Thursday, giving a very negative value to their actual business. But even if hyperscaler capex gets reduced, I'd argue demand visibility on some
-      https://x.com/aleabitoreddit/status/2119031172705771860
-  [11-07 19:14] ↩回复 @PatrikBatCrypto I know this is an AI reply but just to piggyback, I agree counterparty analysis is really important. If we look at memory LTAs, in general they're primarily coming from $NVDA, $GOOGL, $AMZN, and your richest hyperscalers. Other commitments come from Qualcomm to Hyundai.
-      https://x.com/aleabitoreddit/status/2119025765308350564
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
