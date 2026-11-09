@@ -11,14 +11,14 @@
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
   实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
   🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 4 条 / 回复 15 条（北京时间）
+  最近48小时：原创 4 条 / 回复 14 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×10 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     存储/HBM/NOR ×10 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    激光/光芯片/InP ×9 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    CPO/光模块 ×6 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-  提到的代码：$NVDA×4 $MU×3 $LITE×2 $TSM×1 $MSFT×1 $IREN×1 $TWST×1 $SPCX×1 $NBIS×1 $MRVL×1 $SIVE×1 $AAOI×1 $POET×1 $GOOGL×1 $AMZN×1 $COHR×1
+    算力/云/数据中心 ×9 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×7 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    CPO/光模块 ×5 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
+  提到的代码：$MU×3 $NVDA×3 $TSM×1 $MSFT×1 $IREN×1 $TWST×1 $SPCX×1 $NBIS×1 $LITE×1 $MRVL×1 $SIVE×1 $AAOI×1 $POET×1 $AMZN×1 $GOOGL×1
 
   ── 原创推文（全文，新→旧）──
   [11-08 00:01] 📝原创 A $TSM Spokesperson has reportedly denied exploring 3D DRAM per Tom's Hardware. After a report yesterday from The Information stated TSMC's production plans were from $NVDA's request. The implications would have put TSMC in competition with $MU, SK Hynix, and Samsung and set
@@ -57,8 +57,6 @@
       https://x.com/aleabitoreddit/status/2119031172705771860
   [11-07 19:14] ↩回复 @PatrikBatCrypto I know this is an AI reply but just to piggyback, I agree counterparty analysis is really important. If we look at memory LTAs, in general they're primarily coming from $NVDA, $GOOGL, $AMZN, and your richest hyperscalers. Other commitments come from Qualcomm to Hyundai.
       https://x.com/aleabitoreddit/status/2119025765308350564
-  [11-07 14:30] ↩回复 @SiversSemicond @VickramVathulya @sallywf @eetimes I found the technical discussion helpful, but investor messaging to be way too conservative. If you look at how $NVDA CEO describes CPO, Jensen states scale up is increasing optical volumes by 15x. $LITE and $COHR are quantifying that by describing $5-$20B agreements spanning
-      https://x.com/aleabitoreddit/status/2118954148398080283
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
