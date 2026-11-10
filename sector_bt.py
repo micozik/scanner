@@ -102,6 +102,23 @@ def main():
             feat[(n, rows[k]["d"])] = dict(r1=r1, r3=r3, r5=r5, r20=r20, ar=a5 / a60 if a60 else 0,
                                             up3=up3, above20=c >= ma20)
 
+    # ★11/10 轮动三分类回测：每天按当日涨幅给板块排名，算前5日平均排名
+    _byday = {}
+    for (n, d), f in feat.items():
+        _byday.setdefault(d, []).append((n, f["r1"]))
+    for d, lst in _byday.items():
+        lst.sort(key=lambda x: -x[1])
+        for i, (n, _) in enumerate(lst, 1):
+            feat[(n, d)]["rk"] = i
+            feat[(n, d)]["N"] = len(lst)
+    _dpos = {d: i for i, d in enumerate(days)}
+    for (n, d), f in list(feat.items()):
+        i = _dpos[d]
+        prev = [feat.get((n, days[j])) for j in range(max(0, i - 5), i)]
+        prev = [x for x in prev if x and "rk" in x]
+        f["avg5"] = sum(x["rk"] for x in prev) / len(prev) if len(prev) >= 3 else None
+        f["prk"] = prev[-1]["rk"] if prev else None
+
     def fwd(n, d, H):
         k = idx[n].get(d)
         rows = data[n]
@@ -134,6 +151,15 @@ def main():
         "B2 启动第1天+放量(量比≥1.3)": lambda d: rank_top(d, "r1", cond=lambda f: f["r20"] <= 0 and f["ar"] >= 1.3),
         "C1 追连涨3天(3日>5%)": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)]["up3"] and feat[(n, d)]["r3"] > 5],
         "T1 站上20日线+5日动量前3": lambda d: rank_top(d, "r5", cond=lambda f: f["above20"]),
+        "X1 轮动·依旧强势(前5日均排名前25%且今日前25%)": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)].get("avg5") is not None
+            and feat[(n, d)]["avg5"] <= 0.25 * feat[(n, d)]["N"] and feat[(n, d)]["rk"] <= 0.25 * feat[(n, d)]["N"]],
+        "X2 轮动·突然冒头(今日前15、前5日均在后60%)": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)].get("avg5") is not None
+            and feat[(n, d)]["rk"] <= 15 and feat[(n, d)]["avg5"] > 0.4 * feat[(n, d)]["N"] and (feat[(n, d)]["prk"] or 0) > 0.3 * feat[(n, d)]["N"]],
+        "X3 轮动·突然掉队(前5日均前20%、今日后40%)→买了会怎样": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)].get("avg5") is not None
+            and feat[(n, d)]["avg5"] <= 0.2 * feat[(n, d)]["N"] and feat[(n, d)]["rk"] >= 0.6 * feat[(n, d)]["N"]],
+        "X4 依旧强势+站上20日线+20日动量为正": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)].get("avg5") is not None
+            and feat[(n, d)]["avg5"] <= 0.25 * feat[(n, d)]["N"] and feat[(n, d)]["rk"] <= 0.25 * feat[(n, d)]["N"]
+            and feat[(n, d)]["above20"] and feat[(n, d)]["r20"] > 0],
     }
 
     res = {}
