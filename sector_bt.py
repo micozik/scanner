@@ -179,6 +179,19 @@ def main():
             w(f"   {name} ｜ 持有{H}天 ｜ 检验段超额{m:+.2f}% 胜{wr*100:.0f}%")
     else:
         w("❌ 没有一条板块规则在样本外站得住 → 不能把它当买入依据")
+    # ===== 今日信号（最后一个交易日）=====
+    last = days[-1]
+    sg = strong(last)
+    w("\n" + "=" * 70)
+    w(f"📍今日（{last}）信号 ｜ 大盘环境：沪深300 {'在60日线上=强市' if sg else ('在60日线下=弱市' if sg is not None else '未知')}")
+    ks = [x for x in h3d if x <= last][-60:]
+    if len(ks) == 60:
+        w(f"   沪深300 {h3[ks[-1]]:.2f} ｜ MA60 {sum(h3[x] for x in ks)/60:.2f}")
+    for name in ["M2 20日动量前3", "R1 20日最弱3个(反转)", "M1 5日动量前3"]:
+        picks = S[name](last)
+        w(f"   {name}：" + "、".join(f"{n}(20日{feat[(n,last)]['r20']:+.1f}% 5日{feat[(n,last)]['r5']:+.1f}%)" for n in picks))
+    top10 = rank_top(last, "r20", k=10)
+    w("   20日动量前10：" + "、".join(f"{n}{feat[(n,last)]['r20']:+.1f}%" for n in top10))
     w(f"耗时 {time.time()-t0:.0f} 秒")
     os.makedirs("reports", exist_ok=True)
     open("reports/板块回测.txt", "w", encoding="utf-8").write("\n".join(L))
