@@ -2791,6 +2791,35 @@ def scan_board_rank():
         w(f"  ◆ {title}跌幅前5：")
         for _, r in df.tail(5).iloc[::-1].iterrows():
             w(f"    {r[c_name]} | {r[c_pct]}%")
+        # ★11/10 用户："今天什么板块突然冒头、什么板块突然废了、什么板块依旧强势，要记下来告诉我"
+        try:
+            _N = len(df)
+            _ds = sorted([d for d in hist["days"] if d < today], reverse=True)[:5]
+            if _N >= 20 and len(_ds) >= 3:
+                _rows = []
+                for i, (_, r) in enumerate(df.iterrows(), 1):
+                    nm = str(r[c_name]); pct = float(r[c_pct])
+                    recs = [hist["days"][d].get(nm) for d in _ds]
+                    recs = [x for x in recs if x]
+                    if len(recs) < 3:
+                        continue
+                    avg_rk = sum(x.get("rank", _N) for x in recs) / len(recs)
+                    prev_rk = recs[0].get("rank", _N)
+                    cum5 = sum(x.get("pct", 0) for x in recs)
+                    _rows.append((nm, i, pct, prev_rk, avg_rk, cum5))
+                top, bot = 0.2 * _N, 0.6 * _N
+                rise = [x for x in _rows if x[1] <= 15 and x[4] > 0.4 * _N and x[3] > 0.3 * _N]
+                fall = [x for x in _rows if x[4] <= top and (x[1] >= bot or x[2] < 0)]
+                keep = [x for x in _rows if x[4] <= 0.25 * _N and x[1] <= 0.25 * _N]
+                w(f"  ◆ {title}轮动三分类（对比前{len(_ds)}个交易日排名，共{_N}个）：")
+                w("    🆕突然冒头（今天前15、前几天在中下游）：" + ("、".join(
+                    f"{x[0]}{x[2]:+.1f}%(前{len(_ds)}天均第{x[4]:.0f}→今第{x[1]})" for x in rise[:10]) or "无"))
+                w("    💀突然掉队（前几天在前20%、今天跌出后40%或转跌）：" + ("、".join(
+                    f"{x[0]}{x[2]:+.1f}%(均第{x[4]:.0f}→今第{x[1]})" for x in sorted(fall, key=lambda x: x[2])[:10]) or "无"))
+                w("    💪依旧强势（前几天和今天都在前25%）：" + ("、".join(
+                    f"{x[0]}{x[2]:+.1f}%(前{len(_ds)}天累计{x[5]:+.1f}%)" for x in sorted(keep, key=lambda x: x[1])[:10]) or "无"))
+        except Exception as _e_rot:
+            w(f"  [轮动三分类失败] {type(_e_rot).__name__}: {str(_e_rot)[:60]}")
         if can_save:
             for i, (_, r) in enumerate(df.iterrows(), 1):
                 store[str(r[c_name])] = {"pct": round(float(r[c_pct]), 2), "rank": i}
