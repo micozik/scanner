@@ -5273,8 +5273,16 @@ def _save_flow_hist():
     f = "reports/sector_flow_hist.json"
     try:
         d = _load_flow_hist()
-        d[now_beijing().strftime("%Y-%m-%d")] = {
-            k: float(v) for k, v in SECTOR_FLOW_MAP.items()}
+        _today = now_beijing().strftime("%Y-%m-%d")
+        _new = {k: float(v) for k, v in SECTOR_FLOW_MAP.items()}
+        # ★11/10修：接口返回昨天的数时（≥80%行业数值与前一交易日完全相同）不写入今天，免得污染"连续N天"
+        _prev = [k for k in sorted(d.keys()) if k < _today]
+        if _prev:
+            _p = d[_prev[-1]]
+            _ks = [k for k in _new if k in _p]
+            if len(_ks) >= 20 and sum(1 for k in _ks if abs(_new[k] - float(_p[k] or 0)) < 0.01) >= 0.8 * len(_ks):
+                return
+        d[_today] = _new
         ks = sorted(d.keys(), reverse=True)[:30]
         d = {k: d[k] for k in ks}
         os.makedirs("reports", exist_ok=True)

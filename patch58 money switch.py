@@ -54,11 +54,24 @@ NEW = r'''    # ===== @@MARK@@：资金开关 + 资金轮动 =====
         except Exception:
             _h58 = {}
         _days58 = sorted(_h58)[-3:]
+        # ★11/10修：盘中行业资金接口有时返回昨天的数 → 今日==昨日时判为"陈旧"，不算进开关和连续天数
+        _stale58 = False
+        _all58 = sorted(_h58)
+        if len(_all58) >= 2:
+            _t58, _y58 = _h58.get(_all58[-1], {}), _h58.get(_all58[-2], {})
+            _ks58 = [k for k in _t58 if k in _y58]
+            if len(_ks58) >= 20:
+                _same58 = sum(1 for k in _ks58 if abs(float(_t58[k] or 0) - float(_y58[k] or 0)) < 0.01)
+                if _same58 >= 0.8 * len(_ks58):
+                    _stale58 = True
+                    _days58 = _all58[:-1][-3:]
         def _bk(day, names):
             dd = _h58.get(day, {})
             return sum(float(dd.get(n, 0) or 0) for n in names)
-        _g_today = _bk(_days58[-1], _GROW58) if _days58 else None
-        _d_today = _bk(_days58[-1], _DEF58) if _days58 else None
+        _g_today = _bk(_days58[-1], _GROW58) if (_days58 and not _stale58) else None
+        _d_today = _bk(_days58[-1], _DEF58) if (_days58 and not _stale58) else None
+        if _stale58:
+            _L58.append("  ⚠️⚠️ 今日行业资金=昨日数据（接口未更新/缓存），今天的资金不可用：下表只到昨天，开关不含'成长篮子今日'信号；盘中请用查股票盘口(腾讯)+均价线判断")
         # --- 开关 ---
         _off, _why = 0, []
         if _sox58 is not None and _sox58 <= -2: _off += 1; _why.append(f"费半隔夜{_sox58:+.2f}%")
