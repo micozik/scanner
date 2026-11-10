@@ -14,11 +14,15 @@ on:
         description: '最长持有天数'
         required: false
         default: '10'
+      mode:
+        description: 'all=个股回测+因子 ｜ sector=只跑板块轮动回测'
+        required: false
+        default: 'all'
 
 jobs:
   zt:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,8 +37,11 @@ jobs:
           HOLD: ${{ github.event.inputs.hold || '10' }}
         run: |
           touch /tmp/run_start
-          python backtest.py
-          python factor_search.py || echo 因子搜索失败
+          if [ "${{ github.event.inputs.mode }}" != "sector" ]; then
+            python backtest.py
+            python factor_search.py || echo 因子搜索失败
+          fi
+          timeout 1500 python sector_bt.py || echo 板块回测失败
       - name: 提交报告（reset+复制，不rebase）
         if: always()
         run: |
