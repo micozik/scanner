@@ -7,7 +7,7 @@
 
 输入：backup/决策记分.csv（每行一个动作）
   时间,代码,名称,动作,价格,理由
-  动作取值：买 / 卖 / 不买 / 撤单 / 持有
+  动作取值：买 / 卖 / 不买 / 撤单 / 持有 / 练手买（AI自练：虚拟1万，按规则每天14:35必出一笔，不论强弱市）
 打分口径：
   买、持有：之后涨=对，跌=错
   卖、不买、撤单：之后跌=对，涨=错（卖了它又涨=卖错）
@@ -56,12 +56,12 @@ def main():
         for h in (1, 3, 5):
             if len(after) >= h:
                 chg = (after[h - 1] / px - 1) * 100
-                good = chg > 1 if r["动作"] in ("买", "持有") else chg < -1
+                good = chg > 1 if r["动作"] in ("买", "持有", "练手买") else chg < -1
                 flat = abs(chg) < 1
                 tag = "平" if flat else ("对" if good else "错")
                 res.append(f"T+{h} {chg:+.1f}% {tag}")
                 if h in (1, 5):
-                    st = stat.setdefault((r["动作"] if r["动作"] in ("买", "持有") else "卖类", h), [0, 0, 0])
+                    st = stat.setdefault((r["动作"] if r["动作"] in ("买", "持有", "练手买") else "卖类", h), [0, 0, 0])
                     st[0 if tag == "对" else (1 if tag == "错" else 2)] += 1
             else:
                 res.append(f"T+{h} —")
@@ -70,6 +70,20 @@ def main():
     for (a, h), (g, b, f) in sorted(stat.items()):
         n = g + b
         L.append(f"  {a} T+{h}：对{g} 错{b} 平{f} ｜ 判对率 {g/n*100:.0f}%" if n else f"  {a} T+{h}：样本不足")
+    # 练手按轨道（理由开头【A抄底】/【B顺势】）分别统计平均收益
+    tr = {}
+    for r in rows:
+        if r["动作"] != "练手买":
+            continue
+        k = cache.get(r["代码"].strip()) or []
+        after = [c for d, c in k if d > r["时间"][:10]]
+        if len(after) >= 5:
+            g = r.get("理由", "")[:6]
+            tr.setdefault(g, []).append((after[4] / float(r["价格"]) - 1) * 100 - 0.2)
+    if tr:
+        L.append("\n—— 练手轨道（持有5天，扣成本0.2%）——")
+        for g, v in tr.items():
+            L.append(f"  {g}：{len(v)}笔 胜{sum(1 for x in v if x > 0)/len(v)*100:.0f}% 平均{sum(v)/len(v):+.2f}%")
     os.makedirs("reports", exist_ok=True)
     open(OUT, "w", encoding="utf-8").write("\n".join(L))
     print("\n".join(L))
