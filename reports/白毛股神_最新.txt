@@ -4,18 +4,20 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6838条）
   存档最近同步：2026-11-10T16:53:52Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约13小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约18小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
   实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
-  最近48小时：原创 6 条 / 回复 0 条（北京时间）
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
+  最近48小时：原创 5 条 / 回复 0 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     激光/光芯片/InP ×16 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
     CPO/光模块 ×8 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    算力/云/数据中心 ×5 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-  提到的代码：$NVDA×2 $LITE×2 $ANT×1 $GE×1 $SPCX×1 $AAOI×1 $COHR×1 $MRVL×1 $SIVE×1 $NBIS×1
+    算力/云/数据中心 ×4 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+  提到的代码：$LITE×2 $NVDA×1 $ANT×1 $GE×1 $SPCX×1 $AAOI×1 $SIVE×1 $MRVL×1 $COHR×1 $NBIS×1
 
   ── 原创推文（全文，新→旧）──
   [11-11 00:53] 📝原创 It’s pretty wild to see $NVDA crash -25% and lose close to $2T in valuation After projecting 70% supply-constrained growth FY2028. Also probably one of the worst times for $ANT to IPO at $1.4T ahead of Thursday… Are there still people out there interested at that price?
@@ -28,8 +30,6 @@
       https://x.com/aleabitoreddit/status/2119874063132995880
   [11-09 22:59] 📝原创 I did not expect everything in the AI trade from $LITE to $NBIS to rally today Off the “honeypot catalyst”?
       https://x.com/aleabitoreddit/status/2119807048204595582
-  [11-09 15:12] 📝原创 Every AI name in Taiwan from Mediatek to Winbond looks like its limit up. TAIEX: +4.94%, its 2nd largest daily gain in history. I guess the market is impressed by $NVDA’s Jensen Huang vitality at his age?
-      https://x.com/aleabitoreddit/status/2119689635869954503
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
