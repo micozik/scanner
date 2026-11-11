@@ -2803,20 +2803,21 @@ def scan_board_rank():
                     recs = [x for x in recs if x]
                     if len(recs) < 3:
                         continue
-                    avg_rk = sum(x.get("rank", _N) for x in recs) / len(recs)
+                    avg_rk = sum(x.get("rank", _N) for x in recs[:3]) / len(recs[:3])   # 近3日均排名（11/11改：A股板块隔日轮动快，5日均值太钝）
                     prev_rk = recs[0].get("rank", _N)
+                    r2 = recs[1].get("rank", _N) if len(recs) > 1 else _N
                     cum5 = sum(x.get("pct", 0) for x in recs)
-                    _rows.append((nm, i, pct, prev_rk, avg_rk, cum5))
+                    _rows.append((nm, i, pct, prev_rk, avg_rk, cum5, r2))
                 top, bot = 0.2 * _N, 0.6 * _N
                 rise = [x for x in _rows if x[1] <= 15 and x[4] > 0.4 * _N and x[3] > 0.3 * _N]
-                fall = [x for x in _rows if x[4] <= top and (x[1] >= bot or x[2] < 0)]
-                keep = [x for x in _rows if x[4] <= 0.25 * _N and x[1] <= 0.25 * _N]
-                w(f"  ◆ {title}轮动三分类（对比前{len(_ds)}个交易日排名，共{_N}个）：")
-                w("    🆕突然冒头（今天前15、前几天在中下游）：" + ("、".join(
-                    f"{x[0]}{x[2]:+.1f}%(前{len(_ds)}天均第{x[4]:.0f}→今第{x[1]})" for x in rise[:10]) or "无"))
-                w("    💀突然掉队（前几天在前20%、今天跌出后40%或转跌）：" + ("、".join(
-                    f"{x[0]}{x[2]:+.1f}%(均第{x[4]:.0f}→今第{x[1]})" for x in sorted(fall, key=lambda x: x[2])[:10]) or "无"))
-                w("    💪依旧强势（前几天和今天都在前25%）：" + ("、".join(
+                fall = [x for x in _rows if (x[3] <= 0.15 * _N or x[4] <= top) and (x[1] >= bot or x[2] < 0)]
+                keep = [x for x in _rows if x[3] <= 0.25 * _N and x[6] <= 0.35 * _N and x[1] <= 0.25 * _N]
+                w(f"  ◆ {title}轮动三分类（冒头/掉队看近3日均排名，强势看昨天+前天+今天，共{_N}个）：")
+                w("    🆕突然冒头（今天前15、近3日均在中下游且昨天不在前30%）：" + ("、".join(
+                    f"{x[0]}{x[2]:+.1f}%(近3日均第{x[4]:.0f}→今第{x[1]})" for x in rise[:10]) or "无"))
+                w("    💀突然掉队（昨天前15%或近3日均前20%，今天跌到后40%或转跌）：" + ("、".join(
+                    f"{x[0]}{x[2]:+.1f}%(昨第{x[3]}→今第{x[1]})" for x in sorted(fall, key=lambda x: x[2])[:10]) or "无"))
+                w("    💪依旧强势（昨天前25%、前天前35%、今天前25%）：" + ("、".join(
                     f"{x[0]}{x[2]:+.1f}%(前{len(_ds)}天累计{x[5]:+.1f}%)" for x in sorted(keep, key=lambda x: x[1])[:10]) or "无"))
         except Exception as _e_rot:
             w(f"  [轮动三分类失败] {type(_e_rot).__name__}: {str(_e_rot)[:60]}")
