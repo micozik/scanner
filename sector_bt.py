@@ -157,6 +157,10 @@ def main():
             and feat[(n, d)]["rk"] <= 15 and feat[(n, d)]["avg5"] > 0.4 * feat[(n, d)]["N"] and (feat[(n, d)]["prk"] or 0) > 0.3 * feat[(n, d)]["N"]],
         "X3 轮动·突然掉队(前5日均前20%、今日后40%)→买了会怎样": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)].get("avg5") is not None
             and feat[(n, d)]["avg5"] <= 0.2 * feat[(n, d)]["N"] and feat[(n, d)]["rk"] >= 0.6 * feat[(n, d)]["N"]],
+        "W1 弱市专用·超跌确认(20日最弱10个里今天涨幅前3)": lambda d: [n for n, _ in sorted([(n, feat[(n, d)]) for n in rank_top(d, "r20", k=10, rev=False)], key=lambda x: -x[1]["r1"])[:3] if feat[(n, d)]["r1"] > 0],
+        "W2 弱市专用·连跌3天后首次收红": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)]["r1"] > 0 and feat[(n, d)]["r3"] - feat[(n, d)]["r1"] < -3],
+        "W3 防御篮子(银行/电力/公用/高速/煤炭/石油)": lambda d: [n for n in data if (n, d) in feat and any(k in n for k in ("银行", "电力", "燃气", "水务", "高速", "公路", "煤炭", "石油", "港口"))],
+        "W4 量先价后但仅限站上20日线": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)]["ar"] >= 1.3 and -3 <= feat[(n, d)]["r5"] <= 3 and feat[(n, d)]["above20"]],
         "X4 依旧强势+站上20日线+20日动量为正": lambda d: [n for n in data if (n, d) in feat and feat[(n, d)].get("avg5") is not None
             and feat[(n, d)]["avg5"] <= 0.25 * feat[(n, d)]["N"] and feat[(n, d)]["rk"] <= 0.25 * feat[(n, d)]["N"]
             and feat[(n, d)]["above20"] and feat[(n, d)]["r20"] > 0],
