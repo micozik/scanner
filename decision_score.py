@@ -44,6 +44,21 @@ def main():
     L.append("🎯【决策记分】北京 %s ｜ 共 %d 个动作" % ((datetime.datetime.utcnow() + datetime.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M"), len(rows)))
     L.append("口径：买/持有→之后涨=对；卖/不买/撤单→之后跌=对；|涨跌|<1%=平")
     L.append("=" * 70)
+    # 买入卡检查（11/12 起）：每个"买"必须有卡且四项写满
+    card = open("backup/买入卡.md", encoding="utf-8").read() if os.path.exists("backup/买入卡.md") else ""
+    bad = []
+    for r in rows:
+        if r["动作"] == "买" and r["时间"][:10] >= "2026-11-12":
+            sec = card.split("## " + r["代码"].strip())
+            if len(sec) < 2:
+                bad.append(f"{r['名称']}({r['代码']}) 无买入卡")
+                continue
+            body = sec[1].split("\n## ")[0]
+            for k in ("为什么能涨一个月以上", "什么情况才算逻辑破", "灾难线", "买多少"):
+                ln = [x for x in body.splitlines() if k in x]
+                if not ln or len(ln[0].split("：", 1)[-1].strip()) < 2:
+                    bad.append(f"{r['名称']}({r['代码']}) 缺「{k}」")
+    L.append("🔴违规：" + "；".join(bad) if bad else "✅买入卡检查：全部合规")
     for r in rows:
         code = r["代码"].strip()
         if code not in cache:
