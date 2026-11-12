@@ -4,31 +4,22 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6838条）
   存档最近同步：2026-11-10T16:53:52Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约23小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约33小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 4 条（下面标【🔴实时】的就是存档里还没有的）
-  最近48小时：原创 8 条 / 回复 0 条（北京时间）
+  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
+  最近72小时：原创 7 条 / 回复 0 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×37 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    算力/云/数据中心 ×22 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    CPO/光模块 ×9 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    衬底/封装材料 ×2 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
-  提到的代码：$ANT×2 $CRWV×2 $NBIS×2 $AMBA×1 $AVGO×1 $SMTC×1 $TSM×1 $NVDA×1 $GE×1 $SPCX×1 $LITE×1 $AAOI×1 $MRVL×1 $SIVE×1 $COHR×1
+    激光/光芯片/InP ×16 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    CPO/光模块 ×8 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
+    算力/云/数据中心 ×6 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+  提到的代码：$NVDA×3 $LITE×2 $ANT×1 $SPCX×1 $GE×1 $AAOI×1 $MRVL×1 $SIVE×1 $COHR×1 $NBIS×1
 
   ── 原创推文（全文，新→旧）──
-  [11-11 22:37] 🔴实时📝原创 $ANT IPO at $1.4T valuation is now multiple times oversubscribed. After trying to raise $57.8–64.4B… pushing total Anthropic IPO funding closer to $100B. I guess the pool of capital is infinity in America if you can cure cancer with AI in 5–10 years?
-      https://x.com/aleabitoreddit/status/2120526218076504318
-  [11-11 22:25] 🔴实时📝原创 ## Post ## Serenity on X: "There's a lot of news about WT (3036) introducing their first CW DFB laser line card. More significant than people think for medium-long term. For economic impact and what revenue looks like: - $SMTC generated 74% of its revenue through distributors. $AMBA as another example, ~60-70% of their 2026 revenue went through this company. - With WT in specific, if you look at even a large company like $AVGO scaled: -> 13% of Broadcom revenue went through WT in 2020 -> 18% (2021) -> 20% (2022) -> ~21% (2023) -> ~28% (2024) -> now possibly up to ~46% (they stopped naming) Just showing how important the largest distributors in the world become to semi companies. Given how WT
-      https://x.com/aleabitoreddit/status/2120523420639408175
-  [11-11 20:08] 🔴实时📝原创 ## Post ## Serenity on X: "You heard 10x demand for compute > supply from $CRWV today. Hearing from $TSM today on Nikkei Forum: "The demand on our leading node [most advanced] silicon is insatiable" Customers "want to get [their] hands around any compute capability they can have. It's truly an insatiable environment." Q: Whether AI demand was slowing? A: "we did not see any sign of slowdown" Q: How demand compared with TSMC’s ability to supply A: "the demand actually is still far above our capability today to supply." TSMC identified power and substrates as bottlenecks customers were encountering. On the mid-to-high-50s annualized growth estimate for AI accelerator revenue from 2024 to 2029.
-      https://x.com/aleabitoreddit/status/2120488757334044945
-  [11-11 13:42] 🔴实时📝原创 ## Post ## Serenity on X: "$CRWV ER and read through for $NBIS and other Neoclouds: “We have 10x as much qualified demand as available capacity”. - interest in 2028 capacity already amounts to several times what CoreWeave has available - CoreWeave raised prices by 25% in July, +10% later in Q3, and more to come in Q4 - Ampere and Hopper rental pricing rose 30–50% quarter over quarter (older GPUs) - better financing conditions (higher prepayments, lower interest 7–7.5% for new loans) - positive adjusted net income in the first half of 2028. So we’re seeing higher pricing esp. for older GPUs…better financing mechanics, and extreme demand imbalance where you have 10x demand > supply. Same issue
-      https://x.com/aleabitoreddit/status/2120391635737649423
   [11-11 00:53] 📝原创 It’s pretty wild to see $NVDA crash -25% and lose close to $2T in valuation After projecting 70% supply-constrained growth FY2028. Also probably one of the worst times for $ANT to IPO at $1.4T ahead of Thursday… Are there still people out there interested at that price?
       https://x.com/aleabitoreddit/status/2120198265346081174
   [11-10 18:50] 📝原创 New commentary today from SoftBank on Elon Musks post 4 days ago: “SoftBank is defaulting on their turbine orders” Analyst Question: “Any comment on that?” SoftBank CFO Yoshimitsu Goto: “this is simply not correct at all. There is no such default” This also mirrors what $GE CEO Scott Strazik stated about seeing no procurement cancellations or counterparty financing difficulties. Pretty damaging allegations about the company financing $SPCX competitor (OpenAI + Stargate). I wonder if there’s any more nuance these claims or if it’s false.
@@ -37,6 +28,12 @@
       https://x.com/aleabitoreddit/status/2120074819878449605
   [11-10 03:25] 📝原创 Anthropic Fable 5.2 and Mythos 5.2 is out! Doesn't quite look like AI progress is slowing down anytime soon
       https://x.com/aleabitoreddit/status/2119874063132995880
+  [11-09 22:59] 📝原创 I did not expect everything in the AI trade from $LITE to $NBIS to rally today Off the “honeypot catalyst”?
+      https://x.com/aleabitoreddit/status/2119807048204595582
+  [11-09 15:12] 📝原创 Every AI name in Taiwan from Mediatek to Winbond looks like its limit up. TAIEX: +4.94%, its 2nd largest daily gain in history. I guess the market is impressed by $NVDA’s Jensen Huang vitality at his age?
+      https://x.com/aleabitoreddit/status/2119689635869954503
+  [11-09 11:28] 📝原创 I fully support $NVDA and Jensen Huang through this time. Even the most legendary figure in the AI industry is human. Trump, Clinton, Bezos, Gates, and many others have faced scrutiny over their personal lives. It takes courage to own up to it publicly and move forward
+      https://x.com/aleabitoreddit/status/2119633154629881997
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
