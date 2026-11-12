@@ -4,7 +4,7 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6838条）
   存档最近同步：2026-11-10T16:53:52Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约34小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约37小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
@@ -17,7 +17,7 @@
     激光/光芯片/InP ×15 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
     CPO/光模块 ×8 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     算力/云/数据中心 ×3 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-  提到的代码：$NVDA×1 $ANT×1 $GE×1 $SPCX×1 $MRVL×1 $AAOI×1 $COHR×1 $SIVE×1 $LITE×1
+  提到的代码：$NVDA×1 $ANT×1 $GE×1 $SPCX×1 $SIVE×1 $MRVL×1 $LITE×1 $COHR×1 $AAOI×1
 
   ── 原创推文（全文，新→旧）──
   [11-11 00:53] 📝原创 It’s pretty wild to see $NVDA crash -25% and lose close to $2T in valuation After projecting 70% supply-constrained growth FY2028. Also probably one of the worst times for $ANT to IPO at $1.4T ahead of Thursday… Are there still people out there interested at that price?
