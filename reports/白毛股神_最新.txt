@@ -4,28 +4,36 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6838条）
   存档最近同步：2026-11-10T16:53:52Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约37小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约43小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 3 条 / 回复 0 条（北京时间）
+  实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ✅ 实时补抓新增 6 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 7 条 / 回复 0 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    激光/光芯片/InP ×15 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    CPO/光模块 ×8 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    算力/云/数据中心 ×3 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-  提到的代码：$NVDA×1 $ANT×1 $GE×1 $SPCX×1 $SIVE×1 $MRVL×1 $LITE×1 $COHR×1 $AAOI×1
+    算力/云/数据中心 ×10 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
+    存储/HBM/NOR ×1 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+  提到的代码：$NVDA×6 $TSLA×2 $AVGO×1 $MRVL×1 $AMD×1 $ANT×1
 
   ── 原创推文（全文，新→旧）──
+  [11-12 18:14] 🔴实时📝原创 Okay, let’s gauge individual investor and public sentiment independently. Should Jensen Huang remain CEO of $NVDA?
+      https://x.com/aleabitoreddit/status/2120822653997261079
+  [11-12 16:38] 🔴实时📝原创 [](https://x.com/aleabitoreddit) I disagree, Jensen Huang is practically irreplaceable from $NVDA. And it's like if you took out Elon from $TSLA, the valuation and confidence in the company would collapse. The foresight to bet on CUDA before AI took off, build the Neocloud ecosystem... The move to secure critical supply chain capacity years ahead of demand, and sell rack-scale systems (with CPUs, networking, etc). Turn the ASIC threat into another opportunity by investing in $MRVL, MediaTek, to compete against $AVGO. Bringing them all into Nvidia's NVLink ecosystem... Is absolutely insane foresight. Jensen practically architected both the financial and industrial ecosystem surrounding the cu
+      https://x.com/aleabitoreddit/status/2120798356205093139
+  [11-12 16:15] 🔴实时📝原创 "Chinese AI firms rush to secure $NVDA chip capacity as spy scandal stirs fear of US curbs" Wow, Jensen really took one for the team just to generate more GPU and Neocloud demand
+      https://x.com/aleabitoreddit/status/2120792625477468583
+  [11-12 07:20] 🔴实时📝原创 ## Post ## Serenity on X: "All I’m going to say is that I hope board of $NVDA stands by Jensen, despite media and political pressures. The same way $TSLA and SpaceX stood up for Elon Musk around similar allegations. The AI trade won’t end off this but for Nvidia’s best interest, he should remain CEO. Otherwise I see Nvidia’s valuation crashing due to extreme uncertainty, with a lot of capital rotating to $AMD and other competitors." ## Conversation [](https://x.com/aleabitoreddit) All I’m going to say is that I hope board of $NVDA stands by Jensen, despite media and political pressures. The same way $TSLA and SpaceX stood up for Elon Musk around similar allegations. The AI trade won’t end of
+      https://x.com/aleabitoreddit/status/2120658071274013137
+  [11-12 06:51] 🔴实时📝原创 I don’t know what’s happening anymore
+      https://x.com/aleabitoreddit/status/2120650676762181843
+  [11-12 06:41] 🔴实时📝原创 Holy crap, why does $NVDA nonstop TMZ scandals keep getting “leaked” left and right. The cluster of news coming out about Jensen feel extremely bizarre.
+      https://x.com/aleabitoreddit/status/2120648172192378945
   [11-11 00:53] 📝原创 It’s pretty wild to see $NVDA crash -25% and lose close to $2T in valuation After projecting 70% supply-constrained growth FY2028. Also probably one of the worst times for $ANT to IPO at $1.4T ahead of Thursday… Are there still people out there interested at that price?
       https://x.com/aleabitoreddit/status/2120198265346081174
-  [11-10 18:50] 📝原创 New commentary today from SoftBank on Elon Musks post 4 days ago: “SoftBank is defaulting on their turbine orders” Analyst Question: “Any comment on that?” SoftBank CFO Yoshimitsu Goto: “this is simply not correct at all. There is no such default” This also mirrors what $GE CEO Scott Strazik stated about seeing no procurement cancellations or counterparty financing difficulties. Pretty damaging allegations about the company financing $SPCX competitor (OpenAI + Stargate). I wonder if there’s any more nuance these claims or if it’s false.
-      https://x.com/aleabitoreddit/status/2120106741090370030
-  [11-10 16:43] 📝原创 If you look at CW laser ASPs for AI data centers, the pricing differences are pretty substantial: 70mW: ~$3–4 100mW: ~$4–6 (Source Photonics channel checks). With some premiums apparently going up to $7-$9 range with the recent shortage for pluggables. 120–150mW NPO: ~$15–20 350mW UHP CW: ~$40 (Nomura) 400mW UHP CW for NPO/CPO: ~$50–75 (Mizuho) With former communication laser chips going from 20-50 cents. The pricing and gross margins of these players go up with each architectural shift (60%+ for CPO lasers). And go up even more depending how far down the stack you go (selling ELSFP was ~2.5x revenue content) In terms of how I see the landscape now: - $COHR is probably the best risk adjusted
-      https://x.com/aleabitoreddit/status/2120074819878449605
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
