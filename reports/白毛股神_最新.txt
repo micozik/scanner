@@ -4,16 +4,34 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6838条）
   存档最近同步：2026-11-10T16:53:52Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约61小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约67小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 0 条 / 回复 0 条（北京时间）
+  实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ✅ 实时补抓新增 6 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 6 条 / 回复 0 条（北京时间）
+
+  ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
+    算力/云/数据中心 ×13 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    存储/HBM/NOR ×1 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
+  提到的代码：$NVDA×6 $AVGO×1 $AMD×1 $SHOP×1
 
   ── 原创推文（全文，新→旧）──
+  [11-13 19:27] 🔴实时📝原创 [](https://x.com/aleabitoreddit) Just to state the nuances of my opinion: Jensen is irreplaceable to $NVDA. No other CEO can visit a chicken shop in Korea, noodle shop in Japan And rally hundred of billions of capital and supply chain commitment into Nvidia’s next technological vision. As for Nvidia: the their roadmap is intact, their existing commitment and revenues are still preserved under Jensen’s leadership. They’ll still be around 5-10 years from now, given how fundamentally important they are to AI supply chains. Under a new leader they can still continue growing if AI demand is intact and maintain their current lines. But I don’t know anyone who can possibly think that under anyone e
+      https://x.com/aleabitoreddit/status/2121203324167037436
+  [11-13 18:03] 🔴实时📝原创 $SHOP CEO: 今天，真正的 $NVDA 就此终结。 取而代之的，不过是一个披着英伟达外衣、徒有其形的仿冒品。 未来掌舵的，将不再是开创者，而只是一群守成的看管者。他们会竭力守护黄仁勋亲手点燃的那团火焰，却终究无法让它延续下去。
+      https://x.com/aleabitoreddit/status/2121182068558446730
+  [11-13 15:49] 🔴实时📝原创 ## Post ## Serenity on X: "The people have spoken. In the largest large-scale poll of 22,965 respondents: 19,750 supported @JensenHuang remaining CEO of $NVDA, compared with just 1,840 opposing him. Among respondents expressing a position Jensen received a: - 91.5% support vs. 8.5% opposition ratio (10.8 to 1) The results stands in contrast to prominent media commentary calling for and celebrating his departure. Nvidia’s board should reconsider whether removing Jensen Huang was in the best interests of its shareholders and American leadership in AI" ## Conversation * [](https://x.com/aleabitoreddit) The people have spoken. In the largest large-scale poll of 22,965 respondents: 19,750 support
+      https://x.com/aleabitoreddit/status/2121148384555995136
+  [11-13 05:33] 🔴实时📝原创 I’m sorry but why are we letting the future of $NVDA and American semiconductors Be decided by board members with experience from Taco Bell and the NFL
+      https://x.com/aleabitoreddit/status/2120993521289326858
+  [11-13 03:36] 🔴实时📝原创 Former $NVDA CEO had a relationship with a second employee per Reuters. What is this timeline
+      https://x.com/aleabitoreddit/status/2120964006328566047
+  [11-12 18:14] 🔴实时📝原创 Okay, let’s gauge individual investor and public sentiment independently. Should Jensen Huang remain CEO of $NVDA?
+      https://x.com/aleabitoreddit/status/2120822653997261079
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
