@@ -4,16 +4,32 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6838条）
   存档最近同步：2026-11-10T16:53:52Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约71小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约80小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 0 条 / 回复 0 条（北京时间）
+  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status）
+  ✅ 实时补抓新增 6 条（下面标【🔴实时】的就是存档里还没有的）
+  最近72小时：原创 5 条 / 回复 0 条（北京时间）
+
+  ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
+    算力/云/数据中心 ×11 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×4 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    存储/HBM/NOR ×2 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
+    人形机器人/物理AI ×1 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
+  提到的代码：$NVDA×3 $MU×1 $LITE×1 $META×1 $GOOGL×1 $COHR×1 $AMD×1
 
   ── 原创推文（全文，新→旧）──
+  [11-14 08:16] 🔴实时📝原创 ## Log in or sign up for X See what’s happening and join the conversation Continue with phone Continue with Google Continue with Google. Opens in new tab or Log in with username or email
+      https://x.com/aleabitoreddit/status/2121396827484524803
+  [11-14 05:07] 🔴实时📝原创 With Elon’s involvement, the odds of Jensen rejoining as $NVDA CEO just shot up.
+      https://x.com/aleabitoreddit/status/2121349155457261991
+  [11-14 04:25] 🔴实时📝原创 It's been overwhelmingly negative recently, but here's some perspective on how supply-constrained demand from $LITE to $MU looks amid possible AI capex slowdowns. As one Korean executive on memory puts it: "Thirty people are already lined up at a restaurant that is full, and five of them leaving does not create a table." The amount of tables might expand, but supply shortages and price hikes in bottlenecks can persist through capex slowdowns or capacity buildout. From AI implications in medicine, physics, materials, robotics, cybersecurity, engineering, energy, to AI itself over the next 5-10 years... We've only reached the precipice of the next technological paradigm shift. The world is goi
+      https://x.com/aleabitoreddit/status/2121338681571328368
+  [11-14 01:53] 🔴实时📝原创 Be Jensen: > Asian American Dishwasher at Dennys > Founded $NVDA and pioneered GPU computing > Took an extraordinary gamble in CUDA, despite the company close to bankruptcy risk. > Bet paid off heavily, and Nvidia was there as the infrastructure for deep learning and generative AI. > Spent last 33 years of his life growing $NVDA, and finally saw it become a $5T+ company > Devoted his life to establishing American AI leadership > Started having more influence on policies that Washington conflicted with > Leaks and hit pieces happen all at once around midterms > Washington tries to push out others like Lutnick that shared similar China stances to Jensen. > Forced to resign by Taco Bell and NFL
+      https://x.com/aleabitoreddit/status/2121300436011590104
+  [11-13 23:36] 🔴实时📝原创 ## Post ## Serenity on X: "My personal opinion is that Kress leadership is negative for $NVDA centric ecosystems and its financing. Companies like $COHR that supply everyone, with long term visibility are more isolated. As for some of the commentary: Kress reportedly “challenged some of Huang’s proposed investments in customers, including deals involving Lambda (Neocloud)” Jensen later called her “A deer in the headlights”. And said she was “A reporting CFO”, not someone who is able to make strategic decisions… In regards to decisions made where Nvidia could build a moat against hyperscaler diversification. Reports have also said CSP executives have now considered $AMD and $GOOGL TPUs follow
+      https://x.com/aleabitoreddit/status/2121265837000782035
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；

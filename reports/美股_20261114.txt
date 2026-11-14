@@ -1,0 +1,157 @@
+============================================================
+美股夜盘扫描器V4.1 | 北京 2026-11-14 08:59 周六 | 美股收盘后
+============================================================
+★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑
+★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的
+  ✅ 已从 我的清单.txt 载入持仓 3只（2只有美股对标）
+
+【一、美股指数】（费城半导体SOX最关键=A股半导体风向标）
+  （实时指数源：stock_us_famous_spot_em）
+  （实时指数源：新浪 gb_ 实时报价 · patch_usa53；缺的用日K补，日K会标⚠️距今N天）
+    道琼斯：52347.5508 +0.10%  [2026-11-13]
+    纳斯达克：25136.2726 -0.91%  [2026-11-13]
+    标普500：7561.6699 -0.40%  [2026-11-13]
+    费城半导体：10146.3231 -3.43%  [2026-11-13]
+
+【三、美股/全球新闻】
+  [跳过] 东财全球：AttributeError
+  [跳过] 富途：AttributeError
+  [跳过] 财联社：AttributeError
+  [跳过] 新浪：AttributeError
+  [报空] 所有新闻源均失败
+
+【二、重点个股】（芯片/算力/存储/中概 + 伯克希尔）
+  ✅ 实时行情源：新浪 gb_（26/27只，带真实交易日）
+    英伟达(NVDA) 162.85 -2.01%  [2026-11-13]
+    台积电(TSM) 398.73 -1.67%  [2026-11-13]
+    美光(MU) 778.31 -2.52%  [2026-11-13]
+    AMD(AMD) 534.06 -8.75%  [2026-11-13]
+    博通(AVGO) 347.01 -4.76%  [2026-11-13]
+    特斯拉(TSLA) 390.22 -1.82%  [2026-11-13]
+    苹果(AAPL) 356.27 +0.39%  [2026-11-13]
+    阿斯麦(ASML) 1495.16 -0.13%  [2026-11-13]
+    英特尔(INTC) 59.66 -2.52%  [2026-11-13]
+    阿里巴巴(BABA) 94.38 +0.02%  [2026-11-13]
+    Meta(META) 641.69 +2.90%  [2026-11-13]
+    微软(MSFT) 523.88 +0.17%  [2026-11-13]
+    谷歌(GOOGL) 295.77 -0.98%  [2026-11-13]
+    亚马逊(AMZN) 266.66 -0.29%  [2026-11-13]
+    希捷(STX) 528.29 -3.09%  [2026-11-13]
+    西部数据(WDC) 295.65 -5.00%  [2026-11-13]
+    闪迪(SNDK) 885.01 -5.59%  [2026-11-13]
+    应用材料(AMAT) 370.5 -2.74%  [2026-11-13]
+    拉姆研究(LRCX) 225.92 -3.36%  [2026-11-13]
+    康宁(GLW) 114.08 -4.31%  [2026-11-13]
+    Coherent(COHR) 218.15 -6.00%  [2026-11-13]
+    礼来(LLY) 1443.5 +1.26%  [2026-11-13]
+    纽蒙特(NEM) 113.14 +0.44%  [2026-11-13]
+    GE Vernova(GEV) 803.13 -1.88%  [2026-11-13]
+    Moderna(MRNA) 223.37 -3.45%  [2026-11-13]
+    伯克希尔B(BRK.B) 592.94 +0.53% 量4763649.0  [2026-11-13]
+    伯克希尔A(BRK.A) 285520.0 +0.00%  [2020-07-15] ⚠️距今2313天(非最新)
+  （成功27/27只）
+
+  ★【同日闸门 · patch_usa53】最新美股交易日 = 2026-11-13
+  🔴 以下 1 只是旧日数据，已踢出联动表（宁可报空不报错）：
+     BRK.A[2020-07-15]
+     ★它们的真实涨跌看【新闻】一节，别用上面那张表的数
+
+============================================================
+🎯🎯【持仓夜盘影响】今夜美股，直接点名你的票 🎯🎯
+============================================================
+  （基于26只美股真实涨跌幅，非新闻情绪）
+
+  ◆ 东方财富(300059) ← 政策牛：证监会11/2组合拳（互换便利第三批31家>1000亿、回购再贷款1%长期化、主动ETF350亿建仓、两融适度释放融资空间）→互联网券商弹性最大；资金方拉升初段
+     今夜美股无对应标的，方向由A股自身驱动决定
+
+  ◆ 东山精密(002384) ← 救市反弹单：11/6午间9家AI硬件龙头集体公告运用回购再贷款维护价值，东山已回购5000万、当日大单净+16亿、Q3净利+332%   ❄️ 偏空  加权净-2.88%
+     英伟达 -2.01% | 博通 -4.76% | AMD -8.75% | 微软 +0.17% | 亚马逊 -0.29% | 谷歌 -0.98%
+     → 关注，止损69.0
+
+  ◆ 兆易创新(603986) ← 半导体启动第1天（11/4 行业+9.24%、单日净流入202亿、国家大基金持股+9.17%）；存储涨价+国产替代+长鑫回购25–50亿+AMD超预期；PE16   ❄️ 偏空  加权净-2.20%
+     美光 -2.52% | 应用材料 -2.74% | 拉姆研究 -3.36% | 阿斯麦 -0.13% | 台积电 -1.67%
+     → 关注，止损231.0
+
+  ── 排序 ──
+  最偏空：东山精密（-2.88%）
+  最偏多：兆易创新（-2.20%）
+
+  ⚠️ 铁律K：如果某只票【美股对标大跌但它明天高开】，
+     这不是好消息也不是坏消息，是【反常】= 必须查清原因再动
+  ⚠️ 铁律①-B：加权净值只说明『同链共振』，不等于驱动相同。
+     买卖前仍须回答：它靠什么赚钱？今夜涨的那个原因跟它是同一个吗？
+============================================================
+
+============================================================
+🔥【美股催化热力图 → A股映射】美股是A股的先行指标
+============================================================
+  ⚠️ 无新闻数据（新闻源全挂）→ 本节跳过
+  ★但【持仓夜盘影响】用的是真实行情，不受影响，看上面那节
+============================================================
+
+============================================================
+🔬【美股→A股映射·回测】这条规则准不准，机器说了算
+============================================================
+  已积累 78 天 / 234 个样本
+
+  ── 最近5夜的前3预测（次日请对照A股板块榜自查）──
+  2026-11-13：半导体设备(净+3) ｜ 存储芯片(净+2) ｜ AI算力(净+1)
+  2026-11-12：光模块CPO(净+2) ｜ 金融(净+2) ｜ 存储芯片(净+1)
+  2026-11-11：金融(净+3) ｜ 电动车(净+1) ｜ 贵金属(净+1)
+  2026-11-10：AI算力(净+5) ｜ 软件AI应用(净+3) ｜ 电动车(净+2)
+  2026-11-07：AI算力(净+4) ｜ 金融(净+3) ｜ 光模块CPO(净+1)
+
+  ⚠️ 对照方法：次日A股盘后扫描器的【板块全景榜】，
+     看这3个板块在不在当日涨幅前20。在=命中。
+  ⚠️ 满5天后把命中结果写进 scanner_cloud 的规则记分卡，一起管理
+============================================================
+
+============================================================
+★★★【明日A股开盘参考】★★★
+  数据在上，具体操作由AI结合你的持仓在对话中给出。
+  核心看点：①🎯持仓夜盘影响（V3.0新增，直接点名你的票）
+           ②费城半导体SOX → A股半导体/芯片
+           ③英伟达/美光/存储链 → A股算力/存储/CPO/PCB
+           ④美联储/CPI → 成长股整体估值
+           ⑤油价/黄金 → A股资源链
+           ⑥💰聪明钱专区 → 巴菲特等大佬持仓/表态（13F披露日重点看）
+
+  ✅ V3.4起：持仓从 我的清单.txt 自动载入，三个扫描器共用一份，不用同步改
+============================================================
+
+============================================================
+🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
+============================================================
+  来源：raw.githubusercontent.com 公开存档（共6838条）
+  存档最近同步：2026-11-10T16:53:52Z UTC（状态 ok）
+  ⚠️ 存档最新一条 2026-11-10T16:53 UTC，已停更约80小时 → 启动实时补抓
+  实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
+  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status）
+  ✅ 实时补抓新增 6 条（下面标【🔴实时】的就是存档里还没有的）
+  最近72小时：原创 5 条 / 回复 0 条（北京时间）
+
+  ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
+    算力/云/数据中心 ×11 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×4 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    存储/HBM/NOR ×2 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
+    人形机器人/物理AI ×1 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
+  提到的代码：$NVDA×3 $MU×1 $LITE×1 $META×1 $GOOGL×1 $COHR×1 $AMD×1
+
+  ── 原创推文（全文，新→旧）──
+  [11-14 08:16] 🔴实时📝原创 ## Log in or sign up for X See what’s happening and join the conversation Continue with phone Continue with Google Continue with Google. Opens in new tab or Log in with username or email
+      https://x.com/aleabitoreddit/status/2121396827484524803
+  [11-14 05:07] 🔴实时📝原创 With Elon’s involvement, the odds of Jensen rejoining as $NVDA CEO just shot up.
+      https://x.com/aleabitoreddit/status/2121349155457261991
+  [11-14 04:25] 🔴实时📝原创 It's been overwhelmingly negative recently, but here's some perspective on how supply-constrained demand from $LITE to $MU looks amid possible AI capex slowdowns. As one Korean executive on memory puts it: "Thirty people are already lined up at a restaurant that is full, and five of them leaving does not create a table." The amount of tables might expand, but supply shortages and price hikes in bottlenecks can persist through capex slowdowns or capacity buildout. From AI implications in medicine, physics, materials, robotics, cybersecurity, engineering, energy, to AI itself over the next 5-10 years... We've only reached the precipice of the next technological paradigm shift. The world is goi
+      https://x.com/aleabitoreddit/status/2121338681571328368
+  [11-14 01:53] 🔴实时📝原创 Be Jensen: > Asian American Dishwasher at Dennys > Founded $NVDA and pioneered GPU computing > Took an extraordinary gamble in CUDA, despite the company close to bankruptcy risk. > Bet paid off heavily, and Nvidia was there as the infrastructure for deep learning and generative AI. > Spent last 33 years of his life growing $NVDA, and finally saw it become a $5T+ company > Devoted his life to establishing American AI leadership > Started having more influence on policies that Washington conflicted with > Leaks and hit pieces happen all at once around midterms > Washington tries to push out others like Lutnick that shared similar China stances to Jensen. > Forced to resign by Taco Bell and NFL
+      https://x.com/aleabitoreddit/status/2121300436011590104
+  [11-13 23:36] 🔴实时📝原创 ## Post ## Serenity on X: "My personal opinion is that Kress leadership is negative for $NVDA centric ecosystems and its financing. Companies like $COHR that supply everyone, with long term visibility are more isolated. As for some of the commentary: Kress reportedly “challenged some of Huang’s proposed investments in customers, including deals involving Lambda (Neocloud)” Jensen later called her “A deer in the headlights”. And said she was “A reporting CFO”, not someone who is able to make strategic decisions… In regards to decisions made where Nvidia could build a moat against hyperscaler diversification. Reports have also said CSP executives have now considered $AMD and $GOOGL TPUs follow
+      https://x.com/aleabitoreddit/status/2121265837000782035
+
+  ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
+    ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
+    ④她的论点通常5-60个交易日才兑现，且A股映射近月大幅跑输美股对标→必须过我们的资金开关+20日线向上才买；
+    ⑤网上流传伪造截图（如『中际旭创拿下英伟达NPO订单』）→只认存档/实时抓到的原文；⑥她带杠杆、单月最大回撤−49%，不抄她的仓位和时点
