@@ -56,7 +56,7 @@ def main():
             body = sec[1].split("\n## ")[0]
             keys = ["为什么能涨一个月以上", "什么情况才算逻辑破", "灾难线", "买多少"]
             if r["时间"][:10] >= "2026-11-17":   # 11/16兆易亏3,695后新增：弱市闸门+红线必须逐项写明
-                keys += ["弱市闸门", "红线检查", "数据可信度"]
+                keys += ["弱市闸门", "红线检查", "数据可信度", "反方证据"]
             for k in keys:
                 ln = [x for x in body.splitlines() if k in x]
                 if not ln or len(ln[0].split("：", 1)[-1].strip()) < 2:
