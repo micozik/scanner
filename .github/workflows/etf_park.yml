@@ -1,0 +1,37 @@
+name: 短融ETF监控
+
+# 2026-11-16：机构停车资金（511360成交额）+ 天量后沪深300回测；A股扫描也会顺带跑
+permissions:
+  contents: write
+concurrency:
+  group: etf-park
+  cancel-in-progress: false
+on:
+  workflow_dispatch:
+jobs:
+  park:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          python -m pip install --upgrade pip
+          pip install akshare==1.20.42 pandas requests lxml
+      - run: timeout 240 python short_etf_monitor.py || echo "失败"
+      - name: 提交
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          cp reports/短融ETF.txt /tmp/etf.txt
+          for i in 1 2 3; do
+            git fetch origin main && git reset --hard origin/main
+            cp /tmp/etf.txt reports/短融ETF.txt
+            git add reports/短融ETF.txt
+            if [ -z "$(git diff --staged --name-only)" ]; then exit 0; fi
+            git commit -m "短融ETF $(date -u '+%Y-%m-%d %H:%M') UTC"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 8
+          done
