@@ -48,13 +48,16 @@ def main():
     card = open("backup/买入卡.md", encoding="utf-8").read() if os.path.exists("backup/买入卡.md") else ""
     bad = []
     for r in rows:
-        if r["动作"] == "买" and r["时间"][:10] >= "2026-11-12":
+        if r["动作"] in ("买", "加仓") and r["时间"][:10] >= "2026-11-12":
             sec = card.split("## " + r["代码"].strip())
             if len(sec) < 2:
                 bad.append(f"{r['名称']}({r['代码']}) 无买入卡")
                 continue
             body = sec[1].split("\n## ")[0]
-            for k in ("为什么能涨一个月以上", "什么情况才算逻辑破", "灾难线", "买多少"):
+            keys = ["为什么能涨一个月以上", "什么情况才算逻辑破", "灾难线", "买多少"]
+            if r["时间"][:10] >= "2026-11-17":   # 11/16兆易亏3,695后新增：弱市闸门+红线必须逐项写明
+                keys += ["弱市闸门", "红线检查", "数据可信度"]
+            for k in keys:
                 ln = [x for x in body.splitlines() if k in x]
                 if not ln or len(ln[0].split("：", 1)[-1].strip()) < 2:
                     bad.append(f"{r['名称']}({r['代码']}) 缺「{k}」")
