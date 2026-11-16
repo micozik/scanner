@@ -4,23 +4,28 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6871条）
   存档最近同步：2026-11-15T19:19:23Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-15T19:19 UTC，已停更约17小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-15T19:19 UTC，已停更约22小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：4条（x_public_profile+jina_status） 错误2：x.com profile: curl: (22) The requested URL returned error: 403
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 4 条 / 回复 3 条（北京时间）
+  实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ✅ 实时补抓新增 2 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 6 条 / 回复 3 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×5 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    算力/云/数据中心 ×11 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    存储/HBM/NOR ×6 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    衬底/封装材料 ×3 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     激光/光芯片/InP ×3 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    存储/HBM/NOR ×2 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    衬底/封装材料 ×1 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
-  提到的代码：$NVDA×5 $AXTI×1 $SOI×1
+    CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
+  提到的代码：$NVDA×5 $AMD×1 $AXTI×1 $SOI×1
 
   ── 原创推文（全文，新→旧）──
+  [11-16 20:31] 🔴实时📝原创 ## Post ## Serenity on X: "I think AI is one of the few industries where investors celebrate deteriorating supply conditions. MLCC lead times are extending per new Trendforce data… now “very tight” at 40W. Content per system keeps going up as well (eg. $AMD using +632% more of a part for MI450 boards). Yet suppliers from Murata to Samsung Electro-Mechanics are getting sold off to oblivion. I will continue to make the argument that we can continue to see demand acceleration in certain bottlenecks… Despite potential overall capex reductions past 2027. Would not conflate the two like what markets are pricing in now." ## Conversation * [](https://x.com/aleabitoreddit) I think AI is one of the fe
+      https://x.com/aleabitoreddit/status/2122306534772519308
+  [11-16 17:58] 🔴实时📝原创 ## Post ## Serenity on X: "Morgan Stanley sends a note to clients using the term: “Max Overweight” for global equities. Arguing that AI capex cycle remains intact and sustains corporate earnings into 2027. They told clients: - hold less cash, trim commodities and exposure to bonds - move Europe/Japanese equities to overweight - Global stocks trade ~15x fwd earnings (MSCI ACWI), the cheapest since 2023 - AI theme is expected to spread beyond the hyperscalers - Global earnings growth is forecast at 13% in 2027 and 8% in 2028 But flagged: - Inflation could force more tightening than the two further Fed hikes - AI capex cycle may not last as long as assumed Earlier this week they argued: “The he
+      https://x.com/aleabitoreddit/status/2122268155682996328
   [11-16 03:19] 📝原创 It’s time for Jensen’s redemption arc at $NVDA. FT: Jensen Huang discusses comeback as Nvidia CEO.
       https://x.com/aleabitoreddit/status/2122046823934407066
   [11-15 23:01] 📝原创 I've posted a lot about $NVDA because Jensen Huang is worth fighting for. Talking with Jensen and those around him convinced me he's 1 of 1... both for Nvidia's future and US leadership in AI. A friend asked me to share this petition (I signed):
