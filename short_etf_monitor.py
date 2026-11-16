@@ -107,7 +107,15 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
-        L.append("🔴 失败：" + traceback.format_exc()[-600:])
+        # 扫描后东财push2常被限流：失败时不覆盖上一份好数据，只在文末追加失败说明
+        err = traceback.format_exc().strip().splitlines()[-1][:200]
+        old = open(OUT, encoding="utf-8").read() if os.path.exists(OUT) else ""
+        bj = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=8)).strftime("%m-%d %H:%M")
+        if old:
+            old = old.split("\n⚠️ 本次刷新失败")[0]
+            open(OUT, "w", encoding="utf-8").write(old + f"\n⚠️ 本次刷新失败（{bj}，保留上一份数据）：{err}")
+            print("刷新失败，保留上一份"); raise SystemExit(0)
+        L.append("🔴 失败：" + err)
     os.makedirs("reports", exist_ok=True)
     open(OUT, "w", encoding="utf-8").write("\n".join(L))
     print("\n".join(L))
