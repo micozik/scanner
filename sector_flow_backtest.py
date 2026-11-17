@@ -55,7 +55,8 @@ def main():
     L.append("=" * 72)
     weak = hs300_weak()
     names = ak.stock_board_industry_name_em()["板块名称"].tolist()
-    rules = {k: {"all": {3: [], 5: []}, "weak": {3: [], 5: []}} for k in ("R0", "R1", "R2", "R3", "R4")}
+    RK = ("R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7")
+    rules = {k: {"all": {3: [], 5: []}, "weak": {3: [], 5: []}} for k in RK}
     ok = fail = 0
     span = [None, None]
     for nm in names:
@@ -77,7 +78,14 @@ def main():
             sig = {"R0": True,
                    "R1": fl[i] > 0 and fl[i - 1] < 0 and fl[i - 2] < 0 and fl[i - 3] < 0,
                    "R2": fl[i] > 0 and fl[i - 1] > 0,
-                   "R4": fl[i] > 0 and fl[i - 1] > 0 and pd.notna(avg[i]) and fl[i] + fl[i - 1] >= 3 * avg[i]}
+                   "R4": fl[i] > 0 and fl[i - 1] > 0 and pd.notna(avg[i]) and fl[i] + fl[i - 1] >= 3 * avg[i],
+                   # 反向：大资金连续撤出之后买（恐慌出尽？）
+                   "R5": fl[i] < 0 and fl[i - 1] < 0 and fl[i - 2] < 0 and pd.notna(avg[i]) and -(fl[i] + fl[i - 1] + fl[i - 2]) >= 4 * avg[i],
+                   # 连续大撤之后第一天转大额流入（"止血"，今天半导体的样子）
+                   "R6": fl[i] > 0 and fl[i - 1] < 0 and fl[i - 2] < 0 and fl[i - 3] < 0 and pd.notna(avg[i])
+                         and -(fl[i - 1] + fl[i - 2] + fl[i - 3]) >= 4 * avg[i] and fl[i] >= avg[i],
+                   # 单日巨额流出（≥均值×3）之后买
+                   "R7": pd.notna(avg[i]) and fl[i] <= -3 * avg[i]}
             for r, s in sig.items():
                 if not s:
                     continue
@@ -102,7 +110,10 @@ def main():
             "R1": "首日流入就买（前3天流出→今天转流入）",
             "R2": "连续2天流入，第2天收盘买",
             "R3": "连续2天流入，第3天收盘买",
-            "R4": "连续2天流入且是大资金（≥近60日均值×3）"}
+            "R4": "连续2天流入且是大资金（≥近60日均值×3）",
+            "R5": "反向：连续3天大额流出（合计≥均值×4）后买",
+            "R6": "连续3天大额流出后、首日转大额流入（今天半导体的形态）",
+            "R7": "单日巨额流出（≥均值×3）当天收盘买"}
 
     def stat(v):
         if not v:
@@ -112,7 +123,7 @@ def main():
         pl = (sum(w) / len(w)) / abs(sum(lz) / len(lz)) if w and lz and sum(lz) != 0 else float("nan")
         return f"样本{len(v):>5} ｜ 平均{sum(v)/len(v):+.2f}% ｜ 胜率{len(w)/len(v)*100:.0f}% ｜ 盈亏比{pl:.2f}"
 
-    for r in ("R0", "R1", "R2", "R3", "R4"):
+    for r in RK:
         L.append(f"\n◆ {r} {desc[r]}")
         for grp, nm in (("all", "全部"), ("weak", "弱市")):
             for k in (3, 5):
