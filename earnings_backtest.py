@@ -46,10 +46,16 @@ def main():
     idays = list(idx.index)
     res = {g: {5: [], 20: [], "ex5": [], "ex20": []} for g in ("G0", "G1", "G2", "G3")}
     for per in PERIODS:
-        try:
-            yj = ak.stock_yjbb_em(date=per)
-        except Exception:
-            L.append(f"  {per} 业绩报表获取失败：{traceback.format_exc().splitlines()[-1][:120]}")
+        yj = None
+        for _ in range(4):   # 11/17：半年报那次 ChunkedEncodingError，重试
+            try:
+                yj = ak.stock_yjbb_em(date=per)
+                break
+            except Exception:
+                err = traceback.format_exc().splitlines()[-1][:120]
+                time.sleep(8)
+        if yj is None:
+            L.append(f"  {per} 业绩报表获取失败（重试4次）：{err}")
             continue
         yj = yj.rename(columns={"股票代码": "code", "净利润-同比增长": "g", "最新公告日期": "ann",
                                 "每股经营现金流量": "cfps", "每股收益": "eps"})
