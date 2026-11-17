@@ -70,9 +70,16 @@ def main():
     else:
         verdict = "🟢 常态"
     prev = float(h.iloc[-2]["amt"]) if len(h) > 1 else cur
-    if prev >= 800 and cur < prev * 0.6:
+    now_bj = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=8)
+    intraday = h.iloc[-1]["d"] == now_bj.date() and now_bj.hour < 15
+    if intraday:   # 11/17：盘中成交额不完整（09:39才137亿），不能和昨天全天比
+        verdict = f"⏳盘中数据（截至{now_bj:%H:%M}，不完整）→ 沿用昨天判定：" + ("🔴≥800亿红线" if prev >= 800 else "🟢常态")
+        L.append(f"  ★判定：{verdict}")
+        prev = 0
+    if (not intraday) and prev >= 800 and cur < prev * 0.6:
         verdict += " ｜ ⚡昨天天量今天骤降≥40% → 停车资金可能在回流股市，盯大盘放量+板块资金流入"
-    L.append(f"  ★判定：{verdict}")
+    if not intraday:
+        L.append(f"  ★判定：{verdict}")
 
     # 回测
     idx = hs300()

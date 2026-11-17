@@ -3458,7 +3458,7 @@ def scan_news():
                 allnews.extend(items)
                 ok.append(f"{name}({len(items)})")
         except Exception as e:
-            w(f"  [跳过] {name}：{type(e).__name__}")
+            w(f"  [跳过] {name}：{type(e).__name__} {str(e)[:120]}")   # 11/17：带上报错内容，便于定位
         time.sleep(2)
 
     if not allnews:
