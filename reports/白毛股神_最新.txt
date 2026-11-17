@@ -4,33 +4,21 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6871条）
   存档最近同步：2026-11-15T19:19:23Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-15T19:19 UTC，已停更约32小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-15T19:19 UTC，已停更约35小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 5 条（下面标【🔴实时】的就是存档里还没有的）
-  最近72小时：原创 9 条 / 回复 3 条（北京时间）
+  实时补抓⑤[syndication] syndication.twitter.com：2条
+  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ✅ 实时补抓新增 1 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 4 条 / 回复 3 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×9 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    存储/HBM/NOR ×7 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    激光/光芯片/InP ×5 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    算力/云/数据中心 ×5 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×3 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    存储/HBM/NOR ×2 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
     衬底/封装材料 ×1 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
-  提到的代码：$NVDA×5 $GOOGL×1 $AMZN×1 $NBIS×1 $BE×1 $SNDK×1 $AXTI×1 $SOI×1
+  提到的代码：$NVDA×5 $AXTI×1 $SOI×1
 
   ── 原创推文（全文，新→旧）──
-  [11-17 10:36] 🔴实时📝原创 ## Post ## Serenity on X: "$GOOGL Threat Intelligence Group: “The era of autonomous attacks has arrived”. - Fully autonomous vulnerability exploitation is now happening - Adversaries transitioned beyond manual prompting to deploying autonomous multi-agent offensive frameworks - AI is collapsing the window between vulnerability disclosure and exploitation - Google believes cybersecurity defense must become autonomous too by combining Gemini and other frontier models for reasoning + smaller models for continuous scanning. I’d actually argue beneficiaries of this arms race are AI compute and infra providers, regardless of the cybersecurity winners. Since cybersecurity will become a source of pe
-      https://x.com/aleabitoreddit/status/2122519172664209692
-  [11-17 08:22] 🔴实时📝原创 ## Post ## Serenity on X: "DeepSeek is now restricting users due to “insufficient compute capacity”. Prompting rationing over inference usage and tighter restrictions (input limit, conversation history) per Cailian Believe it or not, compute shortages are a bullish signal for AI infra demand" ## Conversation * [](https://x.com/aleabitoreddit) DeepSeek is now restricting users due to “insufficient compute capacity”. Prompting rationing over inference usage and tighter restrictions (input limit, conversation history) per Cailian Believe it or not, compute shortages are a bullish signal for AI infra demand * [](https://x.com/justin11341401) 间接说明DS使用量在飙升。 * [](https://x.com/xiaoxia83908279) 【中国电
-      https://x.com/aleabitoreddit/status/2122485440469241998
-  [11-17 07:27] 🔴实时📝原创 ## Post ## Serenity on X: "True, it also feels like I’m one of the few remaining people that refuse to do paid ads. Even if my ideas don’t perform well short term, I’d rather continue sharing original ideas for free Than treat audiences as something to monetize behind high paywalls or $10K+ / promo posts." ## Conversation * [](https://x.com/aleabitoreddit) True, it also feels like I’m one of the few remaining people that refuse to do paid ads. Even if my ideas don’t perform well short term, I’d rather continue sharing original ideas for free Than treat audiences as something to monetize behind high paywalls or $10K+ / promo posts. [](https://x.com/pataQKV) いまだにXで元気なのは、テクノロジー好きと収益化目的のアカウントだけだ
-      https://x.com/aleabitoreddit/status/2122471739238350876
-  [11-17 06:22] 🔴实时📝原创 ## Post ## Serenity on X: "Leopold’s Situational Awareness 13F filing reveals: - $BE $389.2M calls - $NBIS $332.6M calls - $SNDK $182.7M calls With $440.7M in SHAZ shares, $140.3M in DRAM ETF calls, and additional exposure to IREN + Neoclouds/Colo players. Call values are apparently market value of underlying shares, not premiums. I’m still long term bullish on many of these names like Nebius… But I hope Leopold gives enough time to survive market deleveraging. Reported values were of September 30th." ## Conversation * [](https://x.com/aleabitoreddit) Leopold’s Situational Awareness 13F filing reveals: - $BE $389.2M calls - $NBIS $332.6M calls - $SNDK $182.7M calls With $440.7M in SHAZ share
-      https://x.com/aleabitoreddit/status/2122455173356536151
-  [11-17 04:37] 🔴实时📝原创 Can you help us understand the SemiAnalysis/others' messaging? Especially I'm confused about what anyone's projections are worth if they can change so dramatically. Were they just trying to stir up market hype on the way up?
-      https://x.com/aleabitoreddit/status/2122428876748206564
   [11-16 03:19] 📝原创 It’s time for Jensen’s redemption arc at $NVDA. FT: Jensen Huang discusses comeback as Nvidia CEO.
       https://x.com/aleabitoreddit/status/2122046823934407066
   [11-15 23:01] 📝原创 I've posted a lot about $NVDA because Jensen Huang is worth fighting for. Talking with Jensen and those around him convinced me he's 1 of 1... both for Nvidia's future and US leadership in AI. A friend asked me to share this petition (I signed):
