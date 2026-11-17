@@ -1,0 +1,37 @@
+name: 业绩回测
+
+# 2026-11-17：验证"业绩高增长+现金流对得上，公告后买入"有没有优势（earnings_backtest.py）
+permissions:
+  contents: write
+concurrency:
+  group: earnings-bt
+  cancel-in-progress: false
+on:
+  workflow_dispatch:
+jobs:
+  bt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          python -m pip install --upgrade pip
+          pip install akshare==1.20.42 pandas requests lxml
+      - run: timeout 2100 python earnings_backtest.py || echo "失败"
+      - name: 提交
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          cp reports/业绩回测.txt /tmp/bt.txt
+          for i in 1 2 3; do
+            git fetch origin main && git reset --hard origin/main
+            cp /tmp/bt.txt reports/业绩回测.txt
+            git add reports/业绩回测.txt
+            if [ -z "$(git diff --staged --name-only)" ]; then exit 0; fi
+            git commit -m "业绩回测 $(date -u '+%Y-%m-%d %H:%M') UTC"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 8
+          done
