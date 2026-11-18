@@ -783,18 +783,22 @@ def index_ret(sym="sh000300"):
     """指数5日/20日涨跌（相对强弱基准），腾讯K线"""
     if sym in _IDX:
         return _IDX[sym]
-    try:
-        import json as _j
-        raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,70,qfq" % sym)
-        dd = _j.loads(raw)["data"][sym]
-        rows = dd.get("qfqday") or dd.get("day") or []
-        c = [float(r[2]) for r in rows]
-        r = {"d5": (c[-1] / c[-6] - 1) * 100, "d20": (c[-1] / c[-21] - 1) * 100, "today": (c[-1] / c[-2] - 1) * 100,
-             "ma60": sum(c[-60:]) / 60 if len(c) >= 60 else None, "last": c[-1]}
-    except Exception as e:
-        note("指数[腾讯]失败 %s %s" % (sym, str(e)[:50]))
-        r = None
-    _IDX[sym] = r
+    import json as _j, time as _t
+    r = None
+    for _try in range(3):   # ★11/18：偶发失败曾被缓存成None → 同一轮后面的股票全部识别不出弱市超跌形态；改为重试且失败不缓存
+        try:
+            raw = _tx_get("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=%s,day,,,70,qfq" % sym)
+            dd = _j.loads(raw)["data"][sym]
+            rows = dd.get("qfqday") or dd.get("day") or []
+            c = [float(r_[2]) for r_ in rows]
+            r = {"d5": (c[-1] / c[-6] - 1) * 100, "d20": (c[-1] / c[-21] - 1) * 100, "today": (c[-1] / c[-2] - 1) * 100,
+                 "ma60": sum(c[-60:]) / 60 if len(c) >= 60 else None, "last": c[-1]}
+            break
+        except Exception as e:
+            note("指数[腾讯]失败(第%d次) %s %s" % (_try + 1, sym, str(e)[:50]))
+            _t.sleep(2)
+    if r is not None:
+        _IDX[sym] = r
     return r
 
 
