@@ -1,0 +1,37 @@
+name: 超跌候选
+
+# 2026-11-18：弱市超跌反弹每日选股（oversold_screen.py，依据个股打法回测M3/M4）
+permissions:
+  contents: write
+concurrency:
+  group: oversold
+  cancel-in-progress: false
+on:
+  workflow_dispatch:
+jobs:
+  bt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          python -m pip install --upgrade pip
+          pip install akshare==1.20.39 pandas requests lxml
+      - run: timeout 780 python oversold_screen.py || echo "失败"
+      - name: 提交
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          cp reports/超跌候选.txt /tmp/bt.txt
+          for i in 1 2 3; do
+            git fetch origin main && git reset --hard origin/main
+            cp /tmp/bt.txt reports/超跌候选.txt
+            git add reports/超跌候选.txt
+            if [ -z "$(git diff --staged --name-only)" ]; then exit 0; fi
+            git commit -m "超跌候选 $(date -u '+%Y-%m-%d %H:%M') UTC"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 8
+          done
