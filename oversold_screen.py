@@ -9,7 +9,7 @@
   ① 今日涨≥3% 且 量比≥1.5（放量长阳止跌）
   ② 现价在【向下】的20日线下方（20日线比5天前低）
   ③ 近20日涨幅比沪深300低≥10个点
-  ④ 非ST、成交额≥1亿
+  ④ 非ST、成交额≥1亿、股价≥3元（剔除面值退市风险）
 输出 reports/超跌候选.txt
 """
 import datetime, json, os, time, traceback
@@ -62,7 +62,8 @@ def main():
     for c in ("px", "chg", "vr", "amt"):
         sp[c] = pd.to_numeric(sp[c], errors="coerce")
     sp = sp[sp["code"].astype(str).str[:2].isin(["60", "00", "30", "68"]) & ~sp["name"].astype(str).str.contains("ST")]
-    c1 = sp[(sp["chg"] >= 3) & (sp["vr"] >= 1.5) & (sp["amt"] >= 1e8)].sort_values("chg", ascending=False).head(150)
+    c1 = sp[(sp["chg"] >= 3) & (sp["vr"] >= 1.5) & (sp["amt"] >= 1e8) & (sp["px"] >= 3)]   # 11/18：剔除<3元（面值退市风险）
+    c1 = c1.sort_values("chg", ascending=False).head(150)
     L.append(f"  ① 今日涨≥3%且量比≥1.5且成交≥1亿：{len(c1)}只（逐只查K线）")
     s3, avg = sector_flow()
     end = bj.strftime("%Y%m%d")
