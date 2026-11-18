@@ -24,17 +24,28 @@ L = []
 N = 400
 
 
+def retry(f, n=5, wait=6):
+    """11/18：首轮 ConnectionResetError 直接失败 → 关键接口重试"""
+    for k in range(n):
+        try:
+            return f()
+        except Exception:
+            if k == n - 1:
+                raise
+            time.sleep(wait * (k + 1))
+
+
 def main():
     bj = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     L.append("=" * 72)
     L.append(f"🧪【个股打法回测：抄底 vs 强者恒强】北京 {bj}")
     L.append("=" * 72)
-    idx = ak.stock_zh_index_daily(symbol="sh000300")
+    idx = retry(lambda: ak.stock_zh_index_daily(symbol="sh000300"))
     idx["d"] = pd.to_datetime(idx["date"]).dt.date
     idx = idx.set_index("d")["close"]
     ima60 = idx.rolling(60).mean()
     ir20 = idx.pct_change(20) * 100
-    codes = ak.stock_info_a_code_name()["code"].astype(str)
+    codes = retry(lambda: ak.stock_info_a_code_name())["code"].astype(str)
     codes = [c for c in codes if c[:2] in ("60", "00", "30", "68")]
     random.seed(11)
     codes = random.sample(codes, N)
@@ -44,7 +55,7 @@ def main():
     ok = 0
     for c in codes:
         try:
-            df = ak.stock_zh_a_hist(symbol=c, period="daily", start_date=start, end_date=end, adjust="qfq")
+            df = retry(lambda: ak.stock_zh_a_hist(symbol=c, period="daily", start_date=start, end_date=end, adjust="qfq"), n=3, wait=2)
             time.sleep(0.25)
         except Exception:
             time.sleep(1)
