@@ -74,8 +74,11 @@ def main():
         for h in (1, 3, 5):
             if len(after) >= h:
                 chg = (after[h - 1] / px - 1) * 100
-                good = chg > 1 if r["动作"] in ("买", "持有", "练手买") else chg < -1
-                flat = abs(chg) < 1
+                # 11/18 用户："练手是为了练命中率，不是选涨跌都看不见的股票来凑数" →
+                #   练手的"对"必须涨≥3%，"错"跌≥3%，中间算"平"且平也计入分母（低波动股无法刷命中率）
+                th = 3 if r["动作"] == "练手买" else 1
+                good = chg > th if r["动作"] in ("买", "持有", "练手买") else chg < -th
+                flat = abs(chg) < th
                 tag = "平" if flat else ("对" if good else "错")
                 res.append(f"T+{h} {chg:+.1f}% {tag}")
                 if h in (1, 5):
@@ -88,6 +91,8 @@ def main():
     for (a, h), (g, b, f) in sorted(stat.items()):
         n = g + b
         L.append(f"  {a} T+{h}：对{g} 错{b} 平{f} ｜ 判对率 {g/n*100:.0f}%" if n else f"  {a} T+{h}：样本不足")
+        if a == "练手买" and (g + b + f):
+            L.append(f"      练手有效命中率（涨≥3%才算中，平也算没中）：{g/(g+b+f)*100:.0f}%")
     # 练手按轨道（理由开头【A抄底】/【B顺势】）分别统计平均收益
     tr = {}
     for r in rows:
