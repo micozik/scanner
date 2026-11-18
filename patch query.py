@@ -1223,12 +1223,30 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
         sc.append(("趋势", 2, "趋势单买点成立"))
     elif okb:
         sc.append(("超跌", 2, "超跌错杀单成立"))
+    # ★11/18 个股打法回测（397只×15个月）：弱市里"向下20日线下方＋20日比沪深300弱≥10点"的超跌股
+    #   T+10 +2.02%/55%（8042笔，对照+0.14%/47%）；再加"当日涨≥3%且放量" T+5 +2.12%/55%（157笔）；强市同信号亏
+    #   → 弱市命中这个形态时，旧的"下行20日线否决"和">4%不追"与回测矛盾，改为不否决
+    m3 = False
+    try:
+        weak_mkt = bool(hs and hs.get("ma60") and hs["last"] < hs["ma60"])
+        if (weak_mkt and k and k.get("ma20") and k.get("d20") is not None and hs.get("d20") is not None
+                and last < k["ma20"] and k["ma20"] < k.get("ma20p", k["ma20"]) and k["d20"] - hs["d20"] <= -10):
+            m3 = True
+            m4 = pct is not None and float(pct) >= 3 and float(((dp.get("val") or {}).get("lb")) or 0) >= 1.5   # lb＝腾讯量比
+            w("   ★回测形态：弱市超跌%s → %s（个股打法回测11/18）" % (
+                "＋放量长阳(M4)" if m4 else "(M3)",
+                "T+5 +2.12%/胜率55%（157笔，样本小）" if m4 else "T+10 +2.02%/胜率55%（8042笔）"))
+            sc.append(("回测形态", 2, "弱市超跌M4" if m4 else "弱市超跌M3"))
+    except Exception:
+        pass
+    if ok or okb:
+        pass
     elif k and k.get("ma20"):
         sc.append(("买点", -1, "两种买点都不成立"))
-        if last < k["ma20"] and k["ma20"] < k.get("ma20p", k["ma20"]):
+        if last < k["ma20"] and k["ma20"] < k.get("ma20p", k["ma20"]) and not m3:
             veto.append("在下行20日线下方且不满足超跌")
     try:
-        if pct is not None and float(pct) > 4:
+        if pct is not None and float(pct) > 4 and not m3:
             veto.append("今日+%.1f%%>4%%不追" % float(pct))
     except Exception:
         pass
