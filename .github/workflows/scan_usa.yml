@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install akshare==1.20.42 pandas
+      - run: pip install akshare==1.20.39 pandas
 
       - name: 应用美股补丁
         run: |
