@@ -1306,6 +1306,16 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
     except Exception:
         pass
     w("   ★综合结论★ %s ｜ 总分 %+d" % (vd, tot))
+    # ★11/18：把"🟢可买"自己的实盘战绩贴在结论旁（用户："你还有什么地方需要改进才能让命中率大大提高"）
+    #   🟢组至今 T+5 胜率14%、平均−7%（样本11），在战绩达标（≥30条、胜率≥70%）之前，🟢只能当"值得深查"，不是买入令
+    if "可买" in vd:
+        try:
+            for ln in open("reports/选股命中率.txt", encoding="utf-8"):
+                if ln.strip().startswith("🟢可买"):
+                    w("      ⚠️🟢组实盘战绩：" + " ".join(ln.split()) + " → 未达标前🟢=值得深查，不是买入令；买入须过9项清单+反方+七步推演，≤1.5万")
+                    break
+        except Exception:
+            pass
     w("      计分：" + " ".join("%s%+d(%s)" % (a, b, c) for a, b, c in sc))
     w("      站位：" + stage)
     w("      AI必须补完再下结论：①驱动/故事还在不在（世界新闻、美/韩/日映射）②板块处于资金方哪一步 ③下一个催化剂日期+两种结果赔率")
