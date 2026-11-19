@@ -1,0 +1,37 @@
+name: 练手命中率回测
+
+# 2026-11-18：练手口径（+8%先到 vs −5%先到）回测
+permissions:
+  contents: write
+concurrency:
+  group: practice-bt
+  cancel-in-progress: false
+on:
+  workflow_dispatch:
+jobs:
+  bt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          python -m pip install --upgrade pip
+          pip install akshare==1.20.39 pandas requests lxml
+      - run: timeout 2100 python practice_bt.py || echo "失败"
+      - name: 提交
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          cp reports/练手命中率回测.txt /tmp/bt.txt
+          for i in 1 2 3; do
+            git fetch origin main && git reset --hard origin/main
+            cp /tmp/bt.txt reports/练手命中率回测.txt
+            git add reports/练手命中率回测.txt
+            if [ -z "$(git diff --staged --name-only)" ]; then exit 0; fi
+            git commit -m "练手命中率回测 $(date -u '+%Y-%m-%d %H:%M') UTC"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 8
+          done
