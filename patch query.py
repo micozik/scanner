@@ -1145,9 +1145,28 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
     elif not ul:
         w("   ④限售解禁：前30天~后120天 无")
     else:
-        w("   ④限售解禁：" + " ｜ ".join(ul[:4]))
-        _td = (datetime.datetime.utcnow() + datetime.timedelta(hours=8)).strftime("%Y-%m-%d")
-        if any(x[:10] >= _td for x in ul):
+        w("   ④限售解禁：" + " ｜ ".join(ul[:4]) + "（注：'占比/市值'是解禁股市值·亿元，不是百分比）")
+        _now = (datetime.datetime.utcnow() + datetime.timedelta(hours=8)).date()
+        _td = _now.strftime("%Y-%m-%d")
+        # 11/19 恒坤新材：11/18 解禁约50%股本，我误读成"71.7%" → 换算成占总股本比例；近10天/未来30天大额解禁重罚
+        _big = []
+        try:
+            _vv = dp.get("val") or {}
+            _sh = float(_vv.get("mv")) * 1e8 / float(last) if _vv.get("mv") and last else None
+            for x in ul:
+                _d = datetime.datetime.strptime(x[:10], "%Y-%m-%d").date()
+                _n = float(x.split("解禁", 1)[1].split()[0]) * 1e4   # 万股→股
+                _r = _n / _sh * 100 if _sh else None
+                if _r is not None:
+                    w("      %s 解禁≈总股本%.1f%%" % (x[:10], _r))
+                    if _r >= 10 and -10 <= (_d - _now).days <= 30:
+                        _big.append("%s %.0f%%" % (x[:10], _r))
+        except Exception:
+            pass
+        if _big:
+            sc.append(("解禁", -2, "近10天/未来30天大额解禁(≥10%%股本)：%s" % "、".join(_big)))
+            w("      🔴大额解禁窗口：解禁股东(创投/原始股)可能持续砸盘，回测未覆盖此变量→实盘不推")
+        elif any(x[:10] >= _td for x in ul):
             sc.append(("解禁", -1, "未来120天有解禁（资本出货窗口）"))
         else:
             w("      （已过的解禁，不扣分；看解禁后资金是否承接）")
