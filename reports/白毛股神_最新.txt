@@ -4,7 +4,7 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6896条）
   存档最近同步：2026-11-18T21:54:45Z UTC（状态 ok）
-  最近48小时：原创 14 条 / 回复 11 条（北京时间）
+  最近48小时：原创 13 条 / 回复 11 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     算力/云/数据中心 ×27 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
@@ -13,7 +13,7 @@
     CPO/光模块 ×16 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     衬底/封装材料 ×5 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$NVDA×7 $SOI×4 $AAOI×3 $MU×3 $GOOGL×2 $ANT×2 $SNDK×2 $COHR×2 $AMZN×2 $TSM×1 $BE×1 $SIVE×1 $AMD×1 $WULF×1 $CRWV×1 $IREN×1 $RIOT×1 $AVGO×1 $MTSI×1 $IQE×1
+  提到的代码：$NVDA×7 $SOI×4 $AAOI×3 $MU×3 $ANT×2 $SNDK×2 $COHR×2 $GOOGL×1 $TSM×1 $BE×1 $SIVE×1 $CRWV×1 $AMD×1 $AVGO×1 $WULF×1 $RIOT×1 $IREN×1 $AMZN×1 $MTSI×1 $TSEM×1
 
   ── 原创推文（全文，新→旧）──
   [11-19 05:54] 📝原创 $GOOGL releases benchmarks for Gemini 4 Neon, ahead of $ANT IPO.
@@ -42,8 +42,6 @@
       https://x.com/aleabitoreddit/status/2122660925488718046
   [11-17 17:52] 📝原创 It looks like $AAPL finally gave up on cheap memory supply with $CMXT and China. That they've approached Samsung Electronics for DRAM supply LTAs. Contracts are expected to start H1 2027, and run 4-5 years. This is positive on regarding memory demand visibility, no price floors enforced yet like other hyperscaler agreements.
       https://x.com/aleabitoreddit/status/2122628849657954454
-  [11-17 10:36] 📝原创 $GOOGL Threat Intelligence Group: “The era of autonomous attacks has arrived”. - Fully autonomous vulnerability exploitation is now happening - Adversaries transitioned beyond manual prompting to deploying autonomous multi-agent offensive frameworks - AI is collapsing the window between vulnerability disclosure and exploitation - Google believes cybersecurity defense must become autonomous too by combining Gemini and other frontier models for reasoning + smaller models for continuous scanning. I’d actually argue beneficiaries of this arms race are AI compute and infra providers, regardless of the cybersecurity winners. Since cybersecurity will become a source of persistent inference consumpt
-      https://x.com/aleabitoreddit/status/2122519172664209692
   [11-19 04:03] ↩回复 @Jaime21129601 Most of my commentary recently has been thematic since AI names are just indiscriminately moving up and down together now. Foci is heavily tied to CPO which hasn't reached volume yet. And they've been named to be a $TSM COUPE supplier now last month with exposure to $NVDA CPO programs. Last month, Largan cited fiber arrays as facing the greatest shortages for CPO expansion. H2 2027 from Goldman Sachs flagged accelerated CPO FAU revenue growth. But we're entering 2027 soon, so I hope we see earnings inflection with Foci similar to $SOI today with their commitments. I have a tendency to be a bit early.
       https://x.com/aleabitoreddit/status/2123145041837527085
   [11-19 03:50] ↩回复 @praneeshkhanna As much as I'd like to reply to these types of comments during a sector crash, I'm not in a position to tell anyone how to trade, how to position their portfolios, or when to sell. Everyone has their own risk profile. Some do indexes with 10% allocated to high-beta, others run more concentrated portfolios. In terms of my own portfolio, I'm long and can tolerate volatility. I reduced exposure earlier from 1.3x margin -> 90% long 10% cash, not using any leverage.
@@ -66,9 +64,6 @@
       https://x.com/aleabitoreddit/status/2122826811667263749
   [11-17 18:22] ↩回复 @snmart Yeah, $IQE got backstopped by $MTSI and signed $TSEM agreements since I originally took positions! Earnings saw revenue acceleration too from 30%->40% and margins increase. Fundamentals keep improving despite share prices not reflecting it, but over medium/long horizon I think things keep improving
       https://x.com/aleabitoreddit/status/2122636464672383306
-
-  ── Substack 长文/笔记（最新5篇）──
-  [19 May 2026 10:42] Sivers: The Undiscovered CPO Laser Chokepoint + Customer Mapping  https://aleabitoreddit.substack.com/p/sivers-semi-sive-the-cpo-laser-supplier
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
