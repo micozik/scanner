@@ -4,25 +4,29 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6896条）
   存档最近同步：2026-11-18T21:54:45Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-18T21:54 UTC，已停更约14小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-18T21:54 UTC，已停更约19小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误5：status 2123335230870392843: curl: (22) The requested URL returned error: 401
-  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近48小时：原创 11 条 / 回复 10 条（北京时间）
+  实时补抓④[x.com/jina]：6条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  ✅ 实时补抓新增 2 条（下面标【🔴实时】的就是存档里还没有的）
+  最近48小时：原创 13 条 / 回复 10 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×27 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    算力/云/数据中心 ×30 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    激光/光芯片/InP ×22 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
     存储/HBM/NOR ×20 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    激光/光芯片/InP ×15 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    CPO/光模块 ×13 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    衬底/封装材料 ×5 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
+    CPO/光模块 ×17 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
+    衬底/封装材料 ×7 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$NVDA×7 $SOI×4 $AAOI×3 $MU×3 $ANT×2 $SNDK×2 $COHR×2 $GOOGL×1 $TSM×1 $BE×1 $SIVE×1 $WULF×1 $IREN×1 $CRWV×1 $AMD×1 $RIOT×1 $AVGO×1
+  提到的代码：$NVDA×7 $SOI×5 $COHR×3 $AAOI×3 $MU×3 $ANT×2 $SNDK×2 $GOOGL×1 $TSM×1 $BE×1 $SIVE×1 $WULF×1 $AMD×1 $AVGO×1 $CRWV×1 $RIOT×1 $IREN×1
 
   ── 原创推文（全文，新→旧）──
+  [11-19 21:02] 🔴实时📝原创 That’s the signal of confidence I like to see: $COHR issues a new $2B share buyback, through open market purchases. Optical industry looks very undervalued right now, especially as it reaches the inflection of the next supercycle. We’re already seeing photonics-SOI substrate players go from $25M revenue -> $1.2B LTAs signed in a quarter. Or $100M backlog -> $500M in a quarter with InP substrates. And we’ll see acceleration for lasers, modules, and the optical supply chain next. I’m sure Coherent finds its own valuation very low now too, especially after signing $20B LTAs recently.
+      https://x.com/aleabitoreddit/status/2123401652782923980
+  [11-19 16:39] 🔴实时📝原创 Markets have now given me PTSD on every green rally. That being said, $SOI accelerating from $25m quarterly photonics-SOI revenue… with no forward visibility earlier this year. Into securing $1.2B in agreements this quarter, backed by cash, is extremely transformative and make me happy to see. In terms transcript details: - “AI data center have built large compute power, but some of it remains idle as copper links limit data availability for processing. Optics removes that bottleneck” Reiterating what I said about aggregate capex not applying 1:1 with optical sector, given optical shifts improves GPU utilization - timelines: “Near-package optics brings first volume by the end of the fiscal y
+      https://x.com/aleabitoreddit/status/2123335230870392843
   [11-19 05:54] 📝原创 $GOOGL releases benchmarks for Gemini 4 Neon, ahead of $ANT IPO.
       https://x.com/aleabitoreddit/status/2123173088598938033
   [11-19 04:31] 📝原创 Woah, the charts mapping the recent AI crash is insane. Net momentum exposure went from ~60% of hedge fund equity at the peak down to 8%. The weeks before Nov 13 also saw the heaviest net selling of global tech stocks in the past 9 years. Per Goldman Sachs prime data.
@@ -65,9 +69,6 @@
       https://x.com/aleabitoreddit/status/2123084154757873815
   [11-18 06:58] ↩回复 @MO1465424922353 I'll leave it up to your judgement. From my point of view, there's $956M in commitments vs. $605M cash so they needed more financing for their buildout. However two things stood out: 1. Management commentary around financing: CFO said US bank financing could reach $500m, and that profits would help fund operations. CFO said share price mattered and that they'd lean more into debt. So their actions went contrary to management commentary. If you look at $COHR, they fund capacity expansion from upfront prepayments. There's other ways to do it too like convertible notes. 2. Capital allocation issue: they spent $102M on three Texas buildings they had under lease. Which was around
       https://x.com/aleabitoreddit/status/2122826811667263749
-
-  ── Substack 长文/笔记（最新5篇）──
-  [19 May 2026 10:42] Sivers: The Undiscovered CPO Laser Chokepoint + Customer Mapping  https://aleabitoreddit.substack.com/p/sivers-semi-sive-the-cpo-laser-supplier
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
