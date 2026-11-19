@@ -1166,6 +1166,7 @@ def _deep_out(w, cd, s, k, dp, ok, okb, sm, tag, hs, cy, TA, CASH, HOLD):
         if _big:
             sc.append(("解禁", -2, "近10天/未来30天大额解禁(≥10%%股本)：%s" % "、".join(_big)))
             w("      🔴大额解禁窗口：解禁股东(创投/原始股)可能持续砸盘，回测未覆盖此变量→实盘不推")
+            veto.append("大额解禁窗口（%s）" % "、".join(_big))
         elif any(x[:10] >= _td for x in ul):
             sc.append(("解禁", -1, "未来120天有解禁（资本出货窗口）"))
         else:
