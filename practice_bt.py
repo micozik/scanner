@@ -27,6 +27,7 @@ OUT = "reports/练手命中率回测.txt"
 L = []
 N = 400
 EM_BAN = {"on": False}
+EXITS = [(8, 5), (8, 8), (10, 8), (6, 4), (5, 5), (15, 10)]   # (目标%, 止损%)
 
 
 def retry(f, n=4, wait=5):
@@ -108,34 +109,39 @@ def main():
             if not any(sig[k] for k in keys[1:]) and random.random() > 0.15:
                 continue                       # 对照组抽样15%，省时间
             p = cl[i]
-            res = "平"
-            for j in range(i + 1, i + 11):
-                if lo[j] <= p * 0.95:
-                    res = "错"; break
-                if hi[j] >= p * 1.08:
-                    res = "中"; break
+            outs = []
+            for tg, sl in EXITS:                 # 11/19 v2：多组 目标/止损 同时算，到期按第10天收盘
+                res, ret = "平", (cl[i + 10] / p - 1) * 100
+                for j in range(i + 1, i + 11):
+                    if lo[j] <= p * (1 - sl / 100):
+                        res, ret = "错", -sl; break
+                    if hi[j] >= p * (1 + tg / 100):
+                        res, ret = "中", tg; break
+                outs.append((res, ret))
             r10 = (cl[i + 10] / p - 1) * 100
             t5 = cl[i + 5] / p - 1 >= 0.03
             for k, s in sig.items():
                 if s:
-                    R[k].append((res, r10, t5))
+                    R[k].append((outs, r10, t5))
     L.append(f"  样本股票：成功{ok}/{N}（{'新浪日线' if EM_BAN['on'] else '东财日线'}）")
     desc = {"V0": "对照：弱市任意一天（抽样）", "V1": "M3 超跌", "V2": "M4 超跌+放量长阳", "V3": "M4+收在当日高位",
             "V4": "M3+60日回撤≥30%", "V5": "M4+60日回撤≥30%", "V6": "M4+前5日急跌≥8%",
             "V7": "M3+地量收阳", "V8": "M4+涨幅3–7%（买得到）"}
-    L.append("\n  变体                      样本   中(+8%先到)  错(−5%先到)  平   T+5≥3%   10日平均")
-    for k in keys:
-        v = R[k]
-        if not v:
-            L.append(f"  {k} {desc[k]:<18} 样本0"); continue
-        n = len(v)
-        z = sum(1 for x in v if x[0] == "中") / n * 100
-        e = sum(1 for x in v if x[0] == "错") / n * 100
-        f = 100 - z - e
-        t5 = sum(1 for x in v if x[2]) / n * 100
-        av = sum(x[1] for x in v) / n
-        L.append(f"  {k} {desc[k]:<18} {n:>6}   {z:5.1f}%      {e:5.1f}%     {f:4.1f}%  {t5:5.1f}%   {av:+.2f}%")
-    L.append("\n  读法：'中'比对照高、'中/错'≥1 且 T+5≥3% 明显高于对照的变体，才能当练手主打法")
+    for ei, (tg, sl) in enumerate(EXITS):
+        L.append(f"\n  ── 目标+{tg}% / 止损−{sl}%（10天内先到为准，到期按第10天收盘）──")
+        L.append("  变体                      样本   中     错     平   每笔期望  T+5≥3%  持有10天平均")
+        for k in keys:
+            v = R[k]
+            if not v:
+                L.append(f"  {k} {desc[k]:<18} 样本0"); continue
+            n = len(v)
+            z = sum(1 for x in v if x[0][ei][0] == "中") / n * 100
+            e = sum(1 for x in v if x[0][ei][0] == "错") / n * 100
+            ev = sum(x[0][ei][1] for x in v) / n - 0.2
+            t5 = sum(1 for x in v if x[2]) / n * 100
+            av = sum(x[1] for x in v) / n
+            L.append(f"  {k} {desc[k]:<18} {n:>6} {z:5.1f}% {e:5.1f}% {100-z-e:4.1f}%  {ev:+.2f}%  {t5:5.1f}%  {av:+.2f}%")
+    L.append("\n  读法：每笔期望（已扣0.2%成本）最高、且样本≥100 的 变体×出场 组合 = 练手主打法")
 
 
 if __name__ == "__main__":
