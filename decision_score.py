@@ -101,7 +101,8 @@ def main():
         k = cache.get(r["代码"].strip()) or []
         after = [c for d, c in k if d > r["时间"][:10]]
         if len(after) >= 5:
-            g = r.get("理由", "")[:6]
+            _y = r.get("理由", "")
+            g = (_y.split("】")[0] + "】") if _y.startswith("【") and "】" in _y else "其他"   # 11/19 修：原[:6]把轨道名截断成"【A抄底】P"
             tr.setdefault(g, []).append((after[4] / float(r["价格"]) - 1) * 100 - 0.2)
     if tr:
         L.append("\n—— 练手轨道（持有5天，扣成本0.2%）——")
