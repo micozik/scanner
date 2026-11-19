@@ -30,18 +30,20 @@ def retry(f, n=4, wait=5):
             time.sleep(wait * (k + 1))
 
 
+# 11/19 练手命中率回测（practice_bt.py）选出的主打变体；候选里命中它的标⭐，练手只从⭐里挑
+PRIMARY = "V2"   # 待回测结果更新：V2=M4 V3=+收在高位 V5=+60日回撤≥30% V6=+前5日急跌≥8% V8=+涨幅3–7%
 EM_BAN = {"on": False}   # 11/19：东财push2限流→整轮切新浪，不再碰东财（重复调用会延长封禁）
 
 
 def spot():
     try:
         sp = retry(lambda: ak.stock_zh_a_spot_em(), n=2, wait=5)
-        sp = sp.rename(columns={"代码": "code", "名称": "name", "最新价": "px", "涨跌幅": "chg", "量比": "vr", "成交额": "amt"})
+        sp = sp.rename(columns={"代码": "code", "名称": "name", "最新价": "px", "涨跌幅": "chg", "量比": "vr", "成交额": "amt", "最高": "hi", "最低": "lo"})
         return sp, "东财"
     except Exception:
         EM_BAN["on"] = True
     sp = retry(lambda: ak.stock_zh_a_spot())          # 新浪，无量比→后面用日线自算
-    sp = sp.rename(columns={"代码": "code", "名称": "name", "最新价": "px", "涨跌幅": "chg", "成交额": "amt", "成交量": "vol"})
+    sp = sp.rename(columns={"代码": "code", "名称": "name", "最新价": "px", "涨跌幅": "chg", "成交额": "amt", "成交量": "vol", "最高": "hi", "最低": "lo"})
     sp["code"] = sp["code"].astype(str).str[-6:]
     sp["vr"] = None
     return sp, "新浪(东财限流)"
@@ -92,7 +94,10 @@ def main():
     L.append(f"  大盘：沪深300 {ic.iloc[-1]:.0f} vs 60日线 {ic.rolling(60).mean().iloc[-1]:.0f} → {'弱市✅本筛选适用' if weak else '强市❌本筛选不适用（回测亏）'} ｜ 沪深300近20日{ir20:+.1f}%")
     sp, src = spot()
     L.append(f"  行情源：{src}")
-    for c in ("px", "chg", "vr", "amt"):
+    for c in ("hi", "lo"):
+        if c not in sp.columns:
+            sp[c] = None
+    for c in ("px", "chg", "vr", "amt", "hi", "lo"):
         sp[c] = pd.to_numeric(sp[c], errors="coerce")
     sp = sp[sp["code"].astype(str).str[:2].isin(["60", "00", "30", "68"]) & ~sp["name"].astype(str).str.contains("ST")]
     novr = sp["vr"].isna().all()
@@ -101,7 +106,7 @@ def main():
     L.append(f"  ① 今日涨≥3%且量比≥1.5且成交≥1亿：{len(c1)}只（逐只查K线）")
     s3, avg = sector_flow()
     end = bj.strftime("%Y%m%d")
-    start = (bj - datetime.timedelta(days=60)).strftime("%Y%m%d")
+    start = (bj - datetime.timedelta(days=110)).strftime("%Y%m%d")   # 要算60日高点
     hits = []
     for r in c1.itertuples():
         try:
@@ -137,12 +142,20 @@ def main():
         big_out = flow is not None and avg.get(ind) and flow <= -4 * avg[ind]
         tag = ("❌板块近3日大额流出%.0f亿→剔除" % flow) if big_out else (
             ("板块近3日%+.0f亿" % flow) if flow is not None else "板块资金：未匹配")
-        hits.append((r.code, r.name, r.px, r.chg, vr, r20 - ir20, ind, tag, big_out))
+        # 11/19 练手回测变体特征
+        rng = (r.hi - r.lo) if pd.notna(r.hi) and pd.notna(r.lo) else None
+        hipos = bool(rng and rng > 0 and r.px >= r.lo + 0.8 * rng)
+        deep = r.px <= max(cl[-60:]) * 0.7
+        r5p = (cl[-2] / cl[-7] - 1) * 100 if len(cl) >= 7 else 0
+        var = {"V2": True, "V3": hipos, "V5": deep, "V6": r5p <= -8, "V8": r.chg <= 7}
+        feat = "收高位%s 60日回撤%.0f%% 前5日%+.0f%%" % ("✓" if hipos else "✗", (1 - r.px / max(cl[-60:])) * 100, r5p)
+        hits.append((r.code, r.name, r.px, r.chg, vr, r20 - ir20, ind, tag, big_out, var.get(PRIMARY, False), feat))
     ok = [x for x in hits if not x[8]]
     L.append(f"  ②③ 在向下20日线下方且20日相对沪深300弱≥10点：{len(hits)}只 ｜ 过板块过滤后：{len(ok)}只")
     L.append("\n【候选】（只是回测优势信号，买前仍须：9项清单＋反方证据≥3＋七步推演＋查股票；单笔≤1.5万；止损＝今日最低价下方）")
     for x in hits:
-        L.append(f"  {'✅' if not x[8] else '  '} {x[1]}({x[0]}) 现价{x[2]} 今日{x[3]:+.1f}% 量比{x[4]:.1f} ｜ 20日相对沪深300 {x[5]:+.1f}点 ｜ {x[6] or '行业未知'} ｜ {x[7]}")
+        L.append(f"  {'✅' if not x[8] else '  '}{'⭐' if x[9] and not x[8] else ''} {x[1]}({x[0]}) 现价{x[2]} 今日{x[3]:+.1f}% 量比{x[4]:.1f} ｜ 20日相对沪深300 {x[5]:+.1f}点 ｜ {x[10]} ｜ {x[6] or '行业未知'} ｜ {x[7]}")
+    L.append(f"\n  ⭐=命中练手主打变体 {PRIMARY}（依据 reports/练手命中率回测.txt）；练手A轨只从⭐里挑，没有就空着")
     if not hits:
         L.append("  今天没有符合条件的股票")
 
