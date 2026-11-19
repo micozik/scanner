@@ -4,7 +4,7 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6896条）
   存档最近同步：2026-11-18T21:54:45Z UTC（状态 ok）
-  最近72小时：原创 14 条 / 回复 11 条（北京时间）
+  最近48小时：原创 14 条 / 回复 11 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
     算力/云/数据中心 ×27 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
@@ -13,7 +13,7 @@
     CPO/光模块 ×16 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     衬底/封装材料 ×5 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$NVDA×7 $SOI×4 $AAOI×3 $MU×3 $GOOGL×2 $ANT×2 $SNDK×2 $COHR×2 $AMZN×2 $TSM×1 $BE×1 $SIVE×1 $AVGO×1 $IREN×1 $RIOT×1 $CRWV×1 $AMD×1 $WULF×1 $IQE×1 $MTSI×1
+  提到的代码：$NVDA×7 $SOI×4 $AAOI×3 $MU×3 $GOOGL×2 $ANT×2 $SNDK×2 $COHR×2 $AMZN×2 $TSM×1 $BE×1 $SIVE×1 $AMD×1 $WULF×1 $CRWV×1 $IREN×1 $RIOT×1 $AVGO×1 $MTSI×1 $IQE×1
 
   ── 原创推文（全文，新→旧）──
   [11-19 05:54] 📝原创 $GOOGL releases benchmarks for Gemini 4 Neon, ahead of $ANT IPO.
@@ -66,6 +66,9 @@
       https://x.com/aleabitoreddit/status/2122826811667263749
   [11-17 18:22] ↩回复 @snmart Yeah, $IQE got backstopped by $MTSI and signed $TSEM agreements since I originally took positions! Earnings saw revenue acceleration too from 30%->40% and margins increase. Fundamentals keep improving despite share prices not reflecting it, but over medium/long horizon I think things keep improving
       https://x.com/aleabitoreddit/status/2122636464672383306
+
+  ── Substack 长文/笔记（最新5篇）──
+  [19 May 2026 10:42] Sivers: The Undiscovered CPO Laser Chokepoint + Customer Mapping  https://aleabitoreddit.substack.com/p/sivers-semi-sive-the-cpo-laser-supplier
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
