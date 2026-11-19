@@ -1,14 +1,11 @@
 ========================================================================
-🎯【弱市超跌反弹·候选】北京 2026-11-19 10:11
+🎯【弱市超跌反弹·候选】北京 2026-11-19 10:26
    依据：个股打法回测 弱市M4 T+5 +2.12%/55%（157笔，样本小）、M3 T+10 +2.02%/55%；强市此法亏
 ========================================================================
   大盘：沪深300 3984 vs 60日线 4316 → 弱市✅本筛选适用 ｜ 沪深300近20日-3.1%
-🔴 失败：^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/akshare/utils/http.py", line 226, in request_with_retry
-    response = session.request(method, url, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/akshare/utils/http.py", line 180, in request
-    _raise_if_push2_ban(url, exc)
-  File "/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/akshare/utils/http.py", line 97, in _raise_if_push2_ban
-    raise Push2RateLimitError(_PUSH2_BAN_MESSAGE) from exc
-akshare.utils.http.Push2RateLimitError: 东方财富 push2 行情服务器断开了连接，通常是短时间内请求过多，当前 IP 被临时限流。首次限流一般约 5 分钟后恢复，反复触发后可能需要 40 分钟以上；等待期间不要重复调用东方财富的行情接口，否则会延长限流。
+  行情源：新浪(东财限流)
+  ① 今日涨≥3%且量比≥1.5且成交≥1亿：76只（逐只查K线）
+  ②③ 在向下20日线下方且20日相对沪深300弱≥10点：1只 ｜ 过板块过滤后：1只
+
+【候选】（只是回测优势信号，买前仍须：9项清单＋反方证据≥3＋七步推演＋查股票；单笔≤1.5万；止损＝今日最低价下方）
+  ✅ 利通电子(603629) 现价63.8 今日+4.7% 量比1.6 ｜ 20日相对沪深300 -21.7点 ｜ 行业未知 ｜ 板块资金：未匹配
