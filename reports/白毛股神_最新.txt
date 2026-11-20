@@ -4,36 +4,25 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6896条）
   存档最近同步：2026-11-18T21:54:45Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-18T21:54 UTC，已停更约28小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-18T21:54 UTC，已停更约42小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 5 条（下面标【🔴实时】的就是存档里还没有的）
-  最近72小时：原创 19 条 / 回复 11 条（北京时间）
+  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误5：status 2123749426019868932: curl: (22) The requested URL returned error: 401
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
+  最近48小时：原创 6 条 / 回复 8 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×38 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    存储/HBM/NOR ×29 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    激光/光芯片/InP ×26 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    CPO/光模块 ×24 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    衬底/封装材料 ×8 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
-    CPU/ARM ×3 → CPU/接口：澜起科技688008 海光信息688041
-    人形机器人/物理AI ×1 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
-  提到的代码：$NVDA×8 $SOI×5 $COHR×4 $ANT×4 $AAOI×3 $MU×3 $AAPL×2 $GOOGL×2 $SNDK×2 $AMZN×2 $MRVL×1 $SPCX×1 $LITE×1 $ARM×1 $META×1 $TSM×1 $BE×1 $SIVE×1 $AVGO×1 $IREN×1
+    激光/光芯片/InP ×8 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
+    CPO/光模块 ×7 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
+    算力/云/数据中心 ×5 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    存储/HBM/NOR ×3 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+    CPU/ARM ×2 → CPU/接口：澜起科技688008 海光信息688041
+    衬底/封装材料 ×1 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
+  提到的代码：$SOI×4 $ANT×2 $NVDA×2 $GOOGL×1 $TSM×1 $BE×1 $SNDK×1 $AAOI×1 $SIVE×1 $AVGO×1 $RIOT×1 $CRWV×1 $IREN×1 $MU×1 $AMD×1 $WULF×1
 
   ── 原创推文（全文，新→旧）──
-  [11-20 09:26] 🔴实时📝原创 ## Serenity on X: "True, I've looked at biotech, physical AI, cybersecurity, space, and others... But I still have conviction that optics is the most compelling opportunity. If you look at Elon Musk $SPCX (Mesh acquisition), $MRVL (Lumentum acqusition), Samsung Electronics photonics foundry push... SK Hynix CPO push + PIC IP acqusitions... it's endless. Private VCs are still heavily pouring funds into upcoming optical companies. Supply procurement is accelerating... from $SOI selling $1.2B in agreements, in a single quarter (from $25M revenue/quarter). To $COHR signing $20B in LTAs, to $LITE selling out of 2029 capacity. Actions about where the industry is heading is the biggest signal over 
-      https://x.com/aleabitoreddit/status/2123588783753048553
-  [11-20 07:55] 🔴实时📝原创 ## Serenity on X: "I'm hearing multiple things from industry executives: 1. Potential $NVDA employee exodus if Jensen doesn't come back soon. Many senior management and engineers can easily retire after Nvidia stock appreciation over the years. They don't need to continue working sitting on millions in equity. But they continued to work because Jensen was a visionary leader. Under new interim CFO (former CFO), it gives an excuse for that lot of people to finally quit soon. A pay bump or hiring $ARM CEO isn't going to change that. So you have generational talent leaving. 2. Loss of confidence in $NVDA future growth (Jensen was the moat). What I'm hearing is that Jensen understands heavily top
-      https://x.com/aleabitoreddit/status/2123565807653552458
-  [11-20 06:28] 🔴实时📝原创 $AAPL is now developing its own AI agent offerings to compete vs. $ANT, Meta Muse, Google Gemini, and OpenAI. Given on-device inference isn't quite ready yet for complex workflows... + Apple isn't really known for doing much in the AI race This is pretty positive for aggregate inference demand + infra capex implications (as seen with Meta Muse supply procurement). It also kinda follows rumors they were looking to acquire private accelerator companies for their own inference buildout.
-      https://x.com/aleabitoreddit/status/2123543880780132572
-  [11-20 02:47] 🔴实时📝原创 Wow $ANT at a $1.74T valuation… is now worth hundreds of billions more than $META. Did anyone end up investing?
-      https://x.com/aleabitoreddit/status/2123488317425820130
-  [11-19 21:02] 🔴实时📝原创 That’s the signal of confidence I like to see: $COHR issues a new $2B share buyback, through open market purchases. Optical industry looks very undervalued right now, especially as it reaches the inflection of the next supercycle. We’re already seeing photonics-SOI substrate players go from $25M revenue -> $1.2B LTAs signed in a quarter. Or $100M backlog -> $500M in a quarter with InP substrates. And we’ll see acceleration for lasers, modules, and the optical supply chain next. I’m sure Coherent finds its own valuation very low now too, especially after signing $20B LTAs recently.
-      https://x.com/aleabitoreddit/status/2123401652782923980
   [11-19 05:54] 📝原创 $GOOGL releases benchmarks for Gemini 4 Neon, ahead of $ANT IPO.
       https://x.com/aleabitoreddit/status/2123173088598938033
   [11-19 04:31] 📝原创 Woah, the charts mapping the recent AI crash is insane. Net momentum exposure went from ~60% of hedge fund equity at the peak down to 8%. The weeks before Nov 13 also saw the heaviest net selling of global tech stocks in the past 9 years. Per Goldman Sachs prime data.
@@ -46,22 +35,6 @@
       https://x.com/aleabitoreddit/status/2123116246183088517
   [11-19 01:04] 📝原创 A faction of $NVDA board are now pushing for Jensen Huang to return as CEO per Semafor. I hope the market’s reaction, even after record earnings… sends a message to the rest of the board.
       https://x.com/aleabitoreddit/status/2123100162616951229
-  [11-18 23:48] 📝原创 Does anyone remember the days… When $NVDA disclosing an additional $111B+ in primarily memory procurement in a single quarter… was good news for memory names like $MU and SK Hynix?
-      https://x.com/aleabitoreddit/status/2123080934362845437
-  [11-18 22:53] 📝原创 Now that we're close to 2027 it's a good idea to stress test downside scenarios where you have: 1. Capex cuts past 2028 2. Stranded Compute / DC Slowdowns 3. Finance deterioration (base case) 4. 2x+ rate hikes Working in parallel and see what happens with valuations of AI longs. If you see acceleration despite all 4, I'd argue that's an opportunity. > Next-gen of photonics is one of the rare segments with an extreme rise in optical content and ASPs that can offset aggregate capex cuts. Everyone’s moving into that space, including Elon Musk doing M&A, Marvell, Samsung and others with M&A… and we haven’t seen economic impact on emerging architectures even hit players from Celestial to Ayar + t
-      https://x.com/aleabitoreddit/status/2123067177905643769
-  [11-18 07:34] 📝原创 $NVDA earnings transcript + industry read through. To sum it up: "Demand far exceeds supply". - Good news for the $MU / Samsung memory longs: "Our supply commitments increased from $279B last quarter to $390B, primarily related to the multi-year procurement of memory supply". (from SEC filings, not call) This is a a major leap Q/Q in supply procurement. - "We expect revenue to grow approximately 75% year-over-year, up from 70%." (upward revision, likely due to capacity constraints easing) (new agreements with Kinsus and Samsung Electro-Mechanics support additional ABF substrate capacity) - NVIDIA said industry cloud backlog increased from $2 trillion to $2.5 trillion in a single quarter. Whi
-      https://x.com/aleabitoreddit/status/2122835908596846950
-  [11-18 06:08] 📝原创 $AAOI management lost all credibility by launching another $550M ATM. Especially after it comes contrary to earlier commentary about other financing methods + share price caution. I still find AOI operationally compelling around their CPO program + optical transceiver ramp. Especially as it comes to the new China optical transceiver restrictions and incoming $5B-7B LTAs. But I misjudged management and suffered heavy losses after cost averaging up to $100+ from the initial ~$25. Definitely did not foresee them tapping into abusive financing methods again after the sector drop. I’ll still track their progress, but I don’t see how it’s possible to support a company that serially dilutes with AT
-      https://x.com/aleabitoreddit/status/2122814062329471182
-  [11-18 04:39] 📝原创 Jensen’s first public statement since leaving $NVDA. The support for Jensen is absolutely overwhelming. Can’t think of anyone else who is better suited to lead Nvidia and America’s future in AI
-      https://x.com/aleabitoreddit/status/2122791681405997440
-  [11-17 19:59] 📝原创 Just now: Trump administration to press ahead and block imports of AI DC equipment from China, such as new optical transceiver models. Despite opposition from hyperscalers like $AMZN to solana:GooGLMvZtJZXHdNZy95RUrAMCCKxV6ghK3qE5ddBgVm5 This move benefits Western optical transceiver and laser + component supply chains. While negatively impacting players like Innolight, Eoptolink, and upstream Chinese suppliers. China hawks in Washington were concerned Chinese transceivers could be used by Beijing to steal data, install malware, or disrupt ​US DC services.
-      https://x.com/aleabitoreddit/status/2122660925488718046
-  [11-17 17:52] 📝原创 It looks like $AAPL finally gave up on cheap memory supply with $CMXT and China. That they've approached Samsung Electronics for DRAM supply LTAs. Contracts are expected to start H1 2027, and run 4-5 years. This is positive on regarding memory demand visibility, no price floors enforced yet like other hyperscaler agreements.
-      https://x.com/aleabitoreddit/status/2122628849657954454
-  [11-17 10:36] 📝原创 $GOOGL Threat Intelligence Group: “The era of autonomous attacks has arrived”. - Fully autonomous vulnerability exploitation is now happening - Adversaries transitioned beyond manual prompting to deploying autonomous multi-agent offensive frameworks - AI is collapsing the window between vulnerability disclosure and exploitation - Google believes cybersecurity defense must become autonomous too by combining Gemini and other frontier models for reasoning + smaller models for continuous scanning. I’d actually argue beneficiaries of this arms race are AI compute and infra providers, regardless of the cybersecurity winners. Since cybersecurity will become a source of persistent inference consumpt
-      https://x.com/aleabitoreddit/status/2122519172664209692
   [11-19 04:03] ↩回复 @Jaime21129601 Most of my commentary recently has been thematic since AI names are just indiscriminately moving up and down together now. Foci is heavily tied to CPO which hasn't reached volume yet. And they've been named to be a $TSM COUPE supplier now last month with exposure to $NVDA CPO programs. Last month, Largan cited fiber arrays as facing the greatest shortages for CPO expansion. H2 2027 from Goldman Sachs flagged accelerated CPO FAU revenue growth. But we're entering 2027 soon, so I hope we see earnings inflection with Foci similar to $SOI today with their commitments. I have a tendency to be a bit early.
       https://x.com/aleabitoreddit/status/2123145041837527085
   [11-19 03:50] ↩回复 @praneeshkhanna As much as I'd like to reply to these types of comments during a sector crash, I'm not in a position to tell anyone how to trade, how to position their portfolios, or when to sell. Everyone has their own risk profile. Some do indexes with 10% allocated to high-beta, others run more concentrated portfolios. In terms of my own portfolio, I'm long and can tolerate volatility. I reduced exposure earlier from 1.3x margin -> 90% long 10% cash, not using any leverage.
@@ -74,6 +47,13 @@
       https://x.com/aleabitoreddit/status/2123130570008060023
   [11-19 02:56] ↩回复 @deepstocktrends I'm just joking with the language lol. But it's fun to see a thesis earlier in the year get validated with $1.2B commitments. I thought $SOI would probably see acceleration into 2027, rather than everyone do supply procurement so early.
       https://x.com/aleabitoreddit/status/2123128124628140034
+  [11-19 02:27] ↩回复 @StormDirac Probably around here if I had to guess, I think large cap names have a lot more room to drop relative to high-beta if we actually see future demand collapse. It doesn't look like there is one yet, but markets are pricing it in anyway... So maybe more strong earnings reports and maybe even something like seasonality (like December) might be a sentiment trigger for reversal. Short term is always unpredictable.
+      https://x.com/aleabitoreddit/status/2123120890582012141
+  [11-19 02:22] ↩回复 @VENTOUXBLEU Bullish $SOI, I need to wait for management commentary to shed more light. So far on most material disclosures: -> $1.2B new multi-year photonics SOI wafer reservations, which is probably what to focus on. Considering they were doing like $100m revenue from that earlier... that's a very very large jump. Already €86M in prepayments, committed through 2028. -> Net cash now €169m from -€56m in March. Rest of the business still kinda weak, but their optical growth is hard carrying.
+      https://x.com/aleabitoreddit/status/2123119673864778076
+
+  ── Substack 长文/笔记（最新5篇）──
+  [19 May 2026 10:42] Sivers: The Undiscovered CPO Laser Chokepoint + Customer Mapping  https://aleabitoreddit.substack.com/p/sivers-semi-sive-the-cpo-laser-supplier
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
