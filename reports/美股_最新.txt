@@ -1,17 +1,16 @@
 ============================================================
-美股夜盘扫描器V4.1 | 北京 2026-11-20 09:51 周五 | 美股收盘后
+美股夜盘扫描器V4.1 | 北京 2026-11-21 09:41 周六 | 美股收盘后
 ============================================================
 ★错题㉑：周五收盘 = 周一方向已定，别等周一早上才跑
 ★数据带 ⚠️距今N天 标记的，是陈旧数据，不许当成今夜的
   ✅ 已从 我的清单.txt 载入持仓 3只（2只有美股对标）
 
 【一、美股指数】（费城半导体SOX最关键=A股半导体风向标）
-  （实时指数源：stock_us_famous_spot_em）
   （实时指数源：新浪 gb_ 实时报价 · patch_usa53；缺的用日K补，日K会标⚠️距今N天）
-    道琼斯：49097.0586 -2.19%  [2026-11-19]
-    纳斯达克：23879.1993 -2.25%  [2026-11-19]
-    标普500：7175.8301 -2.02%  [2026-11-19]
-    费城半导体：9419.7224 -2.41%  [2026-11-19]
+    道琼斯：48147.3281 -1.93%  [2026-11-20]
+    纳斯达克：22617.733 -5.28%  [2026-11-20]
+    标普500：6910.3901 -3.70%  [2026-11-20]
+    费城半导体：8408.5904 -10.73%  [2026-11-20]
 
 【三、美股/全球新闻】
   （源：东财全球 已抓取）
@@ -19,145 +18,146 @@
   （源：财联社 已抓取）
   （源：新浪 已抓取）
 
-  💰💰💰【聪明钱专区·大佬动向】（0条）💰💰💰
-    本次无大佬动向新闻（13F季度披露日前后最密集）
+  💰💰💰【聪明钱专区·大佬动向】（2条）💰💰💰
+    [2026-11-21 07:16] “大空头”投资者迈克尔·伯里减持英伟达看跌期权，锁定部分收益
+    [2026-11-21 00:46] “大空头”卖掉半数英伟达和半导体ETF看跌期权
 
-  ★★★ 美股相关情报（75条）★★★
-    [2026-11-20 09:45] 【港股黄金股集体调整 赤峰黄金跌近7%】截至发稿，赤峰黄金(06693.HK)跌6.81%、紫金黄金国际(02259.HK)跌6.47%，灵宝黄金(0
-    [2026-11-20 09:43] 特朗普宣布将于美东时间周五中午12点（北京时间周六凌晨1点）举行新闻发布会。
-    [2026-11-20 09:42] 港股黄金股集体调整 赤峰黄金跌近7%
-    [2026-11-20 09:42] 现货黄金失守3570美元/盎司，日内跌1.56%。
-    [2026-11-20 09:41] 【现货黄金失守3570美元/盎司】现货黄金失守3570美元/盎司，日内跌1.58%。
-    [2026-11-20 09:37] 澳大利亚标普/ASX 200指数下跌1.5%，报8,600.10点。
-    [2026-11-20 09:34] 华为算力概念局部回暖 真视通4连板
-    [2026-11-20 09:31] 算力芯片概念延续调整 天普股份连续2日跌停
-    [2026-11-20 09:29] 沽空机构狙击AMD 被指搞“循环交易” 隔夜收跌近8% 夜盘再跌近3%
-    [2026-11-20 09:28] 国林科技：半导体级臭氧设备为非标定制产品，目前营收占公司整体比重较小
-    [2026-11-20 09:25] 美国ITC发布对动态随机存取存储器（DRAM）设备及其下游产品和组件（III）的337部分终裁
-    [2026-11-20 09:22] 国机精工：公司应用在半导体领域的产品保持较快增长势头，未来增长空间大
-    [2026-11-20 09:11] 锴威特推出超高压SiC反激电源系列芯片CSV387X
-    [2026-11-20 09:04] 国内推出首个智能座舱AI分级评价体系
-    [2026-11-20 09:01] 安诺其新设智算科技公司 含AI相关业务
-    [2026-11-20 08:55] 纳斯达克100指数期货下跌0.8%，标普500指数期货下跌0.35%，道指期货跌0.15%
-    [2026-11-20 08:50] Anthropic敲钟 美股跳水：AI狂欢要结束了吗？
-    [2026-11-20 08:49] 谷歌Gemini Mac版上线“电脑操控”功能：可跨应用操作，自动制作PPT、填写表单
-    [2026-11-20 08:45] 腾讯游戏第三季度收入665亿元、国际游戏收入同比下滑9% 管理层称“AI现阶段无法支撑游戏全流程开发”
-    [2026-11-20 08:44] 阿里巴巴吴泳铭：2027、2028年将是中国算力最紧缺的两年 平头哥会成为阿里云芯片主力
-    [2026-11-20 08:40] 特朗普9月调仓披露：买入英伟达、Palantir、SpaceX 恰逢大额联邦合同落地前后
-    [2026-11-20 08:37] 日经225指数下跌4% 芯片相关股票延续跌势
-    [2026-11-20 08:35] 美联储主席沃什：AI可能带来繁荣 但也需警惕风险
-    [2026-11-20 08:28] 三星电子任命存储与移动业务新负责人 联席 CEO 全永铉、卢泰文留任
-    [2026-11-20 08:25] AI“存储荒”还要加剧？美光总裁：2027年供需形势将比今年更紧张！
-    [2026-11-20 08:21] 日本芯片股走低
-    [2026-11-20 08:19] 11月20日投资避雷针：美三大股指高开低走均跌超2% AMD遭做空重挫近8%
-    [2026-11-20 08:12] 谷歌最新研究：AI智能体只改一处代码 任务成功率暴涨8倍
-    [2026-11-20 08:10] 华天科技：子公司盘古半导体FOPLP业务为公司重点发展的先进封装业务之一
-    [2026-11-20 08:04] 美联储保尔森：还需进一步收紧政策
-    [2026-11-20 08:00] 苹果被曝开发主动型AI智能体 可替用户编程、控制应用
-    [2026-11-20 07:59] 中信证券：2027年黄金仍看好 但预计幅度弱于2025年
-    [2026-11-20 07:58] Meta新款AI设备售价或为300美元：可直接与AI对话 附赠一年5G流量
-    [2026-11-20 07:57] Anthropic上市当天遭抗议 离职研究员呼吁必须关闭这项AI技术
-    [2026-11-20 07:49] 国金证券：AI芯片功耗与热点密度持续提升 推动高导热散热材料需求增长
-    [2026-11-20 07:42] 美联储保罗森称，清晰的沟通有助于货币政策；其重视拥有多种不同的沟通工具
-    [2026-11-20 07:40] 现货黄金向下跌破3600美元
-    [2026-11-20 07:38] 影视变革一线调研： AI走进片场 传统电影人重新算账
-    [2026-11-20 07:38] 苹果相机及照片软件业务负责人离职
-    [2026-11-20 07:36] 行业标准落地 国产化向多工序拓展 半导体材料设备板块触底回升
+  ★★★ 美股相关情报（81条）★★★
+    [2026-11-21 09:36] 【逆势加仓 阿布达比投资局继续买入两只个股】晶盛机电(300316)最新公告显示，截至11月16日，合格境外机构投资者（QFII）“阿布达比投资局－自
+    [2026-11-21 09:17] 【黄仁勋20年前诉讼被翻出：被指辱骂恐吓员工 律师因提担忧遭解雇】一份2007年在加州提起的诉讼材料显示，英伟达两名员工曾投诉时任首席执行官黄仁勋对待
+    [2026-11-21 09:08] 【从高歌猛进到接连“跌倒” 大宗商品遭遇预期大反转】几个月前还被投资者看涨的大宗商品，如今却接连“跌倒”。近期，国际黄金、原油、铜三大龙头商品集体“变
+    [2026-11-21 08:49] 卡莱特股价三日涨逾70%背后：算力子公司上半年“零收入” 公司曾称其为“第二增长曲线”
+    [2026-11-21 08:47] 甲骨文称已筹集履行与OpenAI合同所需全部资金，预计2029财年自由现金流超300亿美元
+    [2026-11-21 08:46] 美股大跌 纳指年内涨幅悉数回吐
+    [2026-11-21 08:43] 专访格力电器CMO朱磊：AI算力增长 制冷正成为关键基础设施
+    [2026-11-21 08:16] 英伟达创金融危机来最长连跌：累跌46% 市值掉了一个亚马逊
+    [2026-11-21 08:13] 黄金急跌一周多重关口失守 类似行情历史上出现过三轮
+    [2026-11-21 08:06] 黄金一周大跌近9% 考验3500美元关口
+    [2026-11-21 07:50] 美联储官员保尔森：支持审慎加息 必要时可连续加息
+    [2026-11-21 07:48] 存储器价格走势分化 厂商积极把握结构性机遇
+    [2026-11-21 07:41] OpenAI推出MedChemBench基准，评估AI辅助药物研发能力
+    [2026-11-21 07:39] 当Token走进大众消费：买算力像充话费一样简单
+    [2026-11-21 07:38] AI产业催化密集 硬件与应用双线配置价值凸显
+    [2026-11-21 07:27] 微导纳米获142家机构调研 半导体业务订单受关注
+    [2026-11-21 07:16] “大空头”投资者迈克尔·伯里减持英伟达看跌期权，锁定部分收益
+    [2026-11-21 06:49] 美国国务院数据显示：特朗普第二任期首年 美国签发的H-1B签证数量比其上任前一年减少约三分之一
+    [2026-11-21 05:16] 标普500指数连续第7个交易日下跌 创2020年以来最长连跌纪录
+    [2026-11-21 05:03] 纳斯达克100指数收盘暴跌5.6% 市值蒸发2.1万亿美元
+    [2026-11-21 05:00] 英伟达暴跌14% “AI交易”抛售加剧使得美股进入回调区间
+    [2026-11-21 04:58] 纳斯达克100指数尾盘跌幅扩大至6% 较10月高点下跌20%
+    [2026-11-21 04:49] AI初创公司Cognition在新一轮融资中洽谈估值750亿美元
+    [2026-11-21 04:09] 纳斯达克中国金龙指数跌幅扩大 现跌3.0%
+    [2026-11-21 03:53] WTI原油期货结算价为83.98美元/桶 涨幅0.93%
+    [2026-11-21 03:36] 交易员不再完全消化美联储12月加息的预期
+    [2026-11-21 03:34] 美股恐慌指数VIX触及盘中高点 并升至3月初以来最高水平
+    [2026-11-21 03:33] 费城半导体指数跌幅扩大至10%
+    [2026-11-21 03:23] 英伟达跌幅扩大至10%
+    [2026-11-21 03:04] OpenAI推出MedChemBench 评估AI模型在源自药物化学研究的推理任务上的表现
+    [2026-11-21 02:43] 美国参议员蒂姆·斯科特表示：英伟达前CEO黄仁勋将在公开听证会上作证
+    [2026-11-21 02:41] 截至11月17日当周：布伦特原油投机者将净多头头寸削减225份合约，至133,635份
+    [2026-11-21 02:33] 费城联储行长主张以“审慎”步伐加息 愿意考虑连续行动
+    [2026-11-21 02:30] 美联储“鹰派”阴云压顶 金价连失四大整数关口
+    [2026-11-21 02:19] 特朗普表示：希望黄仁勋道个歉并回归
+    [2026-11-21 02:16] 纳斯达克综合指数向下跌破23000点 最新报22985.09点 日内下跌3.74%
+    [2026-11-21 01:53] 特朗普表示：接近与墨西哥达成贸易协议 与加拿大还有更多工作要做
+    [2026-11-21 01:39] 特朗普表示，将对在海外建设数据中心的美国公司征税
+    [2026-11-21 01:32] 特朗普重申美国应拥有全球最低的利率
+    [2026-11-21 01:31] 特朗普表示想与伊朗达成真正的协议
 
-  ◆ 全量新闻（最近60条，共236条去重）：
-    [2026-11-20 09:49] 沪银期货主力合约跌破10000元大关
-    [2026-11-20 09:49] 美国国防部长赫格塞思：克尔斯滕·戴维斯的新职位是国家网络安全总监。
-    [2026-11-20 09:49] 【沪银期货主力合约跌破10000元/千克大关】沪银主力合约加速下挫，日内大跌7.46%，盘中跌破10000元/千克关口，较年内历史高点（33
-    [2026-11-20 09:49] 【财政部在香港成功发行美元主权债券】11月19日，中华人民共和国财政部代表中央政府在香港特别行政区成功发行了20亿美元主权债券，发行期限为3
-    [2026-11-20 09:48] 【澳大利亚总理阿尔巴尼斯抵达会见现场】11月20日上午，国家主席习近平将在深圳会见来华出席亚太经合组织领导人非正式会议的澳大利亚总理阿尔巴尼
-    [2026-11-20 09:48] 【文化传媒板块局部活跃，龙版传媒涨停】文化传媒板块局部活跃，龙版传媒涨停，流金科技、果麦文化、凡拓数创、吉视传媒跟涨。
-    [2026-11-20 09:47] 资金继续流向红利资产，工商银行、建设银行、长江电力、招商港口创新高。
-    [2026-11-20 09:46] 煤炭板块震荡拉升 安泰集团涨停
-    [2026-11-20 09:46] 【煤炭板块震荡拉升 安泰集团涨停】煤炭板块震荡拉升，安泰集团涨停，陕西黑猫、大有能源、郑州煤电、中煤能源跟涨。
-    [2026-11-20 09:45] 【FFR任命纽约大学全球事务中心副院长Carolyn Kissane为独立董事】11月20日，FFR宣布，已任命纽约大学全球事务中心副院长C
-    [2026-11-20 09:45] 【港股黄金股集体调整 赤峰黄金跌近7%】截至发稿，赤峰黄金(06693.HK)跌6.81%、紫金黄金国际(02259.HK)跌6.47%，灵
-    [2026-11-20 09:44] FFR任命纽约大学全球事务中心副院长Carolyn Kissane为独立董事
-    [2026-11-20 09:43] 特朗普宣布将于美东时间周五中午12点（北京时间周六凌晨1点）举行新闻发布会。
-    [2026-11-20 09:43] 钯金期货日内跌3%，现报890.05美元/盎司。
-    [2026-11-20 09:42] 港股黄金股集体调整 赤峰黄金跌近7%
-    [2026-11-20 09:42] 网易港股跌18%
-    [2026-11-20 09:42] 现货黄金失守3570美元/盎司，日内跌1.56%。
-    [2026-11-20 09:42] 纽约期金失守3570美元/盎司，日内跌3.14%。
-    [2026-11-20 09:41] 【现货黄金失守3570美元/盎司】现货黄金失守3570美元/盎司，日内跌1.58%。
-    [2026-11-20 09:41] 网易港股暴跌18%，至152.60港元。
-    [2026-11-20 09:40] 台交所加权股价指数下跌5%
-    [2026-11-20 09:39] 先进封装概念逆势活跃 华微电子涨停
-    [2026-11-20 09:39] 中际旭创盘中跌超5%，现报388.64元。
-    [2026-11-20 09:39] 大盘主力净流出超100亿。
-    [2026-11-20 09:39] 【先进封装概念逆势活跃 华微电子涨停】早盘先进封装概念逆势活跃，华微电子涨停，芯碁微装、易天股份、蓝箭电子、三佳科技、盛景微跟涨。
-    [2026-11-20 09:39] 台湾加权股价指数下跌5%至36,498.77点。
-    [2026-11-20 09:37] PCB概念局部活跃 中京电子涨停
-    [2026-11-20 09:37] 澳大利亚标普/ASX 200指数下跌1.5%，报8,600.10点。
-    [2026-11-20 09:34] 港股大模型股集体下挫 MINIMAX跌超10%
-    [2026-11-20 09:34] 华为算力概念局部回暖 真视通4连板
-    [2026-11-20 09:32] 影视院线板块低开 文投控股、金逸影视跌停
-    [2026-11-20 09:31] 港股恒生科技指数跌幅达3%
-    [2026-11-20 09:31] 算力芯片概念延续调整 天普股份连续2日跌停
-    [2026-11-20 09:30] 纽约期金日内跌3%
-    [2026-11-20 09:29] 沽空机构狙击AMD 被指搞“循环交易” 隔夜收跌近8% 夜盘再跌近3%
-    [2026-11-20 09:28] 国林科技：半导体级臭氧设备为非标定制产品，目前营收占公司整体比重较小
-    [2026-11-20 09:26] 美国ITC发布对医疗影像设备的337部分终裁
-    [2026-11-20 09:26] 外国企业对特定运动鞋提起337调查申请
-    [2026-11-20 09:26] 美国ITC发布对变压器及其部件的337部分终裁
-    [2026-11-20 09:26] 港股PCB概念股走弱 广合科技跌超6%
-    [2026-11-20 09:26] 创业板指低开2.15%
-    [2026-11-20 09:25] 美国ITC发布对动态随机存取存储器（DRAM）设备及其下游产品和组件（III）的337部分终裁
-    [2026-11-20 09:22] 国机精工：公司应用在半导体领域的产品保持较快增长势头，未来增长空间大
-    [2026-11-20 09:21] 港股开盘：恒生科技指数跌2.95% 恒生指数跌1.57%
-    [2026-11-20 09:21] 央行今日进行3795亿元人民币隔夜逆回购操作
-    [2026-11-20 09:18] 新光光电等在厦门新设股权投资基金
-    [2026-11-20 09:17] 花旗下调阿里巴巴目标价 此前公司预计明年云服务营收增速将有所放缓
-    [2026-11-20 09:16] 人民币兑美元中间价报6.7131 下调3点
-    [2026-11-20 09:12] 博杰股份等在珠海新设投资咨询企业
-    [2026-11-20 09:12] 原力无限与京东科技达成战略合作
-    [2026-11-20 09:11] 锴威特推出超高压SiC反激电源系列芯片CSV387X
-    [2026-11-20 09:10] ETF两市融资融券余额1209.21亿元 增加20.50亿元
-    [2026-11-20 09:09] 五一视界启动A股上市辅导工作
-    [2026-11-20 09:09] 国家邮政局：前10月邮政寄递业务量、收入双增长
-    [2026-11-20 09:05] 台交所加权股价指数下跌4%
-    [2026-11-20 09:04] LME铜价下跌超过2% 至4月以来最低
-    [2026-11-20 09:04] 国内推出首个智能座舱AI分级评价体系
-    [2026-11-20 09:03] 大宗商品全军覆没、全球股市步履蹒跚！一文读懂：市场在交易什么？
-    [2026-11-20 09:02] 11月LPR报价出炉：5年期和1年期利率均维持不变
-    [2026-11-20 09:01] 安诺其新设智算科技公司 含AI相关业务
+  ◆ 全量新闻（最近60条，共238条去重）：
+    [2026-11-21 09:38] 【人均通关时长减少近26% 珠海拱北口岸智能快捷通道让出行更便捷】昨天（20日），珠海拱北口岸智能快捷通道启用两周年。两年来，超4900万人
+    [2026-11-21 09:37] 【昨日ETF资金整体净流入899亿元 创2025年4月8日以来最高纪录】数据显示，2026年11月20日，ETF资金整体净流入899.25亿
+    [2026-11-21 09:37] 【联合国气候变化安塔利亚大会进入加时阶段】原定20日闭幕的《联合国气候变化框架公约》（以下简称《公约》）第三十一次缔约方大会（COP31），
+    [2026-11-21 09:37] 【俄称爱沙尼亚关闭与俄边境口岸是制造新的“铁幕”】俄罗斯外交部发言人扎哈罗娃20日表示，爱沙尼亚决定从12月1日起关闭与俄罗斯之间边境口岸的
+    [2026-11-21 09:36] 丹麦驱逐俄罗斯武官，俄表示将“适当回应”
+    [2026-11-21 09:36] 逆势加仓！阿布达比投资局继续买入两只个股
+    [2026-11-21 09:36] 【逆势加仓 阿布达比投资局继续买入两只个股】晶盛机电(300316)最新公告显示，截至11月16日，合格境外机构投资者（QFII）“阿布达比
+    [2026-11-21 09:35] 【水泥行业调研：成本倒逼涨价函频出 产业链出海谋新求变】近期，水泥行业频发涨价函，不同区域月内涨价幅度在20元/吨至80元/吨。据了解，目前
+    [2026-11-21 09:34] 【丹麦驱逐俄罗斯武官 俄表示将“适当回应”】丹麦外交大臣拉斯穆森20日宣布，丹麦决定驱逐俄罗斯驻丹麦国防武官，要求其在7日内离境。俄外交部当
+    [2026-11-21 09:32] 我国“5G+工业互联网”项目达2.7万个 已覆盖全部41个工业大类
+    [2026-11-21 09:32] 福建漳州核电4号机组三台蒸汽发生器全部吊装就位
+    [2026-11-21 09:30] 【我国“5G+工业互联网”项目达2.7万个 已覆盖全部41个工业大类】记者从工业和信息化部了解到，目前我国5G应用已融入全部97个国民经济大
+    [2026-11-21 09:28] 辽宁义县推进小规模、薄弱学校合并办学：多所小学、中学撤并
+    [2026-11-21 09:28] 【加密货币市场大幅走低 超29万人被爆仓】截至发稿，比特币价格在59000美元附近徘徊。主流加密货币过去24小时内纷纷大跌，ETH、SOL、
+    [2026-11-21 09:25] 加密货币市场大幅走低 超29万人被爆仓
+    [2026-11-21 09:19] 【中国内地访日游客连降11个月】自高市早苗发表涉台错误言论以来，中国赴日游客数量持续走低。 日本政府观光局（JNTO）11月18日公布数据，
+    [2026-11-21 09:18] 秘鲁民防负责人表示，地震后目前尚无损失报告。
+    [2026-11-21 09:17] 【黄仁勋20年前诉讼被翻出：被指辱骂恐吓员工 律师因提担忧遭解雇】一份2007年在加州提起的诉讼材料显示，英伟达两名员工曾投诉时任首席执行官
+    [2026-11-21 09:15] 新疆最大热电联产项目建成投产
+    [2026-11-21 09:15] 【新疆最大热电联产项目建成投产】据中国能源建设集团有限公司消息，11月20日20时50分，中国能建华东院设计、建筑集团承建的喀什华电2×66
+    [2026-11-21 09:14] 现房销售改革后 地方政府为了卖地既“费心”又“贴心”
+    [2026-11-21 09:13] 从“多放几天假”到“淡季造峰器” 秋假激活亲子出游消费窗口
+    [2026-11-21 09:12] 【宽基ETF频现巨量成交 本轮资金流入逾6700亿元】在震荡调整的市场行情中，大量资金借道ETF积极入市。11月20日，多只宽基ETF成交金
+    [2026-11-21 09:11] 黄仁勋20年前诉讼被翻出：被指辱骂恐吓员工 律师因提担忧遭解雇
+    [2026-11-21 09:10] 宁德时代在土耳其首个宁家服务体验中心开业
+    [2026-11-21 09:09] 广州珠光系近6亿元债权包流拍 低调富豪兄弟的地产困局浮出水面
+    [2026-11-21 09:09] 【小微盘股指数集体走出“七连跌” ETF资金流向为何分化】数据显示，近两周以来跟踪中证1000、中证2000等小微盘指数的ETF整体呈资金净
+    [2026-11-21 09:08] 【从高歌猛进到接连“跌倒” 大宗商品遭遇预期大反转】几个月前还被投资者看涨的大宗商品，如今却接连“跌倒”。近期，国际黄金、原油、铜三大龙头商
+    [2026-11-21 09:08] 【宁德时代在土耳其首个宁家服务体验中心开业】11月19日，宁德时代在土耳其的首个宁家服务体验中心正式开业。该设施是土耳其首个专业电池仓维修中
+    [2026-11-21 09:06] 小微盘股指数集体走出“七连跌” ETF资金流向为何分化
+    [2026-11-21 09:00] 【Capricor被曝研究存在严重缺陷 公司回应：评估完成后将公布后续安排】Capricor Therapeutics今日宣布，其重新提交的
+    [2026-11-21 08:59] 智元机器人开始“做”手机了
+    [2026-11-21 08:59] 【旺季大促叠加出海向好 家电企业发力推新】近期，多家家电行业上市公司股价明显回暖，部分公司股价创下近年新高。记者多方采访了解到，“双十一”“
+    [2026-11-21 08:58] 【今天中东部大部气温回升 明起南方大范围阴雨发展】今天（11月21日）白天，中东部多地气温回升，东北地区未来几天升温显著。预计未来10天，影
+    [2026-11-21 08:55] 年内多只量化私募基金业绩受挫 头部机构押注大模型自主挖掘因子技术引发业内热议
+    [2026-11-21 08:53] 商业航天“国家队”加速拓市场 中国商火超3亿元中标空天院火箭发射项目
+    [2026-11-21 08:52] DeepSeek千亿元融资落地背后：一群浙江实业企业悄然上牌桌
+    [2026-11-21 08:49] 卡莱特股价三日涨逾70%背后：算力子公司上半年“零收入” 公司曾称其为“第二增长曲线”
+    [2026-11-21 08:47] 英国对中国割草机器人启动反倾销调查 国内割草机龙头大叶股份将如何应对？
+    [2026-11-21 08:47] 甲骨文称已筹集履行与OpenAI合同所需全部资金，预计2029财年自由现金流超300亿美元
+    [2026-11-21 08:46] 美股大跌 纳指年内涨幅悉数回吐
+    [2026-11-21 08:43] 专访格力电器CMO朱磊：AI算力增长 制冷正成为关键基础设施
+    [2026-11-21 08:42] 上海航交所：本周三大船型运价小幅下跌 干散货租金指数止涨回落
+    [2026-11-21 08:40] 深圳3D打印龙头 帮张雪造机车配件
+    [2026-11-21 08:36] 宗馥莉48小时调整247人
+    [2026-11-21 08:29] 零跑汽车回应“A10后备厢被几箱啤酒压穿底”：系下层独立储物盒受损 非底板或整车承载结构损坏
+    [2026-11-21 08:27] 1到10月白酒累计产量下跌超4% 行业去库存到了关键期？
+    [2026-11-21 08:26] 第100家央企“满月”答卷：数据要素改革“实体操盘”提速
+    [2026-11-21 08:20] 全球股市“黑色星期五” A股如何更抗跌？多家机构这样说
+    [2026-11-21 08:18] 超200条变更公告、多位“扛旗者”出走 广发基金怎么了？
+    [2026-11-21 08:16] 英伟达创金融危机来最长连跌：累跌46% 市值掉了一个亚马逊
+    [2026-11-21 08:13] 黄金急跌一周多重关口失守 类似行情历史上出现过三轮
+    [2026-11-21 08:10] “闭门造车”造不出新消费
+    [2026-11-21 08:09] 把电池产业优势转化为竞争力
+    [2026-11-21 08:06] 黄金一周大跌近9% 考验3500美元关口
+    [2026-11-21 08:06] “温差”待消弭 信心不可失
+    [2026-11-21 08:05] 缅甸总统府介绍新政府施政及未来规划
+    [2026-11-21 08:01] 对接企业需求 银行股票回购增持专项贷款提速
+    [2026-11-21 07:59] 丰田将在美国召回314029辆配备高田安全气囊充气装置的汽车
+    [2026-11-21 07:59] 知情人士：美方要求乌明年1月初与俄达成和平协议
 
 【二、重点个股】（芯片/算力/存储/中概 + 伯克希尔）
   ✅ 实时行情源：新浪 gb_（26/27只，带真实交易日）
-    英伟达(NVDA) 145.98 -3.30%  [2026-11-19]
-    台积电(TSM) 352.09 -2.90%  [2026-11-19]
-    美光(MU) 690.44 -2.10%  [2026-11-19]
-    AMD(AMD) 489.19 -7.72%  [2026-11-19]
-    博通(AVGO) 346.65 -2.09%  [2026-11-19]
-    特斯拉(TSLA) 374.41 -2.43%  [2026-11-19]
-    苹果(AAPL) 349.21 -0.92%  [2026-11-19]
-    阿斯麦(ASML) 1356.2 -2.80%  [2026-11-19]
-    英特尔(INTC) 55.72 +1.92%  [2026-11-19]
-    阿里巴巴(BABA) 83.31 -1.26%  [2026-11-19]
-    Meta(META) 596.22 -3.27%  [2026-11-19]
-    微软(MSFT) 498.3 -1.78%  [2026-11-19]
-    谷歌(GOOGL) 272.66 -3.46%  [2026-11-19]
-    亚马逊(AMZN) 257.37 -3.87%  [2026-11-19]
-    希捷(STX) 521.39 +1.06%  [2026-11-19]
-    西部数据(WDC) 296.78 +2.98%  [2026-11-19]
-    闪迪(SNDK) 755.16 -2.71%  [2026-11-19]
-    应用材料(AMAT) 338.93 -3.65%  [2026-11-19]
-    拉姆研究(LRCX) 203.68 -3.77%  [2026-11-19]
-    康宁(GLW) 105.97 -2.02%  [2026-11-19]
-    Coherent(COHR) 214.94 +0.99%  [2026-11-19]
-    礼来(LLY) 1351.12 -2.29%  [2026-11-19]
-    纽蒙特(NEM) 100.05 -4.29%  [2026-11-19]
-    GE Vernova(GEV) 756.28 -2.06%  [2026-11-19]
-    Moderna(MRNA) 199.33 +1.29%  [2026-11-19]
-    伯克希尔B(BRK.B) 572.04 -0.45% 量5603522.0  [2026-11-19]
-    伯克希尔A(BRK.A) 285520.0 +0.00%  [2020-07-15] ⚠️距今2319天(非最新)
+    英伟达(NVDA) 125.53 -14.01%  [2026-11-20]
+    台积电(TSM) 318.71 -9.48%  [2026-11-20]
+    美光(MU) 594.51 -13.89%  [2026-11-20]
+    AMD(AMD) 424.39 -13.25%  [2026-11-20]
+    博通(AVGO) 304.41 -12.19%  [2026-11-20]
+    特斯拉(TSLA) 345.82 -7.64%  [2026-11-20]
+    苹果(AAPL) 342.56 -1.90%  [2026-11-20]
+    阿斯麦(ASML) 1266.22 -6.63%  [2026-11-20]
+    英特尔(INTC) 51.28 -7.97%  [2026-11-20]
+    阿里巴巴(BABA) 81.08 -2.68%  [2026-11-20]
+    Meta(META) 560.84 -5.93%  [2026-11-20]
+    微软(MSFT) 484.52 -2.77%  [2026-11-20]
+    谷歌(GOOGL) 265.29 -2.70%  [2026-11-20]
+    亚马逊(AMZN) 246.82 -4.10%  [2026-11-20]
+    希捷(STX) 457.01 -12.35%  [2026-11-20]
+    西部数据(WDC) 261.11 -12.02%  [2026-11-20]
+    闪迪(SNDK) 79.24 -16.05%  [2026-11-20]
+    应用材料(AMAT) 302.63 -10.71%  [2026-11-20]
+    拉姆研究(LRCX) 183.27 -10.02%  [2026-11-20]
+    康宁(GLW) 94.38 -10.94%  [2026-11-20]
+    Coherent(COHR) 187.22 -12.90%  [2026-11-20]
+    礼来(LLY) 1347.11 -0.30%  [2026-11-20]
+    纽蒙特(NEM) 94.68 -5.37%  [2026-11-20]
+    GE Vernova(GEV) 699.33 -7.53%  [2026-11-20]
+    Moderna(MRNA) 195.0 -2.17%  [2026-11-20]
+    伯克希尔B(BRK.B) 570.0 -0.36% 量6711617.0  [2026-11-20]
+    伯克希尔A(BRK.A) 285520.0 +0.00%  [2020-07-15] ⚠️距今2320天(非最新)
   （成功27/27只）
 
-  ★【同日闸门 · patch_usa53】最新美股交易日 = 2026-11-19
+  ★【同日闸门 · patch_usa53】最新美股交易日 = 2026-11-20
   🔴 以下 1 只是旧日数据，已踢出联动表（宁可报空不报错）：
      BRK.A[2020-07-15]
      ★它们的真实涨跌看【新闻】一节，别用上面那张表的数
@@ -170,17 +170,17 @@
   ◆ 东方财富(300059) ← 政策牛：证监会11/2组合拳（互换便利第三批31家>1000亿、回购再贷款1%长期化、主动ETF350亿建仓、两融适度释放融资空间）→互联网券商弹性最大；资金方拉升初段
      今夜美股无对应标的，方向由A股自身驱动决定
 
-  ◆ 东山精密(002384) ← 救市反弹单：11/6午间9家AI硬件龙头集体公告运用回购再贷款维护价值，东山已回购5000万、当日大单净+16亿、Q3净利+332%   🔴🔴 强偏空  加权净-3.52%
-     英伟达 -3.30% | 博通 -2.09% | AMD -7.72% | 微软 -1.78% | 亚马逊 -3.87% | 谷歌 -3.46%
+  ◆ 东山精密(002384) ← 救市反弹单：11/6午间9家AI硬件龙头集体公告运用回购再贷款维护价值，东山已回购5000万、当日大单净+16亿、Q3净利+332%   🔴🔴 强偏空  加权净-9.43%
+     英伟达 -14.01% | 博通 -12.19% | AMD -13.25% | 微软 -2.77% | 亚马逊 -4.10% | 谷歌 -2.70%
      → ⚠️ 明日开盘留意，止损69.0
 
-  ◆ 兆易创新(603986) ← 半导体启动第1天（11/4 行业+9.24%、单日净流入202亿、国家大基金持股+9.17%）；存储涨价+国产替代+长鑫回购25–50亿+AMD超预期；PE16   🔴🔴 强偏空  加权净-3.11%
-     美光 -2.10% | 应用材料 -3.65% | 拉姆研究 -3.77% | 阿斯麦 -2.80% | 台积电 -2.90%
+  ◆ 兆易创新(603986) ← 半导体启动第1天（11/4 行业+9.24%、单日净流入202亿、国家大基金持股+9.17%）；存储涨价+国产替代+长鑫回购25–50亿+AMD超预期；PE16   🔴🔴 强偏空  加权净-10.20%
+     美光 -13.89% | 应用材料 -10.71% | 拉姆研究 -10.02% | 阿斯麦 -6.63% | 台积电 -9.48%
      → ⚠️ 明日开盘留意，止损231.0
 
   ── 排序 ──
-  最偏空：东山精密（-3.52%）
-  最偏多：兆易创新（-3.11%）
+  最偏空：兆易创新（-10.20%）
+  最偏多：东山精密（-9.43%）
 
   ⚠️ 铁律K：如果某只票【美股对标大跌但它明天高开】，
      这不是好消息也不是坏消息，是【反常】= 必须查清原因再动
@@ -191,31 +191,28 @@
 ============================================================
 🔥【美股催化热力图 → A股映射】美股是A股的先行指标
 ============================================================
-  （已过滤5条A股券商研报：那是A股观点，不是美股先行信息）
 
   ★净利多排行（美股利多→次日A股对应板块大概率跟涨）：
-    1. AI算力→A股紫光/中贝通信：净+1（↑4 ↓3） 🔥
-    2. 金融→A股银行/保险：净+0（↑2 ↓2） ⚖️
-    3. 消费电子→A股立讯/歌尔：净-1（↑0 ↓1） ❄️偏空
-    4. 软件AI应用→A股金山/华大九天：净-1（↑1 ↓2） ❄️偏空
-    5. 能源→A股油气：净-1（↑0 ↓1） ❄️偏空
-    6. 贵金属→A股黄金：净-9（↑0 ↓9） ❄️❄️回避
+    1. 能源→A股油气：净+1（↑1 ↓0） 🔥
+    2. 存储芯片→A股存储/长鑫链：净-1（↑0 ↓1） ❄️偏空
+    3. 金融→A股银行/保险：净-2（↑2 ↓4） ❄️偏空
+    4. 贵金属→A股黄金：净-3（↑0 ↓3） ❄️❄️回避
+    5. AI算力→A股紫光/中贝通信：净-6（↑2 ↓8） ❄️❄️回避
 
   ★前3名的具体催化：
 
-  ◆【AI算力→A股紫光/中贝通信】↑4 ↓3
-      ↑[2026-11-20 08:44] (算力) 阿里巴巴吴泳铭：2027、2028年将是中国算力最紧缺的两年 平头哥会成为阿里云芯片主力
-      ↑[2026-11-20 08:40] (英伟达) 特朗普9月调仓披露：买入英伟达、Palantir、SpaceX 恰逢大额联邦合同落地前后
-      ↑[2026-11-20 06:34] (算力) 阿里云外部经常性收入增长67% 吴泳铭：近两年中国市场算力尤为紧缺
-      ↑[2026-11-20 01:37] (英伟达) 文件显示：特朗普9月买入超26万美元英伟达股票
+  ◆【能源→A股油气】↑1 ↓0
+      ↑[2026-11-21 03:53] (原油) WTI原油期货结算价为83.98美元/桶 涨幅0.93%
 
   ★利空最重（次日A股对应板块回避）：
-    ❄️ 能源→A股油气：净-1
-        ↓[2026-11-20 03:31] (原油) WTI原油期货结算价为83.21美元/桶 微跌0.06%
-    ❄️ 贵金属→A股黄金：净-9
-        ↓[2026-11-20 09:45] (黄金) 【港股黄金股集体调整 赤峰黄金跌近7%】截至发稿，赤峰黄金(06693.HK)跌6.81%、紫金黄金国际(02259
-        ↓[2026-11-20 09:42] (黄金) 港股黄金股集体调整 赤峰黄金跌近7%
-        ↓[2026-11-20 09:42] (黄金) 现货黄金失守3570美元/盎司，日内跌1.56%。
+    ❄️ 贵金属→A股黄金：净-3
+        ↓[2026-11-21 08:13] (黄金) 黄金急跌一周多重关口失守 类似行情历史上出现过三轮
+        ↓[2026-11-21 08:06] (黄金) 黄金一周大跌近9% 考验3500美元关口
+        ↓[2026-11-21 05:56] (金价) 积存金价格跌至“7字头” 银行纷纷提示贵金属市场波动风险
+    ❄️ AI算力→A股紫光/中贝通信：净-6
+        ↓[2026-11-21 08:16] (英伟达) 英伟达创金融危机来最长连跌：累跌46% 市值掉了一个亚马逊
+        ↓[2026-11-21 07:16] (英伟达) “大空头”投资者迈克尔·伯里减持英伟达看跌期权，锁定部分收益
+        ↓[2026-11-21 05:00] (英伟达) 英伟达暴跌14% “AI交易”抛售加剧使得美股进入回调区间
 
   ⚠️ 判读：美股某板块净利多高 → 次日A股对应板块优先看
      但仍需过A股决策卡①②④⑤（板块第几天/资金/位置/游资）
@@ -226,14 +223,14 @@
 ============================================================
 🔬【美股→A股映射·回测】这条规则准不准，机器说了算
 ============================================================
-  已积累 81 天 / 243 个样本
+  已积累 82 天 / 246 个样本
 
   ── 最近5夜的前3预测（次日请对照A股板块榜自查）──
+  2026-11-21：能源(净+1) ｜ 存储芯片(净-1) ｜ 金融(净-2)
   2026-11-20：AI算力(净+1) ｜ 金融(净+0) ｜ 消费电子(净-1)
   2026-11-19：能源(净+4) ｜ AI算力(净+2) ｜ 半导体设备(净+1)
   2026-11-18：AI算力(净+16) ｜ 存储芯片(净+2) ｜ 光模块CPO(净+2)
   2026-11-13：半导体设备(净+3) ｜ 存储芯片(净+2) ｜ AI算力(净+1)
-  2026-11-12：光模块CPO(净+2) ｜ 金融(净+2) ｜ 存储芯片(净+1)
 
   ⚠️ 对照方法：次日A股盘后扫描器的【板块全景榜】，
      看这3个板块在不在当日涨幅前20。在=命中。
@@ -256,37 +253,48 @@
 ============================================================
 🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
 ============================================================
-  来源：raw.githubusercontent.com 公开存档（共6896条）
-  存档最近同步：2026-11-18T21:54:45Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-18T21:54 UTC，已停更约28小时 → 启动实时补抓
-  实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
-  ✅ 实时补抓新增 5 条（下面标【🔴实时】的就是存档里还没有的）
-  最近72小时：原创 19 条 / 回复 11 条（北京时间）
+  来源：raw.githubusercontent.com 公开存档（共6921条）
+  存档最近同步：2026-11-20T20:39:44Z UTC（状态 ok）
+  最近72小时：原创 22 条 / 回复 20 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×38 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    算力/云/数据中心 ×55 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     存储/HBM/NOR ×29 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
     激光/光芯片/InP ×26 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    CPO/光模块 ×24 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    衬底/封装材料 ×8 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
+    CPO/光模块 ×15 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
+    衬底/封装材料 ×9 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×3 → CPU/接口：澜起科技688008 海光信息688041
-    人形机器人/物理AI ×1 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
-  提到的代码：$NVDA×8 $SOI×5 $COHR×4 $ANT×4 $AAOI×3 $MU×3 $AAPL×2 $GOOGL×2 $SNDK×2 $AMZN×2 $MRVL×1 $SPCX×1 $LITE×1 $ARM×1 $META×1 $TSM×1 $BE×1 $SIVE×1 $AVGO×1 $IREN×1
+    人形机器人/物理AI ×2 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
+  提到的代码：$NVDA×9 $ANT×5 $SNDK×5 $SOI×5 $COHR×3 $SPCX×2 $CRWV×2 $SIVE×2 $P×2 $AAPL×2 $GOOGL×2 $AAOI×2 $MU×2 $AMZN×1 $HOOD×1 $NBIS×1 $SMTC×1 $MTSI×1 $JBL×1 $LITE×1
 
   ── 原创推文（全文，新→旧）──
-  [11-20 09:26] 🔴实时📝原创 ## Serenity on X: "True, I've looked at biotech, physical AI, cybersecurity, space, and others... But I still have conviction that optics is the most compelling opportunity. If you look at Elon Musk $SPCX (Mesh acquisition), $MRVL (Lumentum acqusition), Samsung Electronics photonics foundry push... SK Hynix CPO push + PIC IP acqusitions... it's endless. Private VCs are still heavily pouring funds into upcoming optical companies. Supply procurement is accelerating... from $SOI selling $1.2B in agreements, in a single quarter (from $25M revenue/quarter). To $COHR signing $20B in LTAs, to $LITE selling out of 2029 capacity. Actions about where the industry is heading is the biggest signal over 
+  [11-21 04:39] 📝原创 $NVDA drops over -12%+, from a new report that the SEC is probing potential accounting issues at Nvidia. At this point, the collateral damage is starting to hit major indexes and retirement portfolios. It's just wild to witness a $5T+ company crash -46%+ in weeks.
+      https://x.com/aleabitoreddit/status/2123878986686333308
+  [11-21 02:50] 📝原创 I covered this earlier in Jan regarding PCB bottlenecks with photonics + $AMZN Kuiper / $SPCX starlink supply chains. But as an update, it like other industries outside of AI are really starting to feel the pain now too. Global Electronics Association: "Is issuing this Industry Alert on escalating shortages across the printed circuit board (PCB) supply chain. Companies in automotive, industrial, medical, defense, and telecommunications report longer lead times and difficulty securing supply as AI absorbs scarce capacity, effectively putting production at risk" The association meaningful relief unlikely before mid-2028. The association urged buyers to plan ahead for supply constraints and man
+      https://x.com/aleabitoreddit/status/2123851594811011470
+  [11-21 02:10] 📝原创 &gt; Democrats: "Let's ban new datacenters in the US" &gt; Trump: "Let's ban new datacenters overseas" &gt; $CRWV: ???
+      https://x.com/aleabitoreddit/status/2123841418577973727
+  [11-21 00:47] 📝原创 
+      https://x.com/aleabitoreddit/status/2123820597465776460
+  [11-20 23:48] 📝原创 Feels like every growth equity, even outside of AI, from $HOOD to $NBIS has fallen off a cliff. Meanwhile bubbles are forming in consumer staples, with valuations not seen since 1999. Do you guys think markets are right... that premiums given to rocket or AI companies, should be given to towel resellers like Walmart instead?
+      https://x.com/aleabitoreddit/status/2123805601411277149
+  [11-20 20:56] 📝原创 $P earnings were actually interesting, not really in terms actionable investments. But more on AI capex broadening, where deployments are happening, and what Jensen at $NVDA might envisioned with open weight model + GPU demand. - Everpure CEO stated that enterprises are increasingly building on-premises AI factories, stating: "The ROI for companies to buy their own GPU environments and run their own models is starting to come to the forefront." - "I'm talking about standard enterprises, regular finance organizations. A wide variety of organizations are starting to buy these AI factories for the purpose of running their own open weight models From "regular insurance companies, et cetera" - "O
+      https://x.com/aleabitoreddit/status/2123762482280055255
+  [11-20 20:04] 📝原创 When the world needed him most, he vanished
+      https://x.com/aleabitoreddit/status/2123749426019868932
+  [11-20 12:23] 📝原创 Markets appear to be wrongly interpreting Chinese eSSD cuts as deteriorating demand and NAND oversupply. Phison CEO commentary today + more context behind $SNDK / Kioxia selloff regarding Trendforce revisions: - "Pua attributed China's recent enterprise SSD demand slowdown to GPU shortages since November 2026" - "Without GPUs, additional purchases offer little value, prompting some companies to sell server components on the spot market to recover cash" (for context enterprise SSDs are growth driver for NAND) - "Chinese cloud giants nevertheless plan substantial GPU prepayments, temporarily tying up capital and delaying procurement of other components." - "the principal challenge in 2027 woul
+      https://x.com/aleabitoreddit/status/2123633356969775107
+  [11-20 10:03] 📝原创 I'm actually very impressed with market-chan. If we look at ESMT numbers today: > $1.58B MC > $747M net cash, $274.7M net inventory from Q3 > $349.5M in Q3 free cash flow Adjusted EV: $559.3M > Q3 net income: $327M (1.2x annualized P/E) > October net income (likely another +$96M added to balance sheet) - "DDR2/DDR3 supply to remain constrained into 2027" - "ASPs to rise Q4" (consumer demand weakening) - "2027 dividend payout ratio could be 30–50% of earnings" So you're valuing the adj. operating business at $559M, despite them making ~$300m net income a quarter. Even the AI models I've double checked it with looked at these numbers with disbelief.
+      https://x.com/aleabitoreddit/status/2123598186065559858
+  [11-20 09:26] 📝原创 True, I've looked at biotech, physical AI, cybersecurity, space, and others... But I still have conviction that optics is the most compelling opportunity. If you look at Elon Musk $SPCX (Mesh acquisition), $MRVL (Lumentum acqusition), Samsung Electronics photonics foundry push... SK Hynix CPO push + PIC IP acqusitions... it's endless. Private VCs are still heavily pouring funds into upcoming optical companies. Supply procurement is accelerating... from $SOI selling $1.2B in agreements, in a single quarter (from $25M revenue/quarter). To $COHR signing $20B in LTAs, to $LITE selling out of 2029 capacity. Actions about where the industry is heading is the biggest signal over valuations crashing
       https://x.com/aleabitoreddit/status/2123588783753048553
-  [11-20 07:55] 🔴实时📝原创 ## Serenity on X: "I'm hearing multiple things from industry executives: 1. Potential $NVDA employee exodus if Jensen doesn't come back soon. Many senior management and engineers can easily retire after Nvidia stock appreciation over the years. They don't need to continue working sitting on millions in equity. But they continued to work because Jensen was a visionary leader. Under new interim CFO (former CFO), it gives an excuse for that lot of people to finally quit soon. A pay bump or hiring $ARM CEO isn't going to change that. So you have generational talent leaving. 2. Loss of confidence in $NVDA future growth (Jensen was the moat). What I'm hearing is that Jensen understands heavily top
+  [11-20 07:55] 📝原创 I'm hearing multiple things from industry executives: 1. Potential $NVDA employee exodus if Jensen doesn't come back soon. Many senior management and engineers can easily retire after Nvidia stock appreciation over the years. They don't need to continue working sitting on millions in equity. But they continued to work because Jensen was a visionary leader. Under new interim CFO (former CFO), it gives an excuse for that lot of people to finally quit soon. A pay bump or hiring $ARM CEO isn't going to change that. So you have generational talent leaving. 2. Loss of confidence in $NVDA future growth (Jensen was the moat). What I'm hearing is that Jensen understands heavily top-down architectures
       https://x.com/aleabitoreddit/status/2123565807653552458
-  [11-20 06:28] 🔴实时📝原创 $AAPL is now developing its own AI agent offerings to compete vs. $ANT, Meta Muse, Google Gemini, and OpenAI. Given on-device inference isn't quite ready yet for complex workflows... + Apple isn't really known for doing much in the AI race This is pretty positive for aggregate inference demand + infra capex implications (as seen with Meta Muse supply procurement). It also kinda follows rumors they were looking to acquire private accelerator companies for their own inference buildout.
+  [11-20 06:28] 📝原创 $AAPL is now developing its own AI agent offerings to compete vs. $ANT, Meta Muse, Google Gemini, and OpenAI. Given on-device inference isn't quite ready yet for complex workflows... + Apple isn't really known for doing much in the AI race This is pretty positive for aggregate inference demand + infra capex implications (as seen with Meta Muse supply procurement). It also kinda follows rumors they were looking to acquire private accelerator companies for their own inference buildout.
       https://x.com/aleabitoreddit/status/2123543880780132572
-  [11-20 02:47] 🔴实时📝原创 Wow $ANT at a $1.74T valuation… is now worth hundreds of billions more than $META. Did anyone end up investing?
+  [11-20 02:47] 📝原创 Wow $ANT at a $1.74T valuation… is now worth hundreds of billions more than $META. Did anyone end up investing?
       https://x.com/aleabitoreddit/status/2123488317425820130
-  [11-19 21:02] 🔴实时📝原创 That’s the signal of confidence I like to see: $COHR issues a new $2B share buyback, through open market purchases. Optical industry looks very undervalued right now, especially as it reaches the inflection of the next supercycle. We’re already seeing photonics-SOI substrate players go from $25M revenue -> $1.2B LTAs signed in a quarter. Or $100M backlog -> $500M in a quarter with InP substrates. And we’ll see acceleration for lasers, modules, and the optical supply chain next. I’m sure Coherent finds its own valuation very low now too, especially after signing $20B LTAs recently.
+  [11-19 21:02] 📝原创 That’s the signal of confidence I like to see: $COHR issues a new $2B share buyback, through open market purchases. Optical industry looks very undervalued right now, especially as it reaches the inflection of the next supercycle. We’re already seeing photonics-SOI substrate players go from $25M revenue -> $1.2B LTAs signed in a quarter. Or $100M backlog -> $500M in a quarter with InP substrates. And we’ll see acceleration for lasers, modules, and the optical supply chain next. I’m sure Coherent finds its own valuation very low now too, especially after signing $20B LTAs recently.
       https://x.com/aleabitoreddit/status/2123401652782923980
   [11-19 05:54] 📝原创 $GOOGL releases benchmarks for Gemini 4 Neon, ahead of $ANT IPO.
       https://x.com/aleabitoreddit/status/2123173088598938033
@@ -304,30 +312,12 @@
       https://x.com/aleabitoreddit/status/2123080934362845437
   [11-18 22:53] 📝原创 Now that we're close to 2027 it's a good idea to stress test downside scenarios where you have: 1. Capex cuts past 2028 2. Stranded Compute / DC Slowdowns 3. Finance deterioration (base case) 4. 2x+ rate hikes Working in parallel and see what happens with valuations of AI longs. If you see acceleration despite all 4, I'd argue that's an opportunity. > Next-gen of photonics is one of the rare segments with an extreme rise in optical content and ASPs that can offset aggregate capex cuts. Everyone’s moving into that space, including Elon Musk doing M&A, Marvell, Samsung and others with M&A… and we haven’t seen economic impact on emerging architectures even hit players from Celestial to Ayar + t
       https://x.com/aleabitoreddit/status/2123067177905643769
-  [11-18 07:34] 📝原创 $NVDA earnings transcript + industry read through. To sum it up: "Demand far exceeds supply". - Good news for the $MU / Samsung memory longs: "Our supply commitments increased from $279B last quarter to $390B, primarily related to the multi-year procurement of memory supply". (from SEC filings, not call) This is a a major leap Q/Q in supply procurement. - "We expect revenue to grow approximately 75% year-over-year, up from 70%." (upward revision, likely due to capacity constraints easing) (new agreements with Kinsus and Samsung Electro-Mechanics support additional ABF substrate capacity) - NVIDIA said industry cloud backlog increased from $2 trillion to $2.5 trillion in a single quarter. Whi
-      https://x.com/aleabitoreddit/status/2122835908596846950
-  [11-18 06:08] 📝原创 $AAOI management lost all credibility by launching another $550M ATM. Especially after it comes contrary to earlier commentary about other financing methods + share price caution. I still find AOI operationally compelling around their CPO program + optical transceiver ramp. Especially as it comes to the new China optical transceiver restrictions and incoming $5B-7B LTAs. But I misjudged management and suffered heavy losses after cost averaging up to $100+ from the initial ~$25. Definitely did not foresee them tapping into abusive financing methods again after the sector drop. I’ll still track their progress, but I don’t see how it’s possible to support a company that serially dilutes with AT
-      https://x.com/aleabitoreddit/status/2122814062329471182
-  [11-18 04:39] 📝原创 Jensen’s first public statement since leaving $NVDA. The support for Jensen is absolutely overwhelming. Can’t think of anyone else who is better suited to lead Nvidia and America’s future in AI
-      https://x.com/aleabitoreddit/status/2122791681405997440
-  [11-17 19:59] 📝原创 Just now: Trump administration to press ahead and block imports of AI DC equipment from China, such as new optical transceiver models. Despite opposition from hyperscalers like $AMZN to solana:GooGLMvZtJZXHdNZy95RUrAMCCKxV6ghK3qE5ddBgVm5 This move benefits Western optical transceiver and laser + component supply chains. While negatively impacting players like Innolight, Eoptolink, and upstream Chinese suppliers. China hawks in Washington were concerned Chinese transceivers could be used by Beijing to steal data, install malware, or disrupt ​US DC services.
-      https://x.com/aleabitoreddit/status/2122660925488718046
-  [11-17 17:52] 📝原创 It looks like $AAPL finally gave up on cheap memory supply with $CMXT and China. That they've approached Samsung Electronics for DRAM supply LTAs. Contracts are expected to start H1 2027, and run 4-5 years. This is positive on regarding memory demand visibility, no price floors enforced yet like other hyperscaler agreements.
-      https://x.com/aleabitoreddit/status/2122628849657954454
-  [11-17 10:36] 📝原创 $GOOGL Threat Intelligence Group: “The era of autonomous attacks has arrived”. - Fully autonomous vulnerability exploitation is now happening - Adversaries transitioned beyond manual prompting to deploying autonomous multi-agent offensive frameworks - AI is collapsing the window between vulnerability disclosure and exploitation - Google believes cybersecurity defense must become autonomous too by combining Gemini and other frontier models for reasoning + smaller models for continuous scanning. I’d actually argue beneficiaries of this arms race are AI compute and infra providers, regardless of the cybersecurity winners. Since cybersecurity will become a source of persistent inference consumpt
-      https://x.com/aleabitoreddit/status/2122519172664209692
-  [11-19 04:03] ↩回复 @Jaime21129601 Most of my commentary recently has been thematic since AI names are just indiscriminately moving up and down together now. Foci is heavily tied to CPO which hasn't reached volume yet. And they've been named to be a $TSM COUPE supplier now last month with exposure to $NVDA CPO programs. Last month, Largan cited fiber arrays as facing the greatest shortages for CPO expansion. H2 2027 from Goldman Sachs flagged accelerated CPO FAU revenue growth. But we're entering 2027 soon, so I hope we see earnings inflection with Foci similar to $SOI today with their commitments. I have a tendency to be a bit early.
-      https://x.com/aleabitoreddit/status/2123145041837527085
-  [11-19 03:50] ↩回复 @praneeshkhanna As much as I'd like to reply to these types of comments during a sector crash, I'm not in a position to tell anyone how to trade, how to position their portfolios, or when to sell. Everyone has their own risk profile. Some do indexes with 10% allocated to high-beta, others run more concentrated portfolios. In terms of my own portfolio, I'm long and can tolerate volatility. I reduced exposure earlier from 1.3x margin -> 90% long 10% cash, not using any leverage.
-      https://x.com/aleabitoreddit/status/2123141884034134132
-  [11-19 03:25] ↩回复 @piyush1337 I still don't think I'm wrong on $AAOI in terms of revenue acceleration entering H2 2027. I'm sure others see how compelling their manufacturing ramp is too. But in terms of shareholder returns, I personally misjudged management commentary vs. actions in how they do financing. I do think approaching 2028 operations outweigh equity dilution, but it's a ways away... Nobody wants to fund further capacity buildout in these market conditions, so near-medium term there's a material overhang.
-      https://x.com/aleabitoreddit/status/2123135584621539471
-  [11-19 03:09] ↩回复 @Angellara124144 I got a little too excited in this post my bad. But a company going from no photonics-SOI revenue guidance when I wrote a thesis into $1.2B in allocations is just super exciting to me. The recent market crash makes me second guess myself and if I was wrong on a lot of these optical names... So having an earnings validate my thought process gives me a sigh of relief.
-      https://x.com/aleabitoreddit/status/2123131526644891687
-  [11-19 03:05] ↩回复 @BAreadude I hope $SIVE management proves everyone wrong around revenue growth expectations as well. Sivers has large laser allocations, lasers for CPO/NPO/pluggables, and sit inside an industry bottleneck. So I hope they can execute and convert those into commitments (no promises though)
-      https://x.com/aleabitoreddit/status/2123130570008060023
-  [11-19 02:56] ↩回复 @deepstocktrends I'm just joking with the language lol. But it's fun to see a thesis earlier in the year get validated with $1.2B commitments. I thought $SOI would probably see acceleration into 2027, rather than everyone do supply procurement so early.
-      https://x.com/aleabitoreddit/status/2123128124628140034
+  [11-21 03:21] ↩回复 @user1777xi32921 Thanks, I'll try to make more higher signal fundamental posts. I tend to post more random stuff when I'm stressed (especially with the broader market crash) But it is pretty wild to see the disconnect between supply procurement patterns and valuations during this deleveraging period.
+      https://x.com/aleabitoreddit/status/2123859267560304947
+  [11-21 02:15] ↩回复 @Linkinthedark It's much more nuanced than that, I'm just making a joke. DC developers will find ways to get it done. It's just statements from Trump like this introduce unnecessary uncertainty.
+      https://x.com/aleabitoreddit/status/2123842606820135371
+  [11-20 21:28] ↩回复 @Crypto__Broski I'm primarily looking forward to $SIVE earnings in 6 days! The $P qualification comment I made was referring to Sivers, even if I don't directly mention the name. If they scale to 300m laser capacity, but MC is $400m, even 25% utilization at like $6 blended would be more revenue a year than their current valuation. The main thing is showing enough customer qualifications to fill up capacity and I think they have potential to cook. I am disappointed though with management execution earlier in the year though from not IPOing on NASDAQ, not going through with M&A using their equity valuation. But at this point valuation is just spare change now and I see them getting bought by $
+      https://x.com/aleabitoreddit/status/2123770443337543965
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
