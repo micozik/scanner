@@ -2,71 +2,29 @@
 ============================================================
 🐑【白毛股神 Serenity @aleabitoreddit · 全量存档】AI/半导体供应链瓶颈
 ============================================================
-  来源：raw.githubusercontent.com 公开存档（共6921条）
-  存档最近同步：2026-11-20T20:39:44Z UTC（状态 ok）
-  最近72小时：原创 22 条 / 回复 20 条（北京时间）
+  来源：raw.githubusercontent.com 公开存档（共6924条）
+  存档最近同步：2026-11-22T19:17:08Z UTC（状态 ok）
+  ⚠️ 存档最新一条 2026-11-22T19:17 UTC，已停更约24小时 → 启动实时补抓
+  实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
+  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
+  最近48小时：原创 2 条 / 回复 1 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×55 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
-    存储/HBM/NOR ×29 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
-    激光/光芯片/InP ×26 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
-    CPO/光模块 ×15 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
-    衬底/封装材料 ×9 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
-    CPU/ARM ×3 → CPU/接口：澜起科技688008 海光信息688041
-    人形机器人/物理AI ×2 → 机器人：宇树688836(她的估值基准) 绿的谐波688017(6/5她点名当天20cm，之后−35%) 雷赛002979 双环002472｜她最看好的是美股Agility
-  提到的代码：$NVDA×9 $ANT×5 $SNDK×5 $SOI×5 $COHR×3 $SPCX×2 $CRWV×2 $SIVE×2 $P×2 $AAPL×2 $GOOGL×2 $AAOI×2 $MU×2 $AMZN×1 $HOOD×1 $NBIS×1 $SMTC×1 $MTSI×1 $JBL×1 $LITE×1
+    算力/云/数据中心 ×2 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    存储/HBM/NOR ×1 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
+  提到的代码：$NVDA×1 $CRWV×1 $SNDK×1 $ORCL×1
 
   ── 原创推文（全文，新→旧）──
-  [11-21 04:39] 📝原创 $NVDA drops over -12%+, from a new report that the SEC is probing potential accounting issues at Nvidia. At this point, the collateral damage is starting to hit major indexes and retirement portfolios. It's just wild to witness a $5T+ company crash -46%+ in weeks.
-      https://x.com/aleabitoreddit/status/2123878986686333308
-  [11-21 02:50] 📝原创 I covered this earlier in Jan regarding PCB bottlenecks with photonics + $AMZN Kuiper / $SPCX starlink supply chains. But as an update, it like other industries outside of AI are really starting to feel the pain now too. Global Electronics Association: "Is issuing this Industry Alert on escalating shortages across the printed circuit board (PCB) supply chain. Companies in automotive, industrial, medical, defense, and telecommunications report longer lead times and difficulty securing supply as AI absorbs scarce capacity, effectively putting production at risk" The association meaningful relief unlikely before mid-2028. The association urged buyers to plan ahead for supply constraints and man
-      https://x.com/aleabitoreddit/status/2123851594811011470
-  [11-21 02:10] 📝原创 &gt; Democrats: "Let's ban new datacenters in the US" &gt; Trump: "Let's ban new datacenters overseas" &gt; $CRWV: ???
-      https://x.com/aleabitoreddit/status/2123841418577973727
-  [11-21 00:47] 📝原创 
-      https://x.com/aleabitoreddit/status/2123820597465776460
-  [11-20 23:48] 📝原创 Feels like every growth equity, even outside of AI, from $HOOD to $NBIS has fallen off a cliff. Meanwhile bubbles are forming in consumer staples, with valuations not seen since 1999. Do you guys think markets are right... that premiums given to rocket or AI companies, should be given to towel resellers like Walmart instead?
-      https://x.com/aleabitoreddit/status/2123805601411277149
-  [11-20 20:56] 📝原创 $P earnings were actually interesting, not really in terms actionable investments. But more on AI capex broadening, where deployments are happening, and what Jensen at $NVDA might envisioned with open weight model + GPU demand. - Everpure CEO stated that enterprises are increasingly building on-premises AI factories, stating: "The ROI for companies to buy their own GPU environments and run their own models is starting to come to the forefront." - "I'm talking about standard enterprises, regular finance organizations. A wide variety of organizations are starting to buy these AI factories for the purpose of running their own open weight models From "regular insurance companies, et cetera" - "O
-      https://x.com/aleabitoreddit/status/2123762482280055255
-  [11-20 20:04] 📝原创 When the world needed him most, he vanished
-      https://x.com/aleabitoreddit/status/2123749426019868932
-  [11-20 12:23] 📝原创 Markets appear to be wrongly interpreting Chinese eSSD cuts as deteriorating demand and NAND oversupply. Phison CEO commentary today + more context behind $SNDK / Kioxia selloff regarding Trendforce revisions: - "Pua attributed China's recent enterprise SSD demand slowdown to GPU shortages since November 2026" - "Without GPUs, additional purchases offer little value, prompting some companies to sell server components on the spot market to recover cash" (for context enterprise SSDs are growth driver for NAND) - "Chinese cloud giants nevertheless plan substantial GPU prepayments, temporarily tying up capital and delaying procurement of other components." - "the principal challenge in 2027 woul
-      https://x.com/aleabitoreddit/status/2123633356969775107
-  [11-20 10:03] 📝原创 I'm actually very impressed with market-chan. If we look at ESMT numbers today: > $1.58B MC > $747M net cash, $274.7M net inventory from Q3 > $349.5M in Q3 free cash flow Adjusted EV: $559.3M > Q3 net income: $327M (1.2x annualized P/E) > October net income (likely another +$96M added to balance sheet) - "DDR2/DDR3 supply to remain constrained into 2027" - "ASPs to rise Q4" (consumer demand weakening) - "2027 dividend payout ratio could be 30–50% of earnings" So you're valuing the adj. operating business at $559M, despite them making ~$300m net income a quarter. Even the AI models I've double checked it with looked at these numbers with disbelief.
-      https://x.com/aleabitoreddit/status/2123598186065559858
-  [11-20 09:26] 📝原创 True, I've looked at biotech, physical AI, cybersecurity, space, and others... But I still have conviction that optics is the most compelling opportunity. If you look at Elon Musk $SPCX (Mesh acquisition), $MRVL (Lumentum acqusition), Samsung Electronics photonics foundry push... SK Hynix CPO push + PIC IP acqusitions... it's endless. Private VCs are still heavily pouring funds into upcoming optical companies. Supply procurement is accelerating... from $SOI selling $1.2B in agreements, in a single quarter (from $25M revenue/quarter). To $COHR signing $20B in LTAs, to $LITE selling out of 2029 capacity. Actions about where the industry is heading is the biggest signal over valuations crashing
-      https://x.com/aleabitoreddit/status/2123588783753048553
-  [11-20 07:55] 📝原创 I'm hearing multiple things from industry executives: 1. Potential $NVDA employee exodus if Jensen doesn't come back soon. Many senior management and engineers can easily retire after Nvidia stock appreciation over the years. They don't need to continue working sitting on millions in equity. But they continued to work because Jensen was a visionary leader. Under new interim CFO (former CFO), it gives an excuse for that lot of people to finally quit soon. A pay bump or hiring $ARM CEO isn't going to change that. So you have generational talent leaving. 2. Loss of confidence in $NVDA future growth (Jensen was the moat). What I'm hearing is that Jensen understands heavily top-down architectures
-      https://x.com/aleabitoreddit/status/2123565807653552458
-  [11-20 06:28] 📝原创 $AAPL is now developing its own AI agent offerings to compete vs. $ANT, Meta Muse, Google Gemini, and OpenAI. Given on-device inference isn't quite ready yet for complex workflows... + Apple isn't really known for doing much in the AI race This is pretty positive for aggregate inference demand + infra capex implications (as seen with Meta Muse supply procurement). It also kinda follows rumors they were looking to acquire private accelerator companies for their own inference buildout.
-      https://x.com/aleabitoreddit/status/2123543880780132572
-  [11-20 02:47] 📝原创 Wow $ANT at a $1.74T valuation… is now worth hundreds of billions more than $META. Did anyone end up investing?
-      https://x.com/aleabitoreddit/status/2123488317425820130
-  [11-19 21:02] 📝原创 That’s the signal of confidence I like to see: $COHR issues a new $2B share buyback, through open market purchases. Optical industry looks very undervalued right now, especially as it reaches the inflection of the next supercycle. We’re already seeing photonics-SOI substrate players go from $25M revenue -> $1.2B LTAs signed in a quarter. Or $100M backlog -> $500M in a quarter with InP substrates. And we’ll see acceleration for lasers, modules, and the optical supply chain next. I’m sure Coherent finds its own valuation very low now too, especially after signing $20B LTAs recently.
-      https://x.com/aleabitoreddit/status/2123401652782923980
-  [11-19 05:54] 📝原创 $GOOGL releases benchmarks for Gemini 4 Neon, ahead of $ANT IPO.
-      https://x.com/aleabitoreddit/status/2123173088598938033
-  [11-19 04:31] 📝原创 Woah, the charts mapping the recent AI crash is insane. Net momentum exposure went from ~60% of hedge fund equity at the peak down to 8%. The weeks before Nov 13 also saw the heaviest net selling of global tech stocks in the past 9 years. Per Goldman Sachs prime data.
-      https://x.com/aleabitoreddit/status/2123152181134234071
-  [11-19 03:34] 📝原创 Situational Awareness 2.0 is coming. I think Leopold's early ideas were directionally right from $SNDK to $BE. Even his recent ones like Taiyo Yuden, I do see MLCCs becoming a bottleneck in 2027. Unfortunately, due to excessive leverage and crowded longs... Positioning left him vulnerable to liquidation before he got to see longer horizon ideas play out. I think it's fun to see fund managers actually have unique ideas in similar sectors. So hope he can make a comeback. I learned a lot of lessons myself to in terms of being more narrow with long selections, so very excited for 2027.
-      https://x.com/aleabitoreddit/status/2123137705597120613
-  [11-19 02:51] 📝原创 Did you listen Citibank? When I first took positions in $SOI, Citi reacted to my analysis and warned: "investor expectations for Photonics-SOI growth might be excessive" Soitec back then had: -> $25M in Photonics-SOI revenue, with no guidance... when Citi published their note. now? -> $1.2 BILLION in long term customer capacity commitments, driven by OPTICAL GROWTH (w/ cash deposits) In just 8 months. $25M -> $1.2B LTAs... Vindicated. This is clear acceleration in underlying OPTICAL DEMAND, despite markets pricing in AI demand destruction.
-      https://x.com/aleabitoreddit/status/2123126925908742463
-  [11-19 02:08] 📝原创 On the bright side, capital flowing from other sectors + semis to a successful $ANT IPO... will eventually flow back into semi balance sheets over the long run. Circle of life. but for semis. If we look at Anthropic's $900.9B of eventual purchase agreements: - $AVGO + financing partners: $161.2B in Google TPU leases - Google Cloud: at least $121.3B - SpaceX: Up to $120.5B (ceiling, can be cut) - Amazon: at least $110B - Microsoft: $47.2B-$49.2B - Nscale: up to $44.6B - Lambda: ~$41.3BN ($34.9B can be cut) With other identifiable counterparty deals such as: - $MU (undisclosed), but supply agreement - $RIOT: ~$28B+ $9.1B - $WULF: ~$19B - Akami: ~$11.6B (CPU cloud) - Volta: ~$10B - OnePWR: ~$3.
-      https://x.com/aleabitoreddit/status/2123116246183088517
-  [11-19 01:04] 📝原创 A faction of $NVDA board are now pushing for Jensen Huang to return as CEO per Semafor. I hope the market’s reaction, even after record earnings… sends a message to the rest of the board.
-      https://x.com/aleabitoreddit/status/2123100162616951229
-  [11-18 23:48] 📝原创 Does anyone remember the days… When $NVDA disclosing an additional $111B+ in primarily memory procurement in a single quarter… was good news for memory names like $MU and SK Hynix?
-      https://x.com/aleabitoreddit/status/2123080934362845437
-  [11-18 22:53] 📝原创 Now that we're close to 2027 it's a good idea to stress test downside scenarios where you have: 1. Capex cuts past 2028 2. Stranded Compute / DC Slowdowns 3. Finance deterioration (base case) 4. 2x+ rate hikes Working in parallel and see what happens with valuations of AI longs. If you see acceleration despite all 4, I'd argue that's an opportunity. > Next-gen of photonics is one of the rare segments with an extreme rise in optical content and ASPs that can offset aggregate capex cuts. Everyone’s moving into that space, including Elon Musk doing M&A, Marvell, Samsung and others with M&A… and we haven’t seen economic impact on emerging architectures even hit players from Celestial to Ayar + t
-      https://x.com/aleabitoreddit/status/2123067177905643769
-  [11-21 03:21] ↩回复 @user1777xi32921 Thanks, I'll try to make more higher signal fundamental posts. I tend to post more random stuff when I'm stressed (especially with the broader market crash) But it is pretty wild to see the disconnect between supply procurement patterns and valuations during this deleveraging period.
-      https://x.com/aleabitoreddit/status/2123859267560304947
-  [11-21 02:15] ↩回复 @Linkinthedark It's much more nuanced than that, I'm just making a joke. DC developers will find ways to get it done. It's just statements from Trump like this introduce unnecessary uncertainty.
-      https://x.com/aleabitoreddit/status/2123842606820135371
-  [11-20 21:28] ↩回复 @Crypto__Broski I'm primarily looking forward to $SIVE earnings in 6 days! The $P qualification comment I made was referring to Sivers, even if I don't directly mention the name. If they scale to 300m laser capacity, but MC is $400m, even 25% utilization at like $6 blended would be more revenue a year than their current valuation. The main thing is showing enough customer qualifications to fill up capacity and I think they have potential to cook. I am disappointed though with management execution earlier in the year though from not IPOing on NASDAQ, not going through with M&A using their equity valuation. But at this point valuation is just spare change now and I see them getting bought by $
-      https://x.com/aleabitoreddit/status/2123770443337543965
+  [11-23 03:17] 📝原创 Treasury Secretary Bessent on $NVDA, AI crash, and circular financing: Q: On Trump wanting Jensen Huang back. A: "Well, I said they should go to the outside, but he's on the outside now" Q: On AI market crash: A: "The Democratic position on the SI buildout has spooked a lot of investors in terms of slowing" " hawkish remarks from the Federal Reserve... people believe they may be making a policy mistake if they over-tighten" "substantial tightening in financial conditions over the past few months" Q: On circular financing: A: "No, as Nvidia continues to be fantastically profitable, and there is near unlimited demand for their chips worldwide." Looks like the chances of Jensen returning and im
+      https://x.com/aleabitoreddit/status/2124582975455318147
+  [11-22 09:35] 📝原创 It's very interesting $ORCL can put out statements about being fully funded for OpenAI. Or $SNDK / Micron can put out statements reassuring investors about signed LTAs + price floors. Yet there's extraordinary levels of distrust toward disclosures and durability. Either everyone is excessively bearish, and this creates a generational buying opportunity on AI if contracts + projections hold... or they're skeptical for a good reason.
+      https://x.com/aleabitoreddit/status/2124315829202493468
+  [11-22 09:46] ↩回复 @corbinians_bear Maybe it's self-fufilling, we'll see. From earnings, $CRWV said 10x quantified demand > compute availability throughout 2027. Then the same week a bunch of people are arguing for a compute glut extrapolating smaller Asian DCs getting impacted. One of the most interesting market dynamics
+      https://x.com/aleabitoreddit/status/2124318494879780986
 
   ★用法（吃透白毛 2026-10-30）：①她给的是『未来1-3个月什么会稀缺』，不是『今天买什么』；
     ②映射到卖稀缺品的一方，不映射到买方；③她点名的A股当天常20cm→不追（绿的谐波6/5涨停后−35%）；
