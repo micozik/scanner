@@ -4,23 +4,23 @@
 ============================================================
   来源：raw.githubusercontent.com 公开存档（共6939条）
   存档最近同步：2026-11-24T19:47:40Z UTC（状态 ok）
-  ⚠️ 存档最新一条 2026-11-24T19:47 UTC，已停更约8小时 → 启动实时补抓
+  ⚠️ 存档最新一条 2026-11-24T19:47 UTC，已停更约22小时 → 启动实时补抓
   实时补抓⑥[RSS镜像] 全部失败：nitter.net:410、xcancel.com:451、nitter.poast.org:ConnectionError、nitter.privacydev.net:ConnectionError、nitter.tiekoetter.com:200、nitter.space:403、lightbrd.com:403、nitter.kuuro.net:404、nuku.trabun.org:403、rsshub.app:404、rsshub.rssforever.com:503
   实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
-  实时补抓⑤[syndication] syndication.twitter.com：连续429（限流）
+  实时补抓⑤[syndication] syndication.twitter.com：0条
   实时补抓⑤[syndication] syndication.twimg.com 失败：ConnectTimeout: HTTPSConnectionPool(host='syndication.twimg.com', port=443):
-  实时补抓④[x.com/jina]：5条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
+  实时补抓④[x.com/jina]：0条（x_public_profile+jina_status） 错误1：x.com profile: curl: (22) The requested URL returned error: 403
   🔴 实时补抓也没拿到新推文 → 请用户截图她X主页最新几条发给AI
-  最近72小时：原创 10 条 / 回复 6 条（北京时间）
+  最近48小时：原创 7 条 / 回复 6 条（北京时间）
 
   ★她这两天在讲什么（提及次数）→ A股对应环节（线索，非买入信号）
-    算力/云/数据中心 ×19 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
+    算力/云/数据中心 ×16 → 算力链：工业富联601138 浪潮信息000977 + 液冷英维克002837
     CPO/光模块 ×14 → 光模块中际旭创300308/新易盛300502/天孚300394｜⚠️模块厂是激光的买方+FCC 3.2T中国模块限制风险，她看好的是西方激光/DSP，不是中国模块
     激光/光芯片/InP ×13 → 激光芯片(她10/24逐家点评中国扩产，结论:多年短缺、近期无过剩)：源杰688498 仕佳688313 长光华芯688048 华工科技000988(云岭) 东山精密002384(索尔思)
     存储/HBM/NOR ×6 → 存储卖方：兆易创新603986(NOR/SLC涨价，她9/14引NOR+100%/SLC+130%) 长鑫科技(DRAM) 设备北方华创002371/中微688012/拓荆688072｜⚠️模组厂佰维/江波龙/德明利是买方，涨价挤压成本
     衬底/封装材料 ×1 → 载板/玻纤/MLCC：深南电路002916 中材科技002080 凯盛科技600552 三环集团300408
     CPU/ARM ×1 → CPU/接口：澜起科技688008 海光信息688041
-  提到的代码：$AAOI×5 $NVDA×5 $SNDK×2 $GOOGL×2 $NBIS×2 $ANT×1 $CRWV×1 $IREN×1 $AMD×1 $SIVE×1 $SMTC×1
+  提到的代码：$AAOI×5 $SNDK×2 $GOOGL×2 $NBIS×2 $NVDA×2 $ANT×1 $CRWV×1 $AMD×1 $IREN×1 $SMTC×1 $SIVE×1
 
   ── 原创推文（全文，新→旧）──
   [11-25 03:30] 📝原创 Wow, memory names like $SNDK just keep on dropping. At a $89B MC they have: > $89B minimum in LTAs with contractual price floors supporting at least 80% gross margins "The floor pricing for those contracts, we said in aggregate, will deliver at least 80% gross margin for every single year" > Not including HBF and uncommited capacity (~50% for 2027, ~33% for 2028) > Customers placing billions in deposits for 2029-2031 capacity already (Morgan Stanley) I really disagree with the notion that you need need NAND pricing to keep exponentially increasing Q/Q. At long as pricing remains elevated and you have duration visibility, lot of these memory companies look very undervalued.
@@ -37,12 +37,6 @@
       https://x.com/aleabitoreddit/status/2125058643154632845
   [11-24 10:38] 📝原创 Ooo found $SMTC laser disclosures in earnings interesting after their HieFo acquisition: - UHP 400mW lasers under development (further behind $AAOI in this aspect since AOI has been doing quals). In terms of laser revenue: - 3-4x capacity expansion EOY, another 3-4x end of next year. -> $25M/quarter EOY after 3x -> ~$$100M quarter after 4x - NPO engagement with 4 US hyperscalers and 3 Chinese hyperscalers (Aug 2027–Jan 2028 initial revenue for NPO for timelines) - "developing CPO scale-up lasers, but that's a contribution of potential revenue beyond 2027" in terms of timeline - "NPO represents a great near-term opportunity" relative to CPO - "We wanted to catch the next wave, so that is a 3.
       https://x.com/aleabitoreddit/status/2125056333045219562
-  [11-23 22:00] 📝原创 THE AI TRADE IS BACK $NVDA Board Reinstates Jensen Huang as CEO
-      https://x.com/aleabitoreddit/status/2124865722342085117
-  [11-23 12:05] 📝原创 President Trump: "I hope the Board of Nvidia rehires Jensen Huang" Jensen's return to $NVDA is looking a lot more likely. Especially with the support from the US president.
-      https://x.com/aleabitoreddit/status/2124715837533859857
-  [11-23 03:17] 📝原创 Treasury Secretary Bessent on $NVDA, AI crash, and circular financing: Q: On Trump wanting Jensen Huang back. A: "Well, I said they should go to the outside, but he's on the outside now" Q: On AI market crash: A: "The Democratic position on the SI buildout has spooked a lot of investors in terms of slowing" " hawkish remarks from the Federal Reserve... people believe they may be making a policy mistake if they over-tighten" "substantial tightening in financial conditions over the past few months" Q: On circular financing: A: "No, as Nvidia continues to be fantastically profitable, and there is near unlimited demand for their chips worldwide." Looks like the chances of Jensen returning and im
-      https://x.com/aleabitoreddit/status/2124582975455318147
   [11-25 03:47] ↩回复 @amitisinvesting Yeah, I think it's a mix of just indiscriminate de-grossing as well as just not believing in counterparties paying the LTAs. Even $SNDK can go out and say: "We came up with these financial guarantees with third-party financial institutions, which basically will flow those funds to us if they don't execute their part of the agreement" I guess all it takes is time for people to change their minds.
       https://x.com/aleabitoreddit/status/2125315431695286326
   [11-24 21:28] ↩回复 @piyush1337 Well yes, for $AAOI it's insanely operationally bullish... In terms of $1.5B in 800G revenue for 2027 alone minimum (not including their other LTAs + orders). But management commentary is literally trolling. They said "Will be even five times bigger, or even more than that." And it turned out to be like 1.5x-2x. Standalone it's still transformational but management commentary drives me insane
